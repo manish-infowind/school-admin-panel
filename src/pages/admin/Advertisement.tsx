@@ -13,7 +13,7 @@ import {
   Trash2,
   Globe,
   Header,
-  Footer,
+  Layout,
   Megaphone,
   Settings,
   Loader2,
@@ -188,7 +188,7 @@ export default function Advertisement() {
                           <Header className="h-6 w-6 text-brand-green" />
                         )}
                         {ad.type === "footer" && (
-                          <Footer className="h-6 w-6 text-brand-green" />
+                          <Layout className="h-6 w-6 text-brand-green" />
                         )}
                         {ad.type === "banner" && (
                           <Globe className="h-6 w-6 text-brand-green" />
