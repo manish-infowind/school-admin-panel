@@ -21,52 +21,113 @@ import {
   Search,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-
-// Mock product data - in real app, this would come from API
-const mockProduct = {
-  id: 1,
-  name: "MedScope Pro X1",
-  category: "Diagnostic Equipment",
-  status: "Published",
-  shortDescription:
-    "Advanced diagnostic imaging system with AI-powered analysis",
-  fullDescription:
-    "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems.",
-  price: "49,999",
-  features: [
-    "AI-powered diagnostic analysis",
-    "4K high-resolution imaging",
-    "Cloud connectivity",
-    "Real-time collaboration tools",
-  ],
-  specifications: {
-    Resolution: "4K Ultra HD",
-    Weight: "2.5 kg",
-    Connectivity: "WiFi 6, Bluetooth 5.0",
-    "Battery Life": "8 hours continuous use",
-    Certifications: "FDA Approved, CE Marked",
-  },
-  images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-  isPublished: true,
-  seoTitle: "MedScope Pro X1 - Advanced Medical Imaging",
-  seoDescription: "Professional-grade medical imaging system with AI analysis",
-};
+import { productStore, type Product } from "@/lib/productStore";
+import { ImageUpload } from "@/components/admin/ImageUpload";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProductEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(mockProduct);
+  const { toast } = useToast();
+  const [product, setProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    // In real app, this would save to API
-    console.log("Saving product:", product);
-    // Show success message and redirect
-    setTimeout(() => {
-      navigate("/admin/products");
-    }, 1000);
+  // Load product data
+  useEffect(() => {
+    if (id) {
+      const productData = productStore.getProduct(parseInt(id));
+      if (productData) {
+        setProduct(productData);
+      } else {
+        toast({
+          title: "Product not found",
+          description: "The product you're looking for doesn't exist.",
+          variant: "destructive",
+        });
+        navigate("/admin/products");
+      }
+    }
+    setLoading(false);
+  }, [id, navigate, toast]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-brand-green border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
+        <p className="text-muted-foreground mb-6">
+          The product you're looking for doesn't exist.
+        </p>
+        <Link to="/admin/products">
+          <Button>Back to Products</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const handleSave = async () => {
+    if (!product) return;
+
+    setSaving(true);
+    try {
+      // Validate required fields
+      if (!product.name.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Product name is required.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!product.category.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Product category is required.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update product in store
+      const updatedProduct = productStore.updateProduct(product.id, product);
+
+      if (updatedProduct) {
+        toast({
+          title: "Success!",
+          description: "Product updated successfully.",
+        });
+
+        // Navigate back after short delay
+        setTimeout(() => {
+          navigate("/admin/products");
+        }, 1000);
+      } else {
+        throw new Error("Failed to update product");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save product. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addFeature = () => {
@@ -135,10 +196,20 @@ export default function ProductEdit() {
             </Button>
             <Button
               onClick={handleSave}
+              disabled={saving}
               className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -369,46 +440,11 @@ export default function ProductEdit() {
               <CardTitle>Product Images</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                {product.images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
-                        const newImages = product.images.filter(
-                          (_, i) => i !== index,
-                        );
-                        setProduct({ ...product, images: newImages });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <div
-                  className="aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-green/50 transition-colors"
-                  onClick={() => {
-                    // Simulate image upload
-                    const newImage = "/placeholder.svg";
-                    setProduct({
-                      ...product,
-                      images: [...product.images, newImage],
-                    });
-                  }}
-                >
-                  <div className="text-center">
-                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Upload Image
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <ImageUpload
+                images={product.images}
+                onImagesChange={(images) => setProduct({ ...product, images })}
+                maxImages={8}
+              />
             </CardContent>
           </Card>
         )}
