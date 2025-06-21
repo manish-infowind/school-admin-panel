@@ -12,64 +12,81 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { productStore } from "@/lib/productStore";
 
-const stats = [
-  {
-    title: "Total Pages",
-    value: "12",
-    change: "+2 this month",
-    icon: FileText,
-    color: "from-brand-green to-brand-teal",
-  },
-  {
-    title: "Products",
-    value: "48",
-    change: "+12 this week",
-    icon: Package,
-    color: "from-brand-teal to-brand-blue",
-  },
-  {
-    title: "Page Views",
-    value: "2,847",
-    change: "+18% this week",
-    icon: TrendingUp,
-    color: "from-brand-blue to-brand-green",
-  },
-  {
-    title: "Active Users",
-    value: "1,234",
-    change: "+8% this month",
-    icon: Users,
-    color: "from-brand-green via-brand-teal to-brand-blue",
-  },
-];
+  return (
+  const [products, setProducts] = useState(productStore.getProducts());
 
-const recentActivity = [
-  {
-    action: "Updated Product Page",
-    page: "Pharmaceutical Solutions",
-    time: "2 hours ago",
-    type: "edit",
-  },
-  {
-    action: "Created New Product",
-    page: "Advanced Diagnostics",
-    time: "4 hours ago",
-    type: "create",
-  },
-  {
-    action: "Modified Index Page",
-    page: "Homepage Content",
-    time: "1 day ago",
-    type: "edit",
-  },
-  {
-    action: "Published Product Details",
-    page: "MedScope Pro X1",
-    time: "2 days ago",
-    type: "publish",
-  },
-];
+  useEffect(() => {
+    const unsubscribe = productStore.subscribe(() => {
+      setProducts(productStore.getProducts());
+    });
+    return unsubscribe;
+  }, []);
+
+  const publishedProducts = products.filter(p => p.isPublished).length;
+  const draftProducts = products.filter(p => !p.isPublished).length;
+
+  const stats = [
+    {
+      title: "Total Pages",
+      value: "4",
+      change: "Admin panel ready",
+      icon: FileText,
+      color: "from-brand-green to-brand-teal",
+    },
+    {
+      title: "Products",
+      value: products.length.toString(),
+      change: `${publishedProducts} published, ${draftProducts} drafts`,
+      icon: Package,
+      color: "from-brand-teal to-brand-blue",
+    },
+    {
+      title: "Page Views",
+      value: "2,847",
+      change: "+18% this week",
+      icon: TrendingUp,
+      color: "from-brand-blue to-brand-green",
+    },
+    {
+      title: "Active Users",
+      value: "1,234",
+      change: "+8% this month",
+      icon: Users,
+      color: "from-brand-green via-brand-teal to-brand-blue",
+    },
+  ];
+
+  const recentActivity = [
+    {
+      action: "Updated Product",
+      page: products[0]?.name || "No products",
+      time: products[0]?.lastModified || "N/A",
+      type: "edit",
+    },
+    {
+      action: "Product Status",
+      page: `${publishedProducts} published, ${draftProducts} drafts`,
+      time: "Real-time",
+      type: "status",
+    },
+    {
+      action: "System Status",
+      page: "Admin Panel Active",
+      time: "Online",
+      type: "system",
+    },
+    {
+      action: "Last Product Modified",
+      page: products.find(p => p.lastModified === "Just now")?.name || "None recently",
+      time: "Real-time",
+      type: "edit",
+    },
+  ];
+
+
 
 const quickActions = [
   {
