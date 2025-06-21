@@ -5,8 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Edit3, Trash2, Save, Eye, Search } from "lucide-react";
+import { ProductPreview } from "@/components/admin/ProductPreview";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const products = [
   {
@@ -16,6 +18,24 @@ const products = [
     status: "Published",
     lastModified: "2 hours ago",
     image: "/placeholder.svg",
+    shortDescription:
+      "Advanced diagnostic imaging system with AI-powered analysis",
+    fullDescription:
+      "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems.",
+    price: "49,999",
+    features: [
+      "AI-powered diagnostic analysis",
+      "4K high-resolution imaging",
+      "Cloud connectivity",
+      "Real-time collaboration tools",
+    ],
+    specifications: {
+      Resolution: "4K Ultra HD",
+      Weight: "2.5 kg",
+      Connectivity: "WiFi 6, Bluetooth 5.0",
+      "Battery Life": "8 hours continuous use",
+      Certifications: "FDA Approved, CE Marked",
+    },
   },
   {
     id: 2,
@@ -24,6 +44,23 @@ const products = [
     status: "Draft",
     lastModified: "1 day ago",
     image: "/placeholder.svg",
+    shortDescription: "Next-generation medical imaging with enhanced clarity",
+    fullDescription:
+      "Our Advanced Imaging System delivers unprecedented image quality with enhanced clarity and detail. Perfect for complex diagnostic procedures requiring the highest level of precision.",
+    price: "75,999",
+    features: [
+      "Ultra-high resolution imaging",
+      "Advanced noise reduction",
+      "Multi-modal integration",
+      "Cloud-based storage",
+    ],
+    specifications: {
+      Resolution: "8K Ultra HD",
+      Weight: "3.2 kg",
+      Connectivity: "WiFi 6E, Bluetooth 5.2",
+      "Battery Life": "12 hours continuous use",
+      Certifications: "FDA Approved, CE Marked, ISO 13485",
+    },
   },
   {
     id: 3,
@@ -32,16 +69,55 @@ const products = [
     status: "Published",
     lastModified: "3 days ago",
     image: "/placeholder.svg",
+    shortDescription: "Compact, portable diagnostic analyzer for field use",
+    fullDescription:
+      "The Portable Analyzer brings laboratory-grade diagnostic capabilities to any location. Ideal for field research, remote clinics, and emergency medical situations.",
+    price: "12,999",
+    features: [
+      "Portable and lightweight design",
+      "Real-time analysis",
+      "Multiple test panels",
+      "Wireless connectivity",
+    ],
+    specifications: {
+      Weight: "1.2 kg",
+      Dimensions: "25 x 15 x 8 cm",
+      "Battery Life": "24 hours continuous use",
+      Connectivity: "WiFi, Bluetooth, USB-C",
+      Certifications: "FDA Approved, CE Marked",
+    },
   },
 ];
 
 export default function ProductPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [previewProduct, setPreviewProduct] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const handleEditProduct = (product: any) => {
+    navigate(`/admin/products/edit/${product.id}`);
+  };
+
+  const handlePreviewProduct = (product: any) => {
+    setPreviewProduct(product);
+    setIsPreviewOpen(true);
+  };
+
+  const handleDeleteProduct = (productId: number) => {
+    // In real app, this would call an API
+    console.log("Deleting product:", productId);
+    // Show confirmation dialog and handle deletion
+  };
+
+  const handleAddNewProduct = () => {
+    navigate("/admin/products/new");
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +135,10 @@ export default function ProductPage() {
               Manage your product listings and information
             </p>
           </div>
-          <Button className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
+          <Button
+            onClick={handleAddNewProduct}
+            className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add New Product
           </Button>
@@ -132,13 +211,38 @@ export default function ProductPage() {
                         {product.status}
                       </Badge>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewProduct(product);
+                          }}
+                          title="Preview Product"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditProduct(product);
+                          }}
+                          title="Edit Product"
+                        >
                           <Edit3 className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProduct(product.id);
+                          }}
+                          title="Delete Product"
+                          className="hover:text-destructive"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -220,6 +324,13 @@ export default function ProductPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Product Preview Modal */}
+      <ProductPreview
+        product={previewProduct}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </div>
   );
 }
