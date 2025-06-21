@@ -303,11 +303,22 @@ export default function ProductPage() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
+                    <Button
+                      onClick={() => {
+                        console.log("Quick saving product:", selectedProduct);
+                        // In real app, this would save the quick changes
+                      }}
+                      className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                    >
                       <Save className="h-4 w-4 mr-2" />
                       Save Changes
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreviewProduct(selectedProduct)}
+                      title="Preview Product"
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>
