@@ -7,94 +7,33 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Edit3, Trash2, Save, Eye, Search } from "lucide-react";
 import { ProductPreview } from "@/components/admin/ProductPreview";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { productStore, type Product } from "@/lib/productStore";
+import { useToast } from "@/hooks/use-toast";
 
-const products = [
-  {
-    id: 1,
-    name: "MedScope Pro X1",
-    category: "Diagnostic Equipment",
-    status: "Published",
-    lastModified: "2 hours ago",
-    image: "/placeholder.svg",
-    shortDescription:
-      "Advanced diagnostic imaging system with AI-powered analysis",
-    fullDescription:
-      "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems.",
-    price: "49,999",
-    features: [
-      "AI-powered diagnostic analysis",
-      "4K high-resolution imaging",
-      "Cloud connectivity",
-      "Real-time collaboration tools",
-    ],
-    specifications: {
-      Resolution: "4K Ultra HD",
-      Weight: "2.5 kg",
-      Connectivity: "WiFi 6, Bluetooth 5.0",
-      "Battery Life": "8 hours continuous use",
-      Certifications: "FDA Approved, CE Marked",
-    },
-  },
-  {
-    id: 2,
-    name: "Advanced Imaging System",
-    category: "Imaging Technology",
-    status: "Draft",
-    lastModified: "1 day ago",
-    image: "/placeholder.svg",
-    shortDescription: "Next-generation medical imaging with enhanced clarity",
-    fullDescription:
-      "Our Advanced Imaging System delivers unprecedented image quality with enhanced clarity and detail. Perfect for complex diagnostic procedures requiring the highest level of precision.",
-    price: "75,999",
-    features: [
-      "Ultra-high resolution imaging",
-      "Advanced noise reduction",
-      "Multi-modal integration",
-      "Cloud-based storage",
-    ],
-    specifications: {
-      Resolution: "8K Ultra HD",
-      Weight: "3.2 kg",
-      Connectivity: "WiFi 6E, Bluetooth 5.2",
-      "Battery Life": "12 hours continuous use",
-      Certifications: "FDA Approved, CE Marked, ISO 13485",
-    },
-  },
-  {
-    id: 3,
-    name: "Portable Analyzer",
-    category: "Lab Equipment",
-    status: "Published",
-    lastModified: "3 days ago",
-    image: "/placeholder.svg",
-    shortDescription: "Compact, portable diagnostic analyzer for field use",
-    fullDescription:
-      "The Portable Analyzer brings laboratory-grade diagnostic capabilities to any location. Ideal for field research, remote clinics, and emergency medical situations.",
-    price: "12,999",
-    features: [
-      "Portable and lightweight design",
-      "Real-time analysis",
-      "Multiple test panels",
-      "Wireless connectivity",
-    ],
-    specifications: {
-      Weight: "1.2 kg",
-      Dimensions: "25 x 15 x 8 cm",
-      "Battery Life": "24 hours continuous use",
-      Connectivity: "WiFi, Bluetooth, USB-C",
-      Certifications: "FDA Approved, CE Marked",
-    },
-  },
-];
+// Products are now managed by the store
 
 export default function ProductPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [previewProduct, setPreviewProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  // Load products from store
+  useEffect(() => {
+    setProducts(productStore.getProducts());
+
+    // Subscribe to store changes
+    const unsubscribe = productStore.subscribe(() => {
+      setProducts(productStore.getProducts());
+    });
+
+    return unsubscribe;
+  }, []);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -110,9 +49,34 @@ export default function ProductPage() {
   };
 
   const handleDeleteProduct = (productId: number) => {
-    // In real app, this would call an API
-    console.log("Deleting product:", productId);
-    // Show confirmation dialog and handle deletion
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete "${product.name}"? This action cannot be undone.`,
+      )
+    ) {
+      const success = productStore.deleteProduct(productId);
+
+      if (success) {
+        toast({
+          title: "Product Deleted",
+          description: `"${product.name}" has been deleted successfully.`,
+        });
+
+        // Clear selection if deleted product was selected
+        if (selectedProduct?.id === productId) {
+          setSelectedProduct(null);
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete product. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleAddNewProduct = () => {
@@ -274,7 +238,13 @@ export default function ProductPage() {
                     <Label htmlFor="productName">Product Name</Label>
                     <Input
                       id="productName"
-                      defaultValue={selectedProduct.name}
+                      value={selectedProduct.name}
+                      onChange={(e) =>
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          name: e.target.value,
+                        })
+                      }
                       placeholder="Enter product name"
                     />
                   </div>
@@ -282,31 +252,66 @@ export default function ProductPage() {
                     <Label htmlFor="category">Category</Label>
                     <Input
                       id="category"
-                      defaultValue={selectedProduct.category}
+                      value={selectedProduct.category}
+                      onChange={(e) =>
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          category: e.target.value,
+                        })
+                      }
                       placeholder="Enter category"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">Short Description</Label>
                     <Textarea
                       id="description"
+                      value={selectedProduct.shortDescription}
+                      onChange={(e) =>
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          shortDescription: e.target.value,
+                        })
+                      }
                       placeholder="Enter product description"
-                      rows={4}
+                      rows={3}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="features">Key Features</Label>
-                    <Textarea
-                      id="features"
-                      placeholder="List key features..."
-                      rows={3}
+                    <Label htmlFor="price">Price (USD)</Label>
+                    <Input
+                      id="price"
+                      value={selectedProduct.price}
+                      onChange={(e) =>
+                        setSelectedProduct({
+                          ...selectedProduct,
+                          price: e.target.value,
+                        })
+                      }
+                      placeholder="0.00"
                     />
                   </div>
                   <div className="flex gap-2">
                     <Button
                       onClick={() => {
-                        console.log("Quick saving product:", selectedProduct);
-                        // In real app, this would save the quick changes
+                        if (!selectedProduct) return;
+
+                        const success = productStore.updateProduct(
+                          selectedProduct.id,
+                          selectedProduct,
+                        );
+                        if (success) {
+                          toast({
+                            title: "Saved!",
+                            description: "Product changes saved successfully.",
+                          });
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: "Failed to save changes.",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
                     >
