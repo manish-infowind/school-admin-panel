@@ -13,6 +13,8 @@ import ProductNew from "./pages/admin/ProductNew";
 import IndexPage from "./pages/admin/IndexPage";
 import ProductDetails from "./pages/admin/ProductDetails";
 import Advertisement from "./pages/admin/Advertisement";
+import AboutUs from "./pages/admin/AboutUs";
+import Enquiries from "./pages/admin/Enquiries";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
 
@@ -73,6 +75,22 @@ const App = () => (
             element={
               <AdminLayout>
                 <ProductDetails />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/about-us"
+            element={
+              <AdminLayout>
+                <AboutUs />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/enquiries"
+            element={
+              <AdminLayout>
+                <Enquiries />
               </AdminLayout>
             }
           />

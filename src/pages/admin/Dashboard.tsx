@@ -10,6 +10,8 @@ import {
   Eye,
   Edit3,
   Megaphone,
+  Building,
+  Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -32,11 +34,18 @@ const quickActions = [
     color: "bg-gradient-to-br from-brand-teal to-brand-blue",
   },
   {
-    title: "Advertisement",
-    description: "Manage headers, footers and promotional content",
-    href: "/admin/advertisement",
-    icon: Megaphone,
+    title: "About Us",
+    description: "Manage company information and team",
+    href: "/admin/about-us",
+    icon: Building,
     color: "bg-gradient-to-br from-brand-blue to-brand-green",
+  },
+  {
+    title: "View Enquiries",
+    description: "Manage customer contact form submissions",
+    href: "/admin/enquiries",
+    icon: Mail,
+    color: "bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue",
   },
 ];
 
@@ -56,7 +65,7 @@ export default function Dashboard() {
   const stats = [
     {
       title: "Total Pages",
-      value: "4",
+      value: "6",
       change: "Admin panel ready",
       icon: FileText,
       color: "from-brand-green to-brand-teal",
@@ -69,10 +78,10 @@ export default function Dashboard() {
       color: "from-brand-teal to-brand-blue",
     },
     {
-      title: "Page Views",
-      value: "2,847",
-      change: "+18% this week",
-      icon: TrendingUp,
+      title: "Enquiries",
+      value: "5",
+      change: "2 new this week",
+      icon: Mail,
       color: "from-brand-blue to-brand-green",
     },
     {
