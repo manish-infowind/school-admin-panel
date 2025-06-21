@@ -298,6 +298,71 @@ export default function ProductEdit() {
           </Card>
         )}
 
+        {activeTab === "specs" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Technical Specifications
+                <Button
+                  onClick={() => {
+                    const key = prompt("Enter specification name:");
+                    if (key) {
+                      setProduct({
+                        ...product,
+                        specifications: {
+                          ...product.specifications,
+                          [key]: "",
+                        },
+                      });
+                    }
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Spec
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(product.specifications).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="grid grid-cols-3 gap-2 items-center"
+                  >
+                    <Label className="font-medium">{key}</Label>
+                    <Input
+                      value={value}
+                      onChange={(e) =>
+                        setProduct({
+                          ...product,
+                          specifications: {
+                            ...product.specifications,
+                            [key]: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="Enter value..."
+                    />
+                    <Button
+                      onClick={() => {
+                        const newSpecs = { ...product.specifications };
+                        delete newSpecs[key];
+                        setProduct({ ...product, specifications: newSpecs });
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === "images" && (
           <Card>
             <CardHeader>
@@ -307,19 +372,35 @@ export default function ProductEdit() {
               <div className="grid gap-4 md:grid-cols-3">
                 {product.images.map((image, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border">
                       <ImageIcon className="h-12 w-12 text-muted-foreground" />
                     </div>
                     <Button
                       size="sm"
                       variant="destructive"
                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        const newImages = product.images.filter(
+                          (_, i) => i !== index,
+                        );
+                        setProduct({ ...product, images: newImages });
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
-                <div className="aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-green/50 transition-colors">
+                <div
+                  className="aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-green/50 transition-colors"
+                  onClick={() => {
+                    // Simulate image upload
+                    const newImage = "/placeholder.svg";
+                    setProduct({
+                      ...product,
+                      images: [...product.images, newImage],
+                    });
+                  }}
+                >
                   <div className="text-center">
                     <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
@@ -327,6 +408,45 @@ export default function ProductEdit() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === "seo" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seoTitle">SEO Title</Label>
+                <Input
+                  id="seoTitle"
+                  value={product.seoTitle}
+                  onChange={(e) =>
+                    setProduct({ ...product, seoTitle: e.target.value })
+                  }
+                  placeholder="Enter SEO title..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  {product.seoTitle.length}/60 characters
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="seoDesc">SEO Description</Label>
+                <Textarea
+                  id="seoDesc"
+                  value={product.seoDescription}
+                  onChange={(e) =>
+                    setProduct({ ...product, seoDescription: e.target.value })
+                  }
+                  placeholder="Enter SEO description..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {product.seoDescription.length}/160 characters
+                </p>
               </div>
             </CardContent>
           </Card>
