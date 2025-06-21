@@ -15,7 +15,31 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { productStore } from "@/lib/productStore";
 
-  return (
+const quickActions = [
+  {
+    title: "Edit Homepage",
+    description: "Update the main landing page content",
+    href: "/admin/index-page",
+    icon: Home,
+    color: "bg-gradient-to-br from-brand-green to-brand-teal",
+  },
+  {
+    title: "Manage Products",
+    description: "Add, edit, or remove product listings",
+    href: "/admin/products",
+    icon: Package,
+    color: "bg-gradient-to-br from-brand-teal to-brand-blue",
+  },
+  {
+    title: "Product Details",
+    description: "Update individual product information",
+    href: "/admin/product-details",
+    icon: FileText,
+    color: "bg-gradient-to-br from-brand-blue to-brand-green",
+  },
+];
+
+export default function Dashboard() {
   const [products, setProducts] = useState(productStore.getProducts());
 
   useEffect(() => {
@@ -25,8 +49,8 @@ import { productStore } from "@/lib/productStore";
     return unsubscribe;
   }, []);
 
-  const publishedProducts = products.filter(p => p.isPublished).length;
-  const draftProducts = products.filter(p => !p.isPublished).length;
+  const publishedProducts = products.filter((p) => p.isPublished).length;
+  const draftProducts = products.filter((p) => !p.isPublished).length;
 
   const stats = [
     {
@@ -80,39 +104,14 @@ import { productStore } from "@/lib/productStore";
     },
     {
       action: "Last Product Modified",
-      page: products.find(p => p.lastModified === "Just now")?.name || "None recently",
+      page:
+        products.find((p) => p.lastModified === "Just now")?.name ||
+        "None recently",
       time: "Real-time",
       type: "edit",
     },
   ];
 
-
-
-const quickActions = [
-  {
-    title: "Edit Homepage",
-    description: "Update the main landing page content",
-    href: "/admin/index-page",
-    icon: Home,
-    color: "bg-gradient-to-br from-brand-green to-brand-teal",
-  },
-  {
-    title: "Manage Products",
-    description: "Add, edit, or remove product listings",
-    href: "/admin/products",
-    icon: Package,
-    color: "bg-gradient-to-br from-brand-teal to-brand-blue",
-  },
-  {
-    title: "Product Details",
-    description: "Update individual product information",
-    href: "/admin/product-details",
-    icon: FileText,
-    color: "bg-gradient-to-br from-brand-blue to-brand-green",
-  },
-];
-
-export default function Dashboard() {
   return (
     <div className="space-y-6">
       <motion.div
