@@ -9,6 +9,7 @@ import {
   FileText,
   ChevronRight,
   X,
+  Megaphone,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +39,11 @@ const navigation = [
     name: "Product Details",
     href: "/admin/product-details",
     icon: FileText,
+  },
+  {
+    name: "Advertisement",
+    href: "/admin/advertisement",
+    icon: Megaphone,
   },
 ];
 

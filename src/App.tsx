@@ -12,6 +12,9 @@ import ProductEdit from "./pages/admin/ProductEdit";
 import ProductNew from "./pages/admin/ProductNew";
 import IndexPage from "./pages/admin/IndexPage";
 import ProductDetails from "./pages/admin/ProductDetails";
+import Advertisement from "./pages/admin/Advertisement";
+import Profile from "./pages/admin/Profile";
+import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +73,30 @@ const App = () => (
             element={
               <AdminLayout>
                 <ProductDetails />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/advertisement"
+            element={
+              <AdminLayout>
+                <Advertisement />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/profile"
+            element={
+              <AdminLayout>
+                <Profile />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminLayout>
+                <Settings />
               </AdminLayout>
             }
           />

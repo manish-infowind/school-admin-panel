@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./ThemeToggle";
 import { Settings, LogOut, User, Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 interface TopNavigationProps {
@@ -21,6 +22,7 @@ export function TopNavigation({
   onToggleSidebar,
   isSidebarOpen,
 }: TopNavigationProps) {
+  const navigate = useNavigate();
   return (
     <motion.header
       className="flex h-16 items-center justify-between border-b bg-background px-6 shadow-sm"
@@ -73,16 +75,16 @@ export function TopNavigation({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin/profile")}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/")}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
