@@ -12,7 +12,7 @@ import {
   Plus,
   Trash2,
   Globe,
-  Header,
+  Navigation,
   Layout,
   Megaphone,
   Settings,
@@ -185,7 +185,7 @@ export default function Advertisement() {
                     >
                       <div className="h-12 w-12 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-lg flex items-center justify-center">
                         {ad.type === "header" && (
-                          <Header className="h-6 w-6 text-brand-green" />
+                          <Navigation className="h-6 w-6 text-brand-green" />
                         )}
                         {ad.type === "footer" && (
                           <Layout className="h-6 w-6 text-brand-green" />
