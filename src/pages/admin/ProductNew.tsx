@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft,
@@ -22,47 +20,31 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-// Mock product data - in real app, this would come from API
-const mockProduct = {
-  id: 1,
-  name: "MedScope Pro X1",
-  category: "Diagnostic Equipment",
-  status: "Published",
-  shortDescription:
-    "Advanced diagnostic imaging system with AI-powered analysis",
-  fullDescription:
-    "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems.",
-  price: "49,999",
-  features: [
-    "AI-powered diagnostic analysis",
-    "4K high-resolution imaging",
-    "Cloud connectivity",
-    "Real-time collaboration tools",
-  ],
-  specifications: {
-    Resolution: "4K Ultra HD",
-    Weight: "2.5 kg",
-    Connectivity: "WiFi 6, Bluetooth 5.0",
-    "Battery Life": "8 hours continuous use",
-    Certifications: "FDA Approved, CE Marked",
-  },
-  images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-  isPublished: true,
-  seoTitle: "MedScope Pro X1 - Advanced Medical Imaging",
-  seoDescription: "Professional-grade medical imaging system with AI analysis",
+const initialProduct = {
+  name: "",
+  category: "",
+  status: "Draft",
+  shortDescription: "",
+  fullDescription: "",
+  price: "",
+  features: [""],
+  specifications: {},
+  images: [],
+  isPublished: false,
+  seoTitle: "",
+  seoDescription: "",
 };
 
-export default function ProductEdit() {
-  const { id } = useParams();
+export default function ProductNew() {
   const navigate = useNavigate();
-  const [product, setProduct] = useState(mockProduct);
+  const [product, setProduct] = useState(initialProduct);
   const [activeTab, setActiveTab] = useState("basic");
 
   const handleSave = () => {
     // In real app, this would save to API
-    console.log("Saving product:", product);
+    console.log("Creating new product:", product);
     // Show success message and redirect
     setTimeout(() => {
       navigate("/admin/products");
@@ -113,9 +95,11 @@ export default function ProductEdit() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-                Edit Product
+                Create New Product
               </h1>
-              <p className="text-muted-foreground mt-1">{product.name}</p>
+              <p className="text-muted-foreground mt-1">
+                Add a new product to your catalog
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -129,16 +113,17 @@ export default function ProductEdit() {
                 }
               />
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={!product.name}>
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
             <Button
               onClick={handleSave}
+              disabled={!product.name || !product.category}
               className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
             >
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              Create Product
             </Button>
           </div>
         </div>
@@ -187,23 +172,25 @@ export default function ProductEdit() {
             <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name</Label>
+                  <Label htmlFor="name">Product Name *</Label>
                   <Input
                     id="name"
                     value={product.name}
                     onChange={(e) =>
                       setProduct({ ...product, name: e.target.value })
                     }
+                    placeholder="Enter product name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">Category *</Label>
                   <Input
                     id="category"
                     value={product.category}
                     onChange={(e) =>
                       setProduct({ ...product, category: e.target.value })
                     }
+                    placeholder="Enter category"
                   />
                 </div>
                 <div className="space-y-2">
@@ -214,6 +201,7 @@ export default function ProductEdit() {
                     onChange={(e) =>
                       setProduct({ ...product, price: e.target.value })
                     }
+                    placeholder="0.00"
                   />
                 </div>
                 <div className="space-y-2">
@@ -224,6 +212,7 @@ export default function ProductEdit() {
                     onChange={(e) =>
                       setProduct({ ...product, status: e.target.value })
                     }
+                    placeholder="Draft"
                   />
                 </div>
               </div>
@@ -235,6 +224,7 @@ export default function ProductEdit() {
                   onChange={(e) =>
                     setProduct({ ...product, shortDescription: e.target.value })
                   }
+                  placeholder="Brief description for product listings"
                   rows={2}
                 />
               </div>
@@ -288,6 +278,7 @@ export default function ProductEdit() {
                       onClick={() => removeFeature(index)}
                       size="sm"
                       variant="ghost"
+                      disabled={product.features.length === 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -305,20 +296,6 @@ export default function ProductEdit() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
-                {product.images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
                 <div className="aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-green/50 transition-colors">
                   <div className="text-center">
                     <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
@@ -328,9 +305,15 @@ export default function ProductEdit() {
                   </div>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                Recommended: High-quality images in JPG or PNG format, minimum
+                800x800 pixels
+              </p>
             </CardContent>
           </Card>
         )}
+
+        {/* Other tabs would be similar to the edit page */}
       </motion.div>
     </div>
   );
