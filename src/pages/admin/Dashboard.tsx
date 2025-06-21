@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Eye,
   Edit3,
+  Megaphone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -31,10 +32,10 @@ const quickActions = [
     color: "bg-gradient-to-br from-brand-teal to-brand-blue",
   },
   {
-    title: "Product Details",
-    description: "Update individual product information",
-    href: "/admin/product-details",
-    icon: FileText,
+    title: "Advertisement",
+    description: "Manage headers, footers and promotional content",
+    href: "/admin/advertisement",
+    icon: Megaphone,
     color: "bg-gradient-to-br from-brand-blue to-brand-green",
   },
 ];
