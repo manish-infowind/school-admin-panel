@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductPage from "./pages/admin/ProductPage";
+import ProductEdit from "./pages/admin/ProductEdit";
+import ProductNew from "./pages/admin/ProductNew";
 import IndexPage from "./pages/admin/IndexPage";
 import ProductDetails from "./pages/admin/ProductDetails";
 
@@ -36,6 +38,22 @@ const App = () => (
             element={
               <AdminLayout>
                 <ProductPage />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/products/edit/:id"
+            element={
+              <AdminLayout>
+                <ProductEdit />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/products/new"
+            element={
+              <AdminLayout>
+                <ProductNew />
               </AdminLayout>
             }
           />
