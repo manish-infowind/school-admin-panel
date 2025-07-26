@@ -12,6 +12,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Settings, LogOut, User, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/authContext";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 interface TopNavigationProps {
   onToggleSidebar: () => void;
@@ -23,6 +25,7 @@ export function TopNavigation({
   isSidebarOpen,
 }: TopNavigationProps) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   return (
     <motion.header
       className="flex h-16 items-center justify-between border-b bg-background px-6 shadow-sm"
@@ -42,9 +45,7 @@ export function TopNavigation({
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
-          </div>
+          <LogoIcon size="sm" />
           <h1 className="text-xl font-semibold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
             MedoScopic Admin
           </h1>
@@ -59,8 +60,8 @@ export function TopNavigation({
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/placeholder.svg" alt="Admin" />
-                <AvatarFallback className="bg-gradient-to-br from-brand-green to-brand-teal text-white">
-                  AD
+                <AvatarFallback className="bg-transparent p-0">
+                  <LogoIcon size="sm" />
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -68,9 +69,9 @@ export function TopNavigation({
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Admin User</p>
+                <p className="text-sm font-medium leading-none">{user?.name || 'Admin User'}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  admin@medoscopic.com
+                  {user?.email || 'admin@medoscopic.com'}
                 </p>
               </div>
             </DropdownMenuLabel>
@@ -84,7 +85,10 @@ export function TopNavigation({
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/")}>
+            <DropdownMenuItem onClick={() => {
+              logout();
+              navigate("/");
+            }}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>

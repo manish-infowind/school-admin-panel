@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 interface SideNavigationProps {
   isOpen: boolean;
@@ -73,9 +74,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       {/* Mobile close button */}
       <div className="flex h-16 items-center justify-between px-6 lg:hidden">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
-          </div>
+          <LogoIcon size="sm" />
           <span className="text-lg font-semibold">Admin</span>
         </div>
         <Button variant="ghost" size="sm" onClick={onClose}>
@@ -140,9 +139,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
 
       <div className="border-t p-4">
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="h-6 w-6 rounded bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue flex items-center justify-center">
-            <span className="text-white font-bold text-xs">MP</span>
-          </div>
+          <LogoIcon size="sm" />
           <div className="flex flex-col">
             <span className="text-sm font-medium">MedoScopic</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>

@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, LayoutDashboard, Stethoscope } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/authContext";
+import { LogoIcon } from "@/components/ui/logo-icon";
 
 const Index = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
       <div className="max-w-2xl w-full space-y-8 p-8">
@@ -15,9 +19,7 @@ const Index = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="flex items-center justify-center mb-6">
-            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue flex items-center justify-center">
-              <Stethoscope className="h-8 w-8 text-white" />
-            </div>
+            <LogoIcon size="xl" />
           </div>
 
           <h1 className="text-5xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent mb-4">
@@ -49,10 +51,10 @@ const Index = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Link to="/admin" className="flex-1">
+                <Link to={isAuthenticated ? "/admin" : "/login"} className="flex-1">
                   <Button className="w-full bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Enter Admin Panel
+                    {isAuthenticated ? "Enter Admin Panel" : "Login to Admin Panel"}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
@@ -61,7 +63,7 @@ const Index = () => {
                   variant="outline"
                   className="flex-1 hover:bg-sidebar-accent"
                 >
-                  <Stethoscope className="h-4 w-4 mr-2" />
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
                   View Website
                 </Button>
               </div>
