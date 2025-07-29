@@ -1,17 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useAuth as useAuthHook } from '@/api/hooks/useAuth';
 
 interface AuthContextType {
-  user: User | null;
+  user: any;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => void;
   logout: () => void;
   loading: boolean;
+  isLoggingIn: boolean;
+  loginError: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,58 +26,20 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const authHook = useAuthHook();
 
-  useEffect(() => {
-    // Check if user is logged in on app start
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        localStorage.removeItem('user');
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo purposes, accept any email/password combination
-    // In a real app, you would validate against your backend
-    if (email && password) {
-      const userData: User = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0], // Use email prefix as name
-      };
-      
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setLoading(false);
-      return true;
-    }
-    
-    setLoading(false);
-    return false;
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const login = (email: string, password: string) => {
+    authHook.login({ email, password });
   };
 
   const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
+    user: authHook.user,
+    isAuthenticated: authHook.isAuthenticated,
     login,
-    logout,
-    loading,
+    logout: authHook.logout,
+    loading: authHook.isLoading,
+    isLoggingIn: authHook.isLoggingIn,
+    loginError: authHook.loginError,
   };
 
   return (

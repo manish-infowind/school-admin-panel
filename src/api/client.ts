@@ -1,0 +1,303 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_CONFIG, HTTP_STATUS, API_ERROR_TYPES } from './config';
+import { ApiResponse, ApiError, ApiRequestOptions } from './types';
+
+class ApiClient {
+  private baseURL: string;
+  private defaultHeaders: Record<string, string>;
+  private timeout: number;
+  private axiosInstance: AxiosInstance;
+
+  constructor() {
+    this.baseURL = API_CONFIG.BASE_URL;
+    this.defaultHeaders = API_CONFIG.DEFAULT_HEADERS;
+    this.timeout = API_CONFIG.TIMEOUT;
+    
+    this.axiosInstance = axios.create({
+      baseURL: this.baseURL,
+      timeout: this.timeout,
+      headers: this.defaultHeaders,
+    });
+
+    // Add request interceptor
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        const token = this.getAuthToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Add response interceptor
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        return response;
+      },
+      async (error) => {
+        if (error.response?.status === 401) {
+          // Only handle token refresh for authenticated requests (not login or refresh)
+          const isLoginRequest = error.config?.url?.includes('/auth/login');
+          const isRefreshRequest = error.config?.url?.includes('/auth/refresh');
+          
+          if (!isLoginRequest && !isRefreshRequest && this.getAuthToken()) {
+            console.log('🔄 401 detected, attempting token refresh...');
+            
+            try {
+              // Try to refresh the token
+              const success = await this.refreshToken();
+              
+              if (success) {
+                console.log('✅ Token refreshed, retrying original request...');
+                // Retry the original request with new token
+                const originalRequest = error.config;
+                originalRequest.headers['Authorization'] = `Bearer ${this.getAuthToken()}`;
+                return this.axiosInstance.request(originalRequest);
+              } else {
+                console.log('❌ Token refresh failed, redirecting to login...');
+                // Refresh failed, clear tokens and redirect to login
+                this.clearAuthTokens();
+                window.location.href = '/login';
+                return Promise.reject(error);
+              }
+            } catch (refreshError) {
+              console.log('❌ Token refresh error, redirecting to login...');
+              // Refresh failed, clear tokens and redirect to login
+              this.clearAuthTokens();
+              window.location.href = '/login';
+              return Promise.reject(error);
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  // Get authentication token from localStorage
+  private getAuthToken(): string | null {
+    return localStorage.getItem('accessToken');
+  }
+
+  // Get refresh token from localStorage
+  private getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
+  }
+
+  // Set authentication tokens
+  private setAuthTokens(accessToken: string, refreshToken: string): void {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+  }
+
+  // Clear authentication tokens
+  private clearAuthTokens(): void {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
+
+  // Handle token expired
+  private async handleTokenExpired(): Promise<void> {
+    try {
+      const success = await this.refreshToken();
+      if (!success) {
+        this.clearAuthTokens();
+        // Don't redirect automatically - let the component handle it
+      }
+    } catch (error) {
+      this.clearAuthTokens();
+      // Don't redirect automatically - let the component handle it
+    }
+  }
+
+  // Handle API errors
+  private handleError(error: any): ApiError {
+    let apiError: ApiError = {
+      type: API_ERROR_TYPES.UNKNOWN_ERROR,
+      message: 'An unexpected error occurred',
+      timestamp: new Date().toISOString(),
+    };
+
+    if (error.code === 'ECONNABORTED') {
+      apiError = {
+        type: API_ERROR_TYPES.TIMEOUT_ERROR,
+        message: 'Request timeout',
+        timestamp: new Date().toISOString(),
+      };
+    } else if (error.message === 'Network Error') {
+      apiError = {
+        type: API_ERROR_TYPES.NETWORK_ERROR,
+        message: 'Network error - please check your connection',
+        timestamp: new Date().toISOString(),
+      };
+    } else if (error.response) {
+      const { status, data } = error.response;
+      apiError = {
+        type: this.getErrorType(status),
+        message: data?.message || data?.error || `HTTP ${status} error`,
+        status,
+        errors: data?.errors,
+        timestamp: new Date().toISOString(),
+      };
+    } else if (error.request) {
+      apiError = {
+        type: API_ERROR_TYPES.NETWORK_ERROR,
+        message: 'No response received from server',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    return apiError;
+  }
+
+  // Get error type based on HTTP status
+  private getErrorType(status: number): string {
+    switch (status) {
+      case HTTP_STATUS.BAD_REQUEST:
+        return API_ERROR_TYPES.VALIDATION_ERROR;
+      case HTTP_STATUS.UNAUTHORIZED:
+        return API_ERROR_TYPES.AUTHENTICATION_ERROR;
+      case HTTP_STATUS.FORBIDDEN:
+        return API_ERROR_TYPES.AUTHORIZATION_ERROR;
+      case HTTP_STATUS.NOT_FOUND:
+        return API_ERROR_TYPES.NOT_FOUND_ERROR;
+      case HTTP_STATUS.INTERNAL_SERVER_ERROR:
+        return API_ERROR_TYPES.SERVER_ERROR;
+      default:
+        return API_ERROR_TYPES.UNKNOWN_ERROR;
+    }
+  }
+
+
+
+  // Main request method
+  async request<T = any>(
+    endpoint: string,
+    options: ApiRequestOptions = {}
+  ): Promise<ApiResponse<T>> {
+    const {
+      method = 'GET',
+      headers = {},
+      body,
+      timeout = this.timeout,
+      signal,
+    } = options;
+
+    const config: AxiosRequestConfig = {
+      method,
+      url: endpoint,
+      headers,
+      timeout,
+      signal,
+    };
+
+    if (body && method !== 'GET') {
+      config.data = body;
+    }
+
+    try {
+      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
+      return response.data;
+    } catch (error) {
+      const apiError = this.handleError(error);
+      throw apiError;
+    }
+  }
+
+  // Convenience methods for different HTTP methods
+  async get<T = any>(endpoint: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  }
+
+  async post<T = any>(endpoint: string, body?: any, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body });
+  }
+
+  async put<T = any>(endpoint: string, body?: any, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body });
+  }
+
+  async patch<T = any>(endpoint: string, body?: any, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
+  }
+
+  async delete<T = any>(endpoint: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
+
+  // File upload method
+  async upload<T = any>(endpoint: string, formData: FormData, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url: endpoint,
+      data: formData,
+      headers: {
+        ...options?.headers,
+        'Content-Type': 'multipart/form-data',
+      },
+    };
+
+    try {
+      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
+      return response.data;
+    } catch (error) {
+      const apiError = this.handleError(error);
+      throw apiError;
+    }
+  }
+
+  // Refresh token method
+  async refreshToken(): Promise<boolean> {
+    try {
+      console.log('🔄 API Client: Starting token refresh...');
+      const refreshToken = this.getRefreshToken();
+      if (!refreshToken) {
+        console.log('❌ API Client: No refresh token found');
+        return false;
+      }
+
+      const response = await this.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {
+        refreshToken,
+      });
+
+      console.log('📥 API Client: Refresh response:', response);
+
+      if (response.success && response.data) {
+        const { accessToken, user } = response.data;
+        
+        // Update access token
+        localStorage.setItem('accessToken', accessToken);
+        
+        // Update user data if provided
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+        
+        console.log('✅ API Client: Token refresh successful');
+        return true;
+      }
+
+      console.log('❌ API Client: Token refresh failed - no success response');
+      return false;
+    } catch (error) {
+      console.error('❌ API Client: Token refresh failed:', error);
+      this.clearAuthTokens();
+      return false;
+    }
+  }
+
+  // Logout method
+  logout(): void {
+    this.clearAuthTokens();
+    // You can also call the logout endpoint here if needed
+    // this.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT);
+  }
+}
+
+// Create and export a singleton instance
+export const apiClient = new ApiClient();
+export default apiClient; 

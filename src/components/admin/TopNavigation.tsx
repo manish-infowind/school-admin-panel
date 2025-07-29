@@ -60,8 +60,9 @@ export function TopNavigation({
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/placeholder.svg" alt="Admin" />
-                <AvatarFallback className="bg-transparent p-0">
-                  <LogoIcon size="sm" />
+                <AvatarFallback className="bg-gradient-to-br from-brand-green to-brand-teal text-white">
+                  {user?.fullName ? user.fullName.substring(0, 2).toUpperCase() : 
+                   user?.username ? user.username.substring(0, 2).toUpperCase() : 'AD'}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -69,7 +70,7 @@ export function TopNavigation({
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name || 'Admin User'}</p>
+                <p className="text-sm font-medium leading-none">{user?.fullName || user?.username || 'Admin User'}</p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user?.email || 'admin@medoscopic.com'}
                 </p>
@@ -87,7 +88,6 @@ export function TopNavigation({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => {
               logout();
-              navigate("/");
             }}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
