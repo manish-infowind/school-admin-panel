@@ -1,0 +1,38 @@
+name: Deploy Frontend to EC2 (with git pull and build)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 and build frontend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Navigate to app directory
+            cd ~/frontend-app
+
+            # Reset and pull latest code
+            git reset --hard
+            git pull origin main
+
+            # Ensure correct Node version is used
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 24
+            nvm use 24
+
+            # Install dependencies and build
+            npm ci
+            npm run build
+
+            # Restart Nginx to reflect new build
+            sudo systemctl restart nginx
