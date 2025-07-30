@@ -52,6 +52,7 @@ const AboutUs = () => {
   const [mainDescription, setMainDescription] = useState("");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [removeMainImage, setRemoveMainImage] = useState(false);
   const [editingSection, setEditingSection] = useState<AboutUsSection | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   
@@ -68,6 +69,8 @@ const AboutUs = () => {
     if (aboutUs) {
       setMainTitle(aboutUs.mainTitle || "");
       setMainDescription(aboutUs.mainDescription || "");
+      // Reset remove flag when data is loaded
+      setRemoveMainImage(false);
     }
   }, [aboutUs]);
 
@@ -110,6 +113,19 @@ const AboutUs = () => {
           setMainImagePreview(null);
         } catch (uploadError) {
           console.warn('Main image upload failed, but content was updated:', uploadError);
+        }
+      }
+
+      // Remove main image if requested
+      if (removeMainImage) {
+        try {
+          const { AboutUsService } = await import('@/api/services/aboutUsService');
+          await AboutUsService.removeMainImage();
+          
+          // Clear the remove flag after successful removal
+          setRemoveMainImage(false);
+        } catch (removeError) {
+          console.warn('Main image removal failed, but content was updated:', removeError);
         }
       }
 
@@ -353,7 +369,7 @@ const AboutUs = () => {
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
-                      ) : aboutUs?.mainImage ? (
+                      ) : aboutUs?.mainImage && !removeMainImage ? (
                         <div className="relative">
                           <img
                             src={aboutUs.mainImage}
@@ -371,10 +387,44 @@ const AboutUs = () => {
                               size="sm"
                               onClick={() => {
                                 // Trigger file input click
-                                document.getElementById('main-image-upload')?.click();
+                                const fileInput = document.getElementById('main-image-upload') as HTMLInputElement;
+                                if (fileInput) {
+                                  fileInput.click();
+                                }
                               }}
                             >
                               Replace
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                // Set flag to remove the main image
+                                setRemoveMainImage(true);
+                                setMainImageFile(null);
+                                setMainImagePreview(null);
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ) : removeMainImage ? (
+                        <div className="w-full h-48 border-2 border-dashed border-red-300 bg-red-50 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-sm text-red-600 font-medium">Image marked for removal</p>
+                            <p className="text-xs text-red-500">Click "Save Changes" to confirm</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                setRemoveMainImage(false);
+                              }}
+                            >
+                              Cancel Removal
                             </Button>
                           </div>
                         </div>

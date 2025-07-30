@@ -372,4 +372,21 @@ export class AboutUsService {
       throw error;
     }
   }
+
+  // Remove main About Us image
+  static async removeMainImage(): Promise<ApiResponse<any>> {
+    try {
+      console.log('🗑️ Removing main About Us image...');
+      
+      const response = await apiClient.delete<any>(
+        API_CONFIG.ENDPOINTS.CONTENT.ABOUT_US_MAIN_IMAGE
+      );
+
+      console.log('📥 Main image remove response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Failed to remove main About Us image:', error);
+      throw error;
+    }
+  }
 } 
