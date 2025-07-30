@@ -106,7 +106,7 @@ export const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ onSucces
           Add Member
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -114,7 +114,7 @@ export const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ onSucces
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
@@ -123,176 +123,185 @@ export const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({ onSucces
             </Alert>
           )}
 
-          {/* Name Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberName" className="text-sm font-medium">
-              Full Name *
-            </Label>
-            <Input
-              id="memberName"
-              type="text"
-              placeholder="Enter full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-4">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberName" className="text-sm font-medium">
+                  Full Name *
+                </Label>
+                <Input
+                  id="memberName"
+                  type="text"
+                  placeholder="Enter full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          {/* Position Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberPosition" className="text-sm font-medium">
-              Position *
-            </Label>
-            <Input
-              id="memberPosition"
-              type="text"
-              placeholder="Enter job position"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+              {/* Position Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberPosition" className="text-sm font-medium">
+                  Position *
+                </Label>
+                <Input
+                  id="memberPosition"
+                  type="text"
+                  placeholder="Enter job position"
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          {/* Bio Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberBio" className="text-sm font-medium">
-              Biography *
-            </Label>
-            <Textarea
-              id="memberBio"
-              placeholder="Enter team member biography..."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="min-h-[150px] focus:ring-blue-500 focus:border-blue-500 resize-none"
-              required
-            />
-          </div>
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberEmail" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <Input
+                  id="memberEmail"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* Email Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberEmail" className="text-sm font-medium">
-              Email Address
-            </Label>
-            <Input
-              id="memberEmail"
-              type="email"
-              placeholder="Enter email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+              {/* LinkedIn Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberLinkedin" className="text-sm font-medium">
+                  LinkedIn Profile
+                </Label>
+                <Input
+                  id="memberLinkedin"
+                  type="url"
+                  placeholder="Enter LinkedIn profile URL"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* LinkedIn Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberLinkedin" className="text-sm font-medium">
-              LinkedIn Profile
-            </Label>
-            <Input
-              id="memberLinkedin"
-              type="url"
-              placeholder="Enter LinkedIn profile URL"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+              {/* Twitter Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberTwitter" className="text-sm font-medium">
+                  Twitter Profile
+                </Label>
+                <Input
+                  id="memberTwitter"
+                  type="url"
+                  placeholder="Enter Twitter profile URL"
+                  value={twitter}
+                  onChange={(e) => setTwitter(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* Twitter Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberTwitter" className="text-sm font-medium">
-              Twitter Profile
-            </Label>
-            <Input
-              id="memberTwitter"
-              type="url"
-              placeholder="Enter Twitter profile URL"
-              value={twitter}
-              onChange={(e) => setTwitter(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Order Field */}
-          <div className="space-y-2">
-            <Label htmlFor="memberOrder" className="text-sm font-medium">
-              Display Order *
-            </Label>
-            <Input
-              id="memberOrder"
-              type="number"
-              min="1"
-              placeholder="Enter display order"
-              value={order}
-              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Lower numbers appear first. Team members are ordered by this number.
-            </p>
-          </div>
-
-          {/* Image Upload Field */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Profile Photo (Optional)
-            </Label>
-            <div className="space-y-3">
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setImageFile(file);
-                        const reader = new FileReader();
-                        reader.onload = (e) => setImagePreview(e.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    id="member-image-upload"
-                  />
-                  <label htmlFor="member-image-upload" className="text-center cursor-pointer">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">Click to upload photo</p>
-                    <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
-                  </label>
-                </div>
-              )}
+              {/* Order Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberOrder" className="text-sm font-medium">
+                  Display Order *
+                </Label>
+                <Input
+                  id="memberOrder"
+                  type="number"
+                  min="1"
+                  placeholder="Enter display order"
+                  value={order}
+                  onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Lower numbers appear first. Team members are ordered by this number.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500">
-              You can upload a profile photo for this team member. Photo will be uploaded after member creation.
-            </p>
+
+            {/* Right Column - Bio and Image */}
+            <div className="space-y-4">
+              {/* Bio Field */}
+              <div className="space-y-2">
+                <Label htmlFor="memberBio" className="text-sm font-medium">
+                  Biography *
+                </Label>
+                <Textarea
+                  id="memberBio"
+                  placeholder="Enter team member biography..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="min-h-[120px] focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  required
+                />
+              </div>
+
+              {/* Image Upload Field */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Profile Photo (Optional)
+                </Label>
+                <div className="space-y-3">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImageFile(file);
+                            const reader = new FileReader();
+                            reader.onload = (e) => setImagePreview(e.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        id="member-image-upload"
+                      />
+                      <label htmlFor="member-image-upload" className="text-center cursor-pointer">
+                        <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                        <p className="text-sm text-gray-500">Click to upload photo</p>
+                        <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+                      </label>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  You can upload a profile photo for this team member. Photo will be uploaded after member creation.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Edit, Loader2, AlertCircle, Upload, X } from "lucide-react";
-import { useTeamMember } from "@/api/hooks/useAboutUs";
+import { Edit, Loader2, AlertCircle, User, Upload, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { TeamMember } from "@/api/types";
 
@@ -128,20 +127,11 @@ export const EditTeamMemberModal: React.FC<EditTeamMemberModalProps> = ({
         onSuccess();
       }
     } catch (error) {
-      console.error('Update failed:', error);
-      setUpdateError(error);
       setError('Failed to update team member. Please try again.');
     } finally {
       setIsUpdating(false);
     }
   };
-
-  // Handle update error
-  useEffect(() => {
-    if (updateError) {
-      setError('Failed to update team member. Please try again.');
-    }
-  }, [updateError]);
 
   const handleClose = () => {
     setOpen(false);
@@ -152,15 +142,15 @@ export const EditTeamMemberModal: React.FC<EditTeamMemberModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit className="h-5 w-5" />
             Edit Team Member
           </DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
@@ -169,176 +159,185 @@ export const EditTeamMemberModal: React.FC<EditTeamMemberModalProps> = ({
             </Alert>
           )}
 
-          {/* Name Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberName" className="text-sm font-medium">
-              Full Name *
-            </Label>
-            <Input
-              id="editMemberName"
-              type="text"
-              placeholder="Enter full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-4">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberName" className="text-sm font-medium">
+                  Full Name *
+                </Label>
+                <Input
+                  id="editMemberName"
+                  type="text"
+                  placeholder="Enter full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          {/* Position Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberPosition" className="text-sm font-medium">
-              Position *
-            </Label>
-            <Input
-              id="editMemberPosition"
-              type="text"
-              placeholder="Enter job position"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+              {/* Position Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberPosition" className="text-sm font-medium">
+                  Position *
+                </Label>
+                <Input
+                  id="editMemberPosition"
+                  type="text"
+                  placeholder="Enter job position"
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          {/* Bio Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberBio" className="text-sm font-medium">
-              Biography *
-            </Label>
-            <Textarea
-              id="editMemberBio"
-              placeholder="Enter team member biography..."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="min-h-[150px] focus:ring-blue-500 focus:border-blue-500 resize-none"
-              required
-            />
-          </div>
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberEmail" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <Input
+                  id="editMemberEmail"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* Email Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberEmail" className="text-sm font-medium">
-              Email Address
-            </Label>
-            <Input
-              id="editMemberEmail"
-              type="email"
-              placeholder="Enter email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+              {/* LinkedIn Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberLinkedin" className="text-sm font-medium">
+                  LinkedIn Profile
+                </Label>
+                <Input
+                  id="editMemberLinkedin"
+                  type="url"
+                  placeholder="Enter LinkedIn profile URL"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* LinkedIn Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberLinkedin" className="text-sm font-medium">
-              LinkedIn Profile
-            </Label>
-            <Input
-              id="editMemberLinkedin"
-              type="url"
-              placeholder="Enter LinkedIn profile URL"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+              {/* Twitter Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberTwitter" className="text-sm font-medium">
+                  Twitter Profile
+                </Label>
+                <Input
+                  id="editMemberTwitter"
+                  type="url"
+                  placeholder="Enter Twitter profile URL"
+                  value={twitter}
+                  onChange={(e) => setTwitter(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-          {/* Twitter Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberTwitter" className="text-sm font-medium">
-              Twitter Profile
-            </Label>
-            <Input
-              id="editMemberTwitter"
-              type="url"
-              placeholder="Enter Twitter profile URL"
-              value={twitter}
-              onChange={(e) => setTwitter(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Order Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editMemberOrder" className="text-sm font-medium">
-              Display Order *
-            </Label>
-            <Input
-              id="editMemberOrder"
-              type="number"
-              min="1"
-              placeholder="Enter display order"
-              value={order}
-              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Lower numbers appear first. Team members are ordered by this number.
-            </p>
-          </div>
-
-          {/* Image Upload Field */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Profile Photo (Optional)
-            </Label>
-            <div className="space-y-3">
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setImageFile(file);
-                        const reader = new FileReader();
-                        reader.onload = (e) => setImagePreview(e.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    id="edit-member-image-upload"
-                  />
-                  <label htmlFor="edit-member-image-upload" className="text-center cursor-pointer">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">Click to upload new photo</p>
-                    <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
-                  </label>
-                </div>
-              )}
+              {/* Order Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberOrder" className="text-sm font-medium">
+                  Display Order *
+                </Label>
+                <Input
+                  id="editMemberOrder"
+                  type="number"
+                  min="1"
+                  placeholder="Enter display order"
+                  value={order}
+                  onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Lower numbers appear first. Team members are ordered by this number.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500">
-              Upload a new photo to replace the current one.
-            </p>
+
+            {/* Right Column - Bio and Image */}
+            <div className="space-y-4">
+              {/* Bio Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editMemberBio" className="text-sm font-medium">
+                  Biography *
+                </Label>
+                <Textarea
+                  id="editMemberBio"
+                  placeholder="Enter team member biography..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="min-h-[120px] focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  required
+                />
+              </div>
+
+              {/* Image Upload Field */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Profile Photo (Optional)
+                </Label>
+                <div className="space-y-3">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImageFile(file);
+                            const reader = new FileReader();
+                            reader.onload = (e) => setImagePreview(e.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        id="edit-member-image-upload"
+                      />
+                      <label htmlFor="edit-member-image-upload" className="text-center cursor-pointer">
+                        <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                        <p className="text-sm text-gray-500">Click to upload photo</p>
+                        <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+                      </label>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Upload a new image to replace the current one.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"

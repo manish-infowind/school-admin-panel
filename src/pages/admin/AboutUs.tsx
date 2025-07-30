@@ -24,8 +24,6 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAboutUs } from "@/api/hooks/useAboutUs";
-import { useSection } from "@/api/hooks/useAboutUs";
-import { useTeamMember } from "@/api/hooks/useAboutUs";
 import { toast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { AddSectionModal } from "@/components/admin/AddSectionModal";
@@ -128,14 +126,17 @@ const AboutUs = () => {
   // Handle section update
   const handleSectionUpdate = async (sectionId: string, data: { title: string; content: string; order: number }) => {
     try {
-      const { updateSection } = useSection(sectionId);
-      await updateSection({ sectionId, data });
+      const { AboutUsService } = await import('@/api/services/aboutUsService');
+      await AboutUsService.updateSection(sectionId, data);
 
       toast({
         title: "Success",
         description: "Section updated successfully",
         variant: "default",
       });
+      
+      // Refresh the data
+      refetchAboutUs();
       setEditingSection(null);
     } catch (error) {
       toast({

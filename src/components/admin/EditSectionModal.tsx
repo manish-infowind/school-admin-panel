@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Edit, Loader2, AlertCircle, Award, Upload, X } from "lucide-react";
-import { useSection } from "@/api/hooks/useAboutUs";
+
 import { toast } from "@/hooks/use-toast";
 import { AboutUsSection } from "@/api/types";
 
@@ -28,8 +28,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState('');
-
-  const { updateSection, uploadSectionImage, isUpdating, updateError } = useSection(section?._id || '');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Load section data when modal opens
   useEffect(() => {
@@ -71,8 +70,14 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     }
 
     try {
+      setIsUpdating(true);
+      setError('');
+
+      // Import the service
+      const { AboutUsService } = await import('@/api/services/aboutUsService');
+
       // Update section data
-      await updateSection({
+      await AboutUsService.updateSection(section._id, {
         title: title.trim(),
         content: content.trim(),
         order: order,
@@ -81,7 +86,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
       // Upload image if new image is selected
       if (imageFile) {
         try {
-          await uploadSectionImage(imageFile);
+          await AboutUsService.uploadSectionImage(section._id, imageFile);
         } catch (uploadError) {
           console.warn('Image upload failed, but section was updated:', uploadError);
         }
@@ -105,15 +110,10 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
       }
     } catch (error) {
       setError('Failed to update section. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
-
-  // Handle update error
-  useEffect(() => {
-    if (updateError) {
-      setError('Failed to update section. Please try again.');
-    }
-  }, [updateError]);
 
   const handleClose = () => {
     setOpen(false);
@@ -124,7 +124,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit className="h-5 w-5" />
@@ -132,7 +132,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
@@ -141,115 +141,124 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
             </Alert>
           )}
 
-          {/* Title Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editSectionTitle" className="text-sm font-medium">
-              Section Title *
-            </Label>
-            <Input
-              id="editSectionTitle"
-              type="text"
-              placeholder="Enter section title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-4">
+              {/* Title Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editSectionTitle" className="text-sm font-medium">
+                  Section Title *
+                </Label>
+                <Input
+                  id="editSectionTitle"
+                  type="text"
+                  placeholder="Enter section title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-          {/* Content Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editSectionContent" className="text-sm font-medium">
-              Section Content *
-            </Label>
-            <Textarea
-              id="editSectionContent"
-              placeholder="Enter section content..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[200px] focus:ring-blue-500 focus:border-blue-500 resize-none"
-              required
-            />
-          </div>
-
-          {/* Order Field */}
-          <div className="space-y-2">
-            <Label htmlFor="editSectionOrder" className="text-sm font-medium">
-              Display Order *
-            </Label>
-            <Input
-              id="editSectionOrder"
-              type="number"
-              min="1"
-              placeholder="Enter display order"
-              value={order}
-              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
-              className="focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Lower numbers appear first. Sections are ordered by this number.
-            </p>
-          </div>
-
-          {/* Image Upload Field */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Section Image (Optional)
-            </Label>
-            <div className="space-y-3">
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setImageFile(file);
-                        const reader = new FileReader();
-                        reader.onload = (e) => setImagePreview(e.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    id="edit-section-image-upload"
-                  />
-                  <label htmlFor="edit-section-image-upload" className="text-center cursor-pointer">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">Click to upload new image</p>
-                    <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
-                  </label>
-                </div>
-              )}
+              {/* Order Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editSectionOrder" className="text-sm font-medium">
+                  Display Order *
+                </Label>
+                <Input
+                  id="editSectionOrder"
+                  type="number"
+                  min="1"
+                  placeholder="Enter display order"
+                  value={order}
+                  onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+                  className="focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500">
+                  Lower numbers appear first. Sections are ordered by this number.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500">
-              Upload a new image to replace the current one.
-            </p>
+
+            {/* Right Column - Content and Image */}
+            <div className="space-y-4">
+              {/* Content Field */}
+              <div className="space-y-2">
+                <Label htmlFor="editSectionContent" className="text-sm font-medium">
+                  Section Content *
+                </Label>
+                <Textarea
+                  id="editSectionContent"
+                  placeholder="Enter section content..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="min-h-[120px] focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  required
+                />
+              </div>
+
+              {/* Image Upload Field */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Section Image (Optional)
+                </Label>
+                <div className="space-y-3">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImageFile(file);
+                            const reader = new FileReader();
+                            reader.onload = (e) => setImagePreview(e.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        id="edit-section-image-upload"
+                      />
+                      <label htmlFor="edit-section-image-upload" className="text-center cursor-pointer">
+                        <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                        <p className="text-sm text-gray-500">Click to upload image</p>
+                        <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+                      </label>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Upload a new image to replace the current one.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
