@@ -12,6 +12,7 @@ import {
   Megaphone,
   Building,
   Mail,
+  Shield,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,6 +58,11 @@ const navigation = [
     name: "Advertisement",
     href: "/admin/advertisement",
     icon: Megaphone,
+  },
+  {
+    name: "Privacy Policy",
+    href: "/admin/privacy-policy",
+    icon: Shield,
   },
 ];
 

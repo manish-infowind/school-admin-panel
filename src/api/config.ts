@@ -40,6 +40,7 @@ export const API_CONFIG = {
       SETTINGS: '/content/settings',
       ABOUT_US: '/content/about-us',
       ADVERTISEMENTS: '/content/advertisements',
+      PRIVACY_POLICY: '/privacy-policy',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

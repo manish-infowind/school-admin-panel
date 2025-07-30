@@ -127,6 +127,20 @@ export interface UpdatePageRequest {
   status?: 'published' | 'draft';
 }
 
+// Privacy Policy Types
+export interface PrivacyPolicy {
+  _id: string;
+  title: string;
+  policyDescription: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePrivacyPolicyRequest {
+  title: string;
+  policyDescription: string;
+}
+
 // Enquiry Types
 export interface Enquiry {
   id: string;

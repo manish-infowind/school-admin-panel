@@ -20,6 +20,7 @@ import AboutUs from "./pages/admin/AboutUs";
 import Enquiries from "./pages/admin/Enquiries";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
+import PrivacyPolicy from "./pages/admin/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -141,6 +142,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <Settings />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/privacy-policy"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <PrivacyPolicy />
                   </AdminLayout>
                 </ProtectedRoute>
               }
