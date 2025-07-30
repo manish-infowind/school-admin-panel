@@ -118,6 +118,9 @@ const AboutUs = () => {
         description: "About Us updated successfully",
         variant: "default",
       });
+      
+      // Refresh the data to show updated content
+      refetchAboutUs();
     } catch (error) {
       setError('Failed to update About Us. Please try again.');
     }
@@ -349,6 +352,31 @@ const AboutUs = () => {
                           >
                             <X className="h-4 w-4" />
                           </Button>
+                        </div>
+                      ) : aboutUs?.mainImage ? (
+                        <div className="relative">
+                          <img
+                            src={aboutUs.mainImage}
+                            alt="Current Main About Us Image"
+                            className="w-full h-48 object-cover rounded-lg border"
+                            onError={(e) => {
+                              // Hide image if it fails to load
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                // Trigger file input click
+                                document.getElementById('main-image-upload')?.click();
+                              }}
+                            >
+                              Replace
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
