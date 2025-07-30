@@ -241,10 +241,21 @@ class ApiClient {
       },
     };
 
+    console.log('🔗 API Client Upload Request:');
+    console.log('🔗 Method:', config.method);
+    console.log('🔗 URL:', config.url);
+    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
+    console.log('🔗 Headers:', config.headers);
+    console.log('📁 FormData:', formData);
+
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
+      console.log('✅ API Client Upload Response:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ API Client Upload Error:', error);
+      console.error('❌ Error Response:', error.response?.data);
+      console.error('❌ Error Status:', error.response?.status);
       const apiError = this.handleError(error);
       throw apiError;
     }

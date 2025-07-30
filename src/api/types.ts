@@ -141,6 +141,71 @@ export interface UpdatePrivacyPolicyRequest {
   policyDescription: string;
 }
 
+// About Us Types
+export interface AboutUsSection {
+  _id: string;
+  title: string;
+  content: string;
+  image?: string;
+  order: number;
+}
+
+export interface TeamMember {
+  _id: string;
+  name: string;
+  position: string;
+  image?: string;
+  bio: string;
+  email?: string;
+  linkedin?: string;
+  twitter?: string;
+  order: number;
+}
+
+export interface AboutUs {
+  _id: string;
+  mainTitle: string;
+  mainDescription: string;
+  mainImage?: string;
+  sections: AboutUsSection[];
+  teamMembers: TeamMember[];
+}
+
+export interface UpdateAboutUsRequest {
+  mainTitle?: string;
+  mainDescription?: string;
+  sections?: Array<{
+    title: string;
+    content: string;
+    order: number;
+  }>;
+  teamMembers?: Array<{
+    name: string;
+    position: string;
+    bio: string;
+    email?: string;
+    linkedin?: string;
+    twitter?: string;
+    order: number;
+  }>;
+}
+
+export interface UpdateSectionRequest {
+  title: string;
+  content: string;
+  order: number;
+}
+
+export interface UpdateTeamMemberRequest {
+  name: string;
+  position: string;
+  bio: string;
+  email?: string;
+  linkedin?: string;
+  twitter?: string;
+  order: number;
+}
+
 // Enquiry Types
 export interface Enquiry {
   id: string;

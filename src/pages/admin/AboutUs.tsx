@@ -1,345 +1,494 @@
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Save,
-  Eye,
   Plus,
   Trash2,
   Users,
-  Award,
-  Target,
-  Heart,
   Building,
-  Calendar,
   Loader2,
+  AlertCircle,
+  CheckCircle,
+  Upload,
+  Edit,
+  Award,
+  Eye,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useAboutUs } from "@/api/hooks/useAboutUs";
+import { useSection } from "@/api/hooks/useAboutUs";
+import { useTeamMember } from "@/api/hooks/useAboutUs";
+import { toast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { AddSectionModal } from "@/components/admin/AddSectionModal";
+import { AddTeamMemberModal } from "@/components/admin/AddTeamMemberModal";
+import { EditTeamMemberModal } from "@/components/admin/EditTeamMemberModal";
+import { EditSectionModal } from "@/components/admin/EditSectionModal";
+import { DeleteConfirmationModal } from "@/components/admin/DeleteConfirmationModal";
+import { AboutUsSection, TeamMember, UpdateAboutUsRequest } from "@/api/types";
 
-interface AboutSection {
-  id: number;
-  title: string;
-  content: string;
-  type: "mission" | "vision" | "values" | "team" | "history" | "awards";
-  isActive: boolean;
-  order: number;
-}
+const AboutUs = () => {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [error, setError] = useState("");
+  
+  // Main About Us data
+  const { 
+    aboutUs, 
+    isLoading, 
+    updateAboutUs, 
+    isUpdating, 
+    updateError,
+    refetchAboutUs
+  } = useAboutUs();
 
-interface TeamMember {
-  id: number;
-  name: string;
-  position: string;
-  bio: string;
-  image: string;
-  email: string;
-  linkedin: string;
-  isActive: boolean;
-}
+  // Form states
+  const [mainTitle, setMainTitle] = useState("");
+  const [mainDescription, setMainDescription] = useState("");
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [editingSection, setEditingSection] = useState<AboutUsSection | null>(null);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  
+  // Delete confirmation modal states
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteItemType, setDeleteItemType] = useState<'section' | 'member' | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<string>('');
+  const [deleteItemName, setDeleteItemName] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>('');
 
-const initialSections: AboutSection[] = [
-  {
-    id: 1,
-    title: "Our Mission",
-    content:
-      "To revolutionize healthcare through innovative medical technology and pharmaceutical solutions that improve patient outcomes and enhance the quality of life for people worldwide.",
-    type: "mission",
-    isActive: true,
-    order: 1,
-  },
-  {
-    id: 2,
-    title: "Our Vision",
-    content:
-      "To be the global leader in medical technology innovation, setting new standards for healthcare excellence and making advanced medical solutions accessible to all.",
-    type: "vision",
-    isActive: true,
-    order: 2,
-  },
-  {
-    id: 3,
-    title: "Our Values",
-    content:
-      "Innovation, Excellence, Integrity, Compassion, and Collaboration guide everything we do. We believe in putting patients first and creating solutions that make a real difference.",
-    type: "values",
-    isActive: true,
-    order: 3,
-  },
-  {
-    id: 4,
-    title: "Company History",
-    content:
-      "Founded in 2015, MedoScopic Pharma has grown from a startup to a leading medical technology company. Our journey has been marked by groundbreaking innovations and strategic partnerships with healthcare providers worldwide.",
-    type: "history",
-    isActive: true,
-    order: 4,
-  },
-];
+  // Load existing data when component mounts
+  useEffect(() => {
+    if (aboutUs) {
+      setMainTitle(aboutUs.mainTitle || "");
+      setMainDescription(aboutUs.mainDescription || "");
+    }
+  }, [aboutUs]);
 
-const initialTeam: TeamMember[] = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    position: "Chief Executive Officer",
-    bio: "Dr. Johnson brings over 20 years of experience in medical technology and pharmaceutical development. She holds a PhD in Biomedical Engineering from Stanford University.",
-    image: "/placeholder.svg",
-    email: "sarah.johnson@medoscopic.com",
-    linkedin: "linkedin.com/in/sarahjohnson",
-    isActive: true,
-  },
-  {
-    id: 2,
-    name: "Dr. Michael Chen",
-    position: "Chief Technology Officer",
-    bio: "Dr. Chen is a renowned expert in medical device innovation with over 15 years of experience. He has led the development of several award-winning medical technologies.",
-    image: "/placeholder.svg",
-    email: "michael.chen@medoscopic.com",
-    linkedin: "linkedin.com/in/michaelchen",
-    isActive: true,
-  },
-  {
-    id: 3,
-    name: "Dr. Emily Rodriguez",
-    position: "Head of Research & Development",
-    bio: "Dr. Rodriguez leads our R&D initiatives with a focus on next-generation diagnostic solutions. She has published over 50 research papers in leading medical journals.",
-    image: "/placeholder.svg",
-    email: "emily.rodriguez@medoscopic.com",
-    linkedin: "linkedin.com/in/emilyrodriguez",
-    isActive: true,
-  },
-];
+  // Handle update error
+  useEffect(() => {
+    if (updateError) {
+      setError('Failed to update About Us. Please try again.');
+    }
+  }, [updateError]);
 
-export default function AboutUs() {
-  const { toast } = useToast();
-  const [sections, setSections] = useState(initialSections);
-  const [team, setTeam] = useState(initialTeam);
-  const [selectedSection, setSelectedSection] = useState<AboutSection | null>(
-    null,
-  );
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("sections");
+  // Handle main About Us update
+  const handleMainUpdate = async () => {
+    setError("");
 
-  const handleSaveSection = async (section: AboutSection) => {
-    setSaving(true);
+    if (!mainTitle.trim()) {
+      setError('Main title is required');
+      return;
+    }
+
+    if (!mainDescription.trim()) {
+      setError('Main description is required');
+      return;
+    }
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Update main content
+      await updateAboutUs({
+        mainTitle: mainTitle.trim(),
+        mainDescription: mainDescription.trim(),
+      });
 
-      const updatedSections = sections.map((s) =>
-        s.id === section.id ? section : s,
-      );
-      setSections(updatedSections);
+      // Upload main image if provided
+      if (mainImageFile) {
+        try {
+          const { AboutUsService } = await import('@/api/services/aboutUsService');
+          await AboutUsService.uploadMainImage(mainImageFile);
+          
+          // Clear the image file after successful upload
+          setMainImageFile(null);
+          setMainImagePreview(null);
+        } catch (uploadError) {
+          console.warn('Main image upload failed, but content was updated:', uploadError);
+        }
+      }
 
       toast({
-        title: "Success!",
-        description: `${section.title} updated successfully.`,
+        title: "Success",
+        description: "About Us updated successfully",
+        variant: "default",
       });
+    } catch (error) {
+      setError('Failed to update About Us. Please try again.');
+    }
+  };
+
+  // Handle section update
+  const handleSectionUpdate = async (sectionId: string, data: { title: string; content: string; order: number }) => {
+    try {
+      const { updateSection } = useSection(sectionId);
+      await updateSection({ sectionId, data });
+
+      toast({
+        title: "Success",
+        description: "Section updated successfully",
+        variant: "default",
+      });
+      setEditingSection(null);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save section.",
+        description: "Failed to update section",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleSaveTeamMember = async (member: TeamMember) => {
-    setSaving(true);
+
+
+  // Handle section delete
+  const handleDeleteSection = (section: AboutUsSection) => {
+    setDeleteItemType('section');
+    setDeleteItemId(section._id);
+    setDeleteItemName(section.title);
+    setDeleteError('');
+    setDeleteModalOpen(true);
+  };
+
+  // Handle team member delete
+  const handleDeleteTeamMember = (member: TeamMember) => {
+    setDeleteItemType('member');
+    setDeleteItemId(member._id);
+    setDeleteItemName(member.name);
+    setDeleteError('');
+    setDeleteModalOpen(true);
+  };
+
+  // Handle closing edit modals
+  const handleCloseEditMemberModal = () => {
+    setEditingMember(null);
+  };
+
+  const handleCloseEditSectionModal = () => {
+    setEditingSection(null);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!deleteItemType || !deleteItemId) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { AboutUsService } = await import('@/api/services/aboutUsService');
 
-      const updatedTeam = team.map((m) => (m.id === member.id ? member : m));
-      setTeam(updatedTeam);
+      if (deleteItemType === 'section') {
+        await AboutUsService.deleteSection(deleteItemId);
+        toast({
+          title: "Success",
+          description: "Section deleted successfully",
+          variant: "default",
+        });
+      } else if (deleteItemType === 'member') {
+        await AboutUsService.deleteTeamMember(deleteItemId);
+        toast({
+          title: "Success",
+          description: "Team member deleted successfully",
+          variant: "default",
+        });
+      }
 
-      toast({
-        title: "Success!",
-        description: `${member.name} updated successfully.`,
-      });
+      // Refresh the data
+      refetchAboutUs();
+      
+      // Close modal
+      setDeleteModalOpen(false);
+      setDeleteItemType(null);
+      setDeleteItemId('');
+      setDeleteItemName('');
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save team member.",
-        variant: "destructive",
-      });
+      console.error('Delete failed:', error);
+      setDeleteError('Failed to delete item. Please try again.');
     } finally {
-      setSaving(false);
+      setIsDeleting(false);
     }
   };
 
-  const handleDeleteSection = (id: number) => {
-    const section = sections.find((s) => s.id === id);
-    if (section && window.confirm(`Delete "${section.title}"?`)) {
-      setSections(sections.filter((s) => s.id !== id));
-      if (selectedSection?.id === id) {
-        setSelectedSection(null);
-      }
-      toast({
-        title: "Deleted",
-        description: `${section.title} deleted successfully.`,
-      });
-    }
+  // Handle close delete modal
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setDeleteItemType(null);
+    setDeleteItemId('');
+    setDeleteItemName('');
+    setDeleteError('');
   };
 
-  const handleDeleteTeamMember = (id: number) => {
-    const member = team.find((m) => m.id === id);
-    if (member && window.confirm(`Remove ${member.name} from team?`)) {
-      setTeam(team.filter((m) => m.id !== id));
-      if (selectedMember?.id === id) {
-        setSelectedMember(null);
-      }
-      toast({
-        title: "Deleted",
-        description: `${member.name} removed from team.`,
-      });
-    }
-  };
-
-  const getIconForType = (type: string) => {
-    switch (type) {
-      case "mission":
-        return Target;
-      case "vision":
-        return Eye;
-      case "values":
-        return Heart;
-      case "team":
-        return Users;
-      case "history":
-        return Calendar;
-      case "awards":
-        return Award;
-      default:
-        return Building;
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading About Us data...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex items-center gap-3"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              About Us Management
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your company information, mission, team, and history
-            </p>
-          </div>
-          <Button className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
-            <Eye className="h-4 w-4 mr-2" />
-            Preview About Page
-          </Button>
+        <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+          <Building className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            About Us
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your company's About Us page content
+          </p>
         </div>
       </motion.div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="sections">About Sections</TabsTrigger>
-          <TabsTrigger value="team">Team Members</TabsTrigger>
-          <TabsTrigger value="edit">Edit Content</TabsTrigger>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sections">Sections</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sections" className="space-y-4">
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card>
+            <Card className="border-2 border-dashed border-border hover:border-blue-500/50 transition-colors">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building className="h-5 w-5" />
-                  Company Sections
+                  Main Content
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={(e) => { e.preventDefault(); handleMainUpdate(); }} className="space-y-6">
+                  {/* Error Alert */}
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Main Title */}
+                  <div className="space-y-2">
+                    <Label htmlFor="mainTitle" className="text-sm font-medium">
+                      Main Title *
+                    </Label>
+                    <Input
+                      id="mainTitle"
+                      type="text"
+                      placeholder="Enter main title"
+                      value={mainTitle}
+                      onChange={(e) => setMainTitle(e.target.value)}
+                      className="focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+
+                  {/* Main Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="mainDescription" className="text-sm font-medium">
+                      Main Description *
+                    </Label>
+                    <Textarea
+                      id="mainDescription"
+                      placeholder="Enter main description..."
+                      value={mainDescription}
+                      onChange={(e) => setMainDescription(e.target.value)}
+                      className="min-h-[200px] focus:ring-blue-500 focus:border-blue-500 resize-none"
+                      required
+                    />
+                  </div>
+
+                  {/* Main Image Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Main About Us Image (Optional)
+                    </Label>
+                    <div className="space-y-3">
+                      {mainImagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={mainImagePreview}
+                            alt="Main About Us Preview"
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => {
+                              setMainImageFile(null);
+                              setMainImagePreview(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setMainImageFile(file);
+                                const reader = new FileReader();
+                                reader.onload = (e) => setMainImagePreview(e.target?.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            id="main-image-upload"
+                          />
+                          <label htmlFor="main-image-upload" className="text-center cursor-pointer">
+                            <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500">Click to upload main image</p>
+                            <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Upload a main image for the About Us page. This will be displayed prominently.
+                    </p>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isUpdating}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    >
+                      {isUpdating ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Updating...
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Save className="h-4 w-4" />
+                          Save Changes
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Sections Tab */}
+        <TabsContent value="sections" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Content Sections
+                  </div>
+                  <AddSectionModal onSuccess={refetchAboutUs} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {sections.map((section, index) => {
-                    const IconComponent = getIconForType(section.type);
-                    return (
-                      <motion.div
-                        key={section.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="flex items-center gap-4 p-4 border rounded-lg hover:bg-sidebar-accent transition-colors"
-                      >
-                        <div className="h-12 w-12 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-lg flex items-center justify-center">
-                          <IconComponent className="h-6 w-6 text-brand-green" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{section.title}</h3>
-                          <p className="text-sm text-muted-foreground truncate max-w-md">
-                            {section.content}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge
+                  {aboutUs?.sections?.map((section, index) => (
+                    <Card key={section._id} className="border border-gray-200 dark:border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">Section {index + 1}</Badge>
+                            <Badge variant="outline">Order: {section.order}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
                               variant="outline"
-                              className="text-xs capitalize"
+                              onClick={() => setEditingSection(section)}
                             >
-                              {section.type}
-                            </Badge>
-                            <Badge
-                              variant={
-                                section.isActive ? "default" : "secondary"
-                              }
-                              className={
-                                section.isActive
-                                  ? "bg-gradient-to-r from-brand-green to-brand-teal text-white"
-                                  : ""
-                              }
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteSection(section)}
                             >
-                              {section.isActive ? "Active" : "Inactive"}
-                            </Badge>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSection(section);
-                              setActiveTab("edit");
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteSection(section.id)}
-                            className="hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-lg">{section.title}</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">
+                            {section.content.substring(0, 150)}...
+                          </p>
                         </div>
-                      </motion.div>
-                    );
-                  })}
+
+                        {section.image && (
+                          <div className="mt-4">
+                            <img
+                              src={section.image}
+                              alt={section.title}
+                              className="w-32 h-32 object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {(!aboutUs?.sections || aboutUs.sections.length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No sections added yet.</p>
+                      <p className="text-sm">Click "Add Section" to get started.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </TabsContent>
 
-        <TabsContent value="team" className="space-y-4">
+        {/* Team Tab */}
+        <TabsContent value="team" className="space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Card>
               <CardHeader>
@@ -348,365 +497,194 @@ export default function AboutUs() {
                     <Users className="h-5 w-5" />
                     Team Members
                   </div>
-                  <Button
-                    onClick={() => {
-                      const newMember: TeamMember = {
-                        id: Date.now(),
-                        name: "New Team Member",
-                        position: "Position",
-                        bio: "",
-                        image: "/placeholder.svg",
-                        email: "",
-                        linkedin: "",
-                        isActive: true,
-                      };
-                      setTeam([...team, newMember]);
-                      setSelectedMember(newMember);
-                      setActiveTab("edit");
-                    }}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Member
-                  </Button>
+                  <AddTeamMemberModal onSuccess={refetchAboutUs} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {team.map((member, index) => (
-                    <motion.div
-                      key={member.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="p-4 border rounded-lg hover:bg-sidebar-accent transition-colors"
-                    >
-                      <div className="text-center space-y-3">
-                        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-full flex items-center justify-center">
-                          <Users className="h-10 w-10 text-brand-green" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {aboutUs?.teamMembers?.map((member, index) => (
+                    <Card key={member._id} className="border border-gray-200 dark:border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <Badge variant="outline">Order: {member.order}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingMember(member)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteTeamMember(member)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">{member.name}</h3>
-                          <p className="text-sm text-muted-foreground">
+                        
+                        <div className="text-center space-y-2">
+                          {member.image && (
+                            <img
+                              src={member.image}
+                              alt={member.name}
+                              className="w-20 h-20 rounded-full object-cover mx-auto"
+                            />
+                          )}
+                          <h3 className="font-semibold text-lg">{member.name}</h3>
+                          <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                             {member.position}
                           </p>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">
+                            {member.bio.substring(0, 100)}...
+                          </p>
                         </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <Badge
-                            variant={member.isActive ? "default" : "secondary"}
-                            className={
-                              member.isActive
-                                ? "bg-gradient-to-r from-brand-green to-brand-teal text-white"
-                                : ""
-                            }
-                          >
-                            {member.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedMember(member);
-                              setActiveTab("edit");
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteTeamMember(member.id)}
-                            className="hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
+                      </CardContent>
+                    </Card>
                   ))}
+
+                  {(!aboutUs?.teamMembers || aboutUs.teamMembers.length === 0) && (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No team members added yet.</p>
+                      <p className="text-sm">Click "Add Member" to get started.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </TabsContent>
 
-        <TabsContent value="edit" className="space-y-4">
-          {selectedSection && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Edit Section: {selectedSection.title}
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={selectedSection.isActive}
-                        onCheckedChange={(checked) =>
-                          setSelectedSection({
-                            ...selectedSection,
-                            isActive: checked,
-                          })
-                        }
-                      />
-                      <Label>Active</Label>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="sectionTitle">Section Title</Label>
-                      <Input
-                        id="sectionTitle"
-                        value={selectedSection.title}
-                        onChange={(e) =>
-                          setSelectedSection({
-                            ...selectedSection,
-                            title: e.target.value,
-                          })
-                        }
-                        placeholder="Enter section title"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sectionType">Section Type</Label>
-                      <select
-                        id="sectionType"
-                        value={selectedSection.type}
-                        onChange={(e) =>
-                          setSelectedSection({
-                            ...selectedSection,
-                            type: e.target.value as any,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                      >
-                        <option value="mission">Mission</option>
-                        <option value="vision">Vision</option>
-                        <option value="values">Values</option>
-                        <option value="history">History</option>
-                        <option value="awards">Awards</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sectionContent">Content</Label>
-                    <Textarea
-                      id="sectionContent"
-                      value={selectedSection.content}
-                      onChange={(e) =>
-                        setSelectedSection({
-                          ...selectedSection,
-                          content: e.target.value,
-                        })
-                      }
-                      placeholder="Enter section content"
-                      rows={6}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={() => handleSaveSection(selectedSection)}
-                    disabled={saving}
-                    className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Section
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {selectedMember && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Edit Team Member: {selectedMember.name}
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={selectedMember.isActive}
-                        onCheckedChange={(checked) =>
-                          setSelectedMember({
-                            ...selectedMember,
-                            isActive: checked,
-                          })
-                        }
-                      />
-                      <Label>Active</Label>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="memberName">Full Name</Label>
-                      <Input
-                        id="memberName"
-                        value={selectedMember.name}
-                        onChange={(e) =>
-                          setSelectedMember({
-                            ...selectedMember,
-                            name: e.target.value,
-                          })
-                        }
-                        placeholder="Enter full name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="memberPosition">Position</Label>
-                      <Input
-                        id="memberPosition"
-                        value={selectedMember.position}
-                        onChange={(e) =>
-                          setSelectedMember({
-                            ...selectedMember,
-                            position: e.target.value,
-                          })
-                        }
-                        placeholder="Enter position/title"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="memberBio">Biography</Label>
-                    <Textarea
-                      id="memberBio"
-                      value={selectedMember.bio}
-                      onChange={(e) =>
-                        setSelectedMember({
-                          ...selectedMember,
-                          bio: e.target.value,
-                        })
-                      }
-                      placeholder="Enter biography"
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="memberEmail">Email</Label>
-                      <Input
-                        id="memberEmail"
-                        type="email"
-                        value={selectedMember.email}
-                        onChange={(e) =>
-                          setSelectedMember({
-                            ...selectedMember,
-                            email: e.target.value,
-                          })
-                        }
-                        placeholder="Enter email address"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="memberLinkedin">LinkedIn</Label>
-                      <Input
-                        id="memberLinkedin"
-                        value={selectedMember.linkedin}
-                        onChange={(e) =>
-                          setSelectedMember({
-                            ...selectedMember,
-                            linkedin: e.target.value,
-                          })
-                        }
-                        placeholder="LinkedIn profile URL"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Profile Image</Label>
-                    <ImageUpload
-                      images={
-                        selectedMember.image ? [selectedMember.image] : []
-                      }
-                      onImagesChange={(images) =>
-                        setSelectedMember({
-                          ...selectedMember,
-                          image: images[0] || "/placeholder.svg",
-                        })
-                      }
-                      maxImages={1}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={() => handleSaveTeamMember(selectedMember)}
-                    disabled={saving}
-                    className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Team Member
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {!selectedSection && !selectedMember && (
+        {/* Preview Tab */}
+        <TabsContent value="preview" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <Card>
-              <CardContent className="text-center py-12">
-                <Building className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  No Content Selected
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Select a section or team member to edit their content.
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <Button
-                    onClick={() => setActiveTab("sections")}
-                    variant="outline"
-                  >
-                    <Building className="h-4 w-4 mr-2" />
-                    View Sections
-                  </Button>
-                  <Button
-                    onClick={() => setActiveTab("team")}
-                    variant="outline"
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    View Team
-                  </Button>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <h1 className="text-3xl font-bold mb-4">{mainTitle || "About Us"}</h1>
+                  {aboutUs?.mainImage && (
+                    <div className="mb-6">
+                      <img
+                        src={aboutUs.mainImage}
+                        alt="About Us"
+                        className="w-full max-w-2xl h-auto rounded-lg shadow-lg object-cover"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+                    {mainDescription || "Company overview..."}
+                  </p>
+
+                  {/* Sections Preview */}
+                  {aboutUs?.sections && aboutUs.sections.length > 0 && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-semibold">Content Sections</h2>
+                      {aboutUs.sections.map((section, index) => (
+                        <div key={section._id} className="border-l-4 border-blue-500 pl-4">
+                          <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
+                          {section.image && (
+                            <div className="mb-4">
+                              <img
+                                src={section.image}
+                                alt={section.title}
+                                className="w-full max-w-md h-auto rounded-lg shadow-md object-cover"
+                                onError={(e) => {
+                                  // Hide image if it fails to load
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <p className="text-gray-600 dark:text-gray-400">{section.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Team Preview */}
+                  {aboutUs?.teamMembers && aboutUs.teamMembers.length > 0 && (
+                    <div className="space-y-6 mt-8">
+                      <h2 className="text-2xl font-semibold">Our Team</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {aboutUs.teamMembers.map((member) => (
+                          <div key={member._id} className="text-center">
+                            {member.image && (
+                              <img
+                                src={member.image}
+                                alt={member.name}
+                                className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+                                onError={(e) => {
+                                  // Hide image if it fails to load
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <h3 className="font-semibold text-lg">{member.name}</h3>
+                            <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                              {member.position}
+                            </p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                              {member.bio}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          )}
+          </motion.div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Team Member Modal */}
+      <EditTeamMemberModal
+        member={editingMember}
+        onClose={handleCloseEditMemberModal}
+        onSuccess={refetchAboutUs}
+      />
+
+      {/* Edit Section Modal */}
+      <EditSectionModal
+        section={editingSection}
+        onClose={handleCloseEditSectionModal}
+        onSuccess={refetchAboutUs}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        title={deleteItemType === 'section' ? 'Delete Section' : 'Delete Team Member'}
+        message={deleteItemType === 'section' 
+          ? 'Are you sure you want to delete this section? This will permanently remove the section and all its content.'
+          : 'Are you sure you want to delete this team member? This will permanently remove the team member from your team.'
+        }
+        itemName={deleteItemName}
+        isLoading={isDeleting}
+        error={deleteError}
+      />
     </div>
   );
-}
+};
+
+export default AboutUs;
