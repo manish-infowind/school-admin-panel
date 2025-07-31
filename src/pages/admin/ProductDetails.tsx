@@ -10,21 +10,21 @@ const productDetails = [
     name: "MedScope Pro X1",
     category: "Diagnostic Equipment",
     lastModified: "2 hours ago",
-    sections: ["Overview", "Specifications", "Features", "Gallery"],
+    sections: ["Overview", "Features", "Gallery"],
   },
   {
     id: 2,
     name: "Advanced Imaging System",
     category: "Imaging Technology",
     lastModified: "1 day ago",
-    sections: ["Overview", "Technical Specs", "Software Features"],
+    sections: ["Overview", "Features", "Gallery"],
   },
   {
     id: 3,
     name: "Portable Analyzer",
     category: "Lab Equipment",
     lastModified: "3 days ago",
-    sections: ["Overview", "Capabilities", "Use Cases", "Support"],
+    sections: ["Overview", "Features", "Gallery"],
   },
 ];
 
@@ -159,7 +159,7 @@ export default function ProductDetails() {
                     variant="secondary"
                     className="bg-gradient-to-r from-brand-teal/10 to-brand-blue/10 text-brand-teal block"
                   >
-                    Specification Builder
+                    Feature Manager
                   </Badge>
                 </div>
               </div>

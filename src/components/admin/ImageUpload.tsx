@@ -2,13 +2,13 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
-import { uploadImage } from "@/lib/productStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ImageUploadProps {
   images: string[];
-  onImagesChange: (images: string[]) => void;
+  onImagesChange: (images: string[], files?: File[]) => void;
   maxImages?: number;
+  productId?: string; // Optional: if provided, will upload to API
 }
 
 export function ImageUpload({
@@ -20,6 +20,7 @@ export function ImageUpload({
     {},
   );
   const [uploading, setUploading] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (
@@ -29,7 +30,7 @@ export function ImageUpload({
     if (files.length === 0) return;
 
     for (const file of files) {
-      if (images.length + uploading.length >= maxImages) {
+      if (images.length >= maxImages) {
         alert(`Maximum ${maxImages} images allowed`);
         break;
       }
@@ -46,49 +47,15 @@ export function ImageUpload({
         continue;
       }
 
-      const uploadId = `${Date.now()}-${file.name}`;
-      setUploading((prev) => [...prev, uploadId]);
-      setUploadProgress((prev) => ({ ...prev, [uploadId]: 0 }));
-
-      try {
-        // Simulate upload progress
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) => {
-            const current = prev[uploadId] || 0;
-            if (current >= 90) {
-              clearInterval(progressInterval);
-              return prev;
-            }
-            return { ...prev, [uploadId]: current + 10 };
-          });
-        }, 100);
-
-        // Upload the image
-        const imageUrl = await uploadImage(file);
-
-        // Complete the progress
-        setUploadProgress((prev) => ({ ...prev, [uploadId]: 100 }));
-
-        // Add to images list
-        setTimeout(() => {
-          onImagesChange([...images, imageUrl]);
-          setUploading((prev) => prev.filter((id) => id !== uploadId));
-          setUploadProgress((prev) => {
-            const newProgress = { ...prev };
-            delete newProgress[uploadId];
-            return newProgress;
-          });
-        }, 500);
-      } catch (error) {
-        console.error("Upload failed:", error);
-        alert(`Failed to upload ${file.name}`);
-        setUploading((prev) => prev.filter((id) => id !== uploadId));
-        setUploadProgress((prev) => {
-          const newProgress = { ...prev };
-          delete newProgress[uploadId];
-          return newProgress;
-        });
-      }
+      // Create local preview URL
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Track the file object
+      const newImageFiles = [...imageFiles, file];
+      setImageFiles(newImageFiles);
+      
+      // Add to images list immediately for preview
+      onImagesChange([...images, imageUrl], newImageFiles);
     }
 
     // Reset file input
@@ -99,7 +66,9 @@ export function ImageUpload({
 
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
-    onImagesChange(newImages);
+    const newImageFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(newImageFiles);
+    onImagesChange(newImages, newImageFiles);
   };
 
   const handleUploadClick = () => {
@@ -119,7 +88,17 @@ export function ImageUpload({
               className="relative group"
             >
               <div className="aspect-square bg-muted rounded-lg border-2 border-dashed border-border overflow-hidden">
-                <div className="w-full h-full bg-gradient-to-br from-brand-green/10 to-brand-teal/10 flex items-center justify-center">
+                <img
+                  src={image}
+                  alt={`Product image ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="w-full h-full bg-gradient-to-br from-brand-green/10 to-brand-teal/10 flex items-center justify-center hidden">
                   <ImageIcon className="h-12 w-12 text-brand-green" />
                 </div>
               </div>

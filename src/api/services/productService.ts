@@ -1,183 +1,200 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
-import { 
-  Product, 
-  CreateProductRequest, 
-  UpdateProductRequest, 
-  PaginatedResponse, 
-  QueryParams,
-  ApiResponse 
-} from '../types';
+import { ApiResponse } from '../types';
+
+export interface Product {
+  _id: string;
+  name: string;
+  category: string;
+  status: string;
+  shortDescription: string;
+  fullDescription: string;
+  features: string[];
+  images: string[];
+  isPublished: boolean;
+  lastModified?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProductRequest {
+  name: string;
+  category: string;
+  status: string;
+  shortDescription: string;
+  fullDescription: string;
+  features: string[];
+  images: string[];
+  isPublished: boolean;
+}
+
+export interface UpdateProductRequest {
+  name?: string;
+  category?: string;
+  status?: string;
+  shortDescription?: string;
+  fullDescription?: string;
+  features?: string[];
+  images?: string[];
+  isPublished?: boolean;
+}
+
+export interface ProductListResponse {
+  products: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface UpdateProductStatusRequest {
+  status: string;
+  isPublished: boolean;
+}
 
 export class ProductService {
-  // Get all products with pagination and filters
-  static async getProducts(params?: QueryParams): Promise<PaginatedResponse<Product>> {
+  // Get all products with pagination and search
+  static async getProducts(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<ApiResponse<ProductListResponse>> {
     try {
-      const queryString = this.buildQueryString(params);
-      const endpoint = `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}${queryString}`;
+      console.log('📋 Fetching products...', params);
       
-      const response = await apiClient.get<Product[]>(endpoint);
-      return response as PaginatedResponse<Product>;
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.search) queryParams.append('search', params.search);
+
+      const url = `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?${queryParams.toString()}`;
+      
+      const response = await apiClient.get<ProductListResponse>(url);
+      
+      console.log('📥 Products response:', response);
+      console.log('📥 Products response.data:', response.data);
+      console.log('📥 Products response.data.products:', response.data?.products);
+      return response;
     } catch (error) {
+      console.error('❌ Failed to fetch products:', error);
       throw error;
     }
   }
 
   // Get single product by ID
-  static async getProduct(id: string): Promise<ApiResponse<Product>> {
+  static async getProduct(productId: string): Promise<ApiResponse<Product>> {
     try {
-      const endpoint = API_CONFIG.ENDPOINTS.PRODUCTS.DETAILS.replace(':id', id);
-      const response = await apiClient.get<Product>(endpoint);
+      console.log('📋 Fetching product:', productId);
+      
+      const response = await apiClient.get<Product>(
+        `${API_CONFIG.ENDPOINTS.PRODUCTS.DETAILS.replace(':id', productId)}`
+      );
+      
+      console.log('📥 Product response:', response);
+      console.log('📥 Product response.data:', response.data);
       return response;
     } catch (error) {
+      console.error('❌ Failed to fetch product:', error);
       throw error;
     }
   }
 
   // Create new product
-  static async createProduct(productData: CreateProductRequest): Promise<ApiResponse<Product>> {
+  static async createProduct(data: CreateProductRequest): Promise<ApiResponse<Product>> {
     try {
-      const formData = new FormData();
+      console.log('📝 Creating product...', data);
       
-      // Add text fields
-      formData.append('name', productData.name);
-      formData.append('description', productData.description);
-      formData.append('price', productData.price.toString());
-      formData.append('category', productData.category);
-      
-      // Add image if provided
-      if (productData.image) {
-        formData.append('image', productData.image);
-      }
-
-      const response = await apiClient.upload<Product>(
+      const response = await apiClient.post<Product>(
         API_CONFIG.ENDPOINTS.PRODUCTS.CREATE,
-        formData
+        data
       );
       
+      console.log('📥 Create product response:', response);
       return response;
     } catch (error) {
+      console.error('❌ Failed to create product:', error);
       throw error;
     }
   }
 
   // Update existing product
-  static async updateProduct(id: string, productData: UpdateProductRequest): Promise<ApiResponse<Product>> {
+  static async updateProduct(productId: string, data: UpdateProductRequest): Promise<ApiResponse<Product>> {
     try {
-      const formData = new FormData();
+      console.log('📝 Updating product:', productId, data);
       
-      // Add text fields
-      if (productData.name) formData.append('name', productData.name);
-      if (productData.description) formData.append('description', productData.description);
-      if (productData.price) formData.append('price', productData.price.toString());
-      if (productData.category) formData.append('category', productData.category);
+      const response = await apiClient.put<Product>(
+        `${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', productId)}`,
+        data
+      );
       
-      // Add image if provided
-      if (productData.image) {
-        formData.append('image', productData.image);
-      }
-
-      const endpoint = API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', id);
-      const response = await apiClient.upload<Product>(endpoint, formData);
-      
+      console.log('📥 Update product response:', response);
       return response;
     } catch (error) {
+      console.error('❌ Failed to update product:', error);
       throw error;
     }
   }
 
   // Delete product
-  static async deleteProduct(id: string): Promise<ApiResponse<void>> {
+  static async deleteProduct(productId: string): Promise<ApiResponse<{ id: string; deletedAt: string }>> {
     try {
-      const endpoint = API_CONFIG.ENDPOINTS.PRODUCTS.DELETE.replace(':id', id);
-      const response = await apiClient.delete<void>(endpoint);
+      console.log('🗑️ Deleting product:', productId);
+      
+      const response = await apiClient.delete<{ id: string; deletedAt: string }>(
+        `${API_CONFIG.ENDPOINTS.PRODUCTS.DELETE.replace(':id', productId)}`
+      );
+      
+      console.log('📥 Delete product response:', response);
       return response;
     } catch (error) {
+      console.error('❌ Failed to delete product:', error);
+      throw error;
+    }
+  }
+
+  // Upload product image
+  static async uploadProductImage(productId: string, imageFile: File): Promise<ApiResponse<{ imageUrl: string }>> {
+    try {
+      console.log('📤 Uploading product image:', productId);
+      
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      
+      const response = await apiClient.post<{ imageUrl: string }>(
+        `${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', productId)}/upload-image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      console.log('📥 Upload image response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Failed to upload product image:', error);
       throw error;
     }
   }
 
   // Update product status
-  static async updateProductStatus(id: string, status: 'active' | 'inactive'): Promise<ApiResponse<Product>> {
+  static async updateProductStatus(productId: string, data: UpdateProductStatusRequest): Promise<ApiResponse<Product>> {
     try {
-      const endpoint = API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', id);
-      const response = await apiClient.patch<Product>(endpoint, { status });
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Search products
-  static async searchProducts(query: string, params?: QueryParams): Promise<PaginatedResponse<Product>> {
-    try {
-      const searchParams = { ...params, search: query };
-      const queryString = this.buildQueryString(searchParams);
-      const endpoint = `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}${queryString}`;
+      console.log('📝 Updating product status:', productId, data);
       
-      const response = await apiClient.get<Product[]>(endpoint);
-      return response as PaginatedResponse<Product>;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Get products by category
-  static async getProductsByCategory(category: string, params?: QueryParams): Promise<PaginatedResponse<Product>> {
-    try {
-      const categoryParams = { ...params, category };
-      const queryString = this.buildQueryString(categoryParams);
-      const endpoint = `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}${queryString}`;
+      const response = await apiClient.patch<Product>(
+        `${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', productId)}/status`,
+        data
+      );
       
-      const response = await apiClient.get<Product[]>(endpoint);
-      return response as PaginatedResponse<Product>;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Bulk operations
-  static async bulkUpdateStatus(ids: string[], status: 'active' | 'inactive'): Promise<ApiResponse<void>> {
-    try {
-      const response = await apiClient.patch<void>(
-        `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}/bulk-status`,
-        { ids, status }
-      );
+      console.log('📥 Update status response:', response);
       return response;
     } catch (error) {
+      console.error('❌ Failed to update product status:', error);
       throw error;
     }
   }
-
-  static async bulkDelete(ids: string[]): Promise<ApiResponse<void>> {
-    try {
-      const response = await apiClient.post<void>(
-        `${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}/bulk-delete`,
-        { ids }
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Helper method to build query string
-  private static buildQueryString(params?: QueryParams): string {
-    if (!params || Object.keys(params).length === 0) {
-      return '';
-    }
-
-    const searchParams = new URLSearchParams();
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, value.toString());
-      }
-    });
-
-    const queryString = searchParams.toString();
-    return queryString ? `?${queryString}` : '';
-  }
-}
-
-export default ProductService; 
+} 

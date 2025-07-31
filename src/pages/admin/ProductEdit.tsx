@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft,
   Save,
@@ -17,45 +18,78 @@ import {
   Image as ImageIcon,
   FileText,
   List,
-  Settings,
-  Search,
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { productStore, type Product } from "@/lib/productStore";
+import { useProduct, useUpdateProduct, useUploadProductImage } from "@/api/hooks/useProducts";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { ProductPreview } from "@/components/admin/ProductPreview";
 import { useToast } from "@/hooks/use-toast";
+import type { Product } from "@/api/services/productService";
+
+// Predefined medical categories
+const categories = [
+  "Diagnostic Equipment",
+  "Imaging Technology",
+  "Lab Equipment",
+  "Surgical Instruments",
+  "Patient Monitoring",
+  "Pharmaceuticals",
+  "Medical Devices",
+  "Rehabilitation Equipment",
+  "Emergency Medical",
+  "Dental Equipment",
+  "Ophthalmology",
+  "Cardiology",
+  "Neurology",
+  "Orthopedics",
+  "Pediatrics",
+  "Geriatrics",
+  "Oncology",
+  "Radiology",
+  "Pathology",
+  "Other Medical"
+];
 
 export default function ProductEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [product, setProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [localProduct, setLocalProduct] = useState<Partial<Product>>({});
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Load product data
+  // Load product data from API
+  const { data: productResponse, isLoading, error } = useProduct(id || '');
+  const updateProductMutation = useUpdateProduct();
+  const uploadImageMutation = useUploadProductImage();
+
+  const product = productResponse?.data;
+
+  // Update local product when API data loads
   useEffect(() => {
-    if (id) {
-      const productData = productStore.getProduct(parseInt(id));
-      if (productData) {
-        setProduct(productData);
-      } else {
-        toast({
-          title: "Product not found",
-          description: "The product you're looking for doesn't exist.",
-          variant: "destructive",
-        });
-        navigate("/admin/products");
-      }
+    if (product) {
+      setLocalProduct(product);
     }
-    setLoading(false);
-  }, [id, navigate, toast]);
+  }, [product]);
 
-  if (loading) {
+  // Handle product not found
+  useEffect(() => {
+    if (error && !isLoading) {
+      toast({
+        title: "Product not found",
+        description: "The product you're looking for doesn't exist.",
+        variant: "destructive",
+      });
+      navigate("/admin/products");
+    }
+  }, [error, isLoading, navigate, toast]);
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -81,81 +115,127 @@ export default function ProductEdit() {
   }
 
   const handleSave = async () => {
-    if (!product) return;
+    if (!localProduct || !id) return;
 
-    setSaving(true);
-    try {
-      // Validate required fields
-      if (!product.name.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Product name is required.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Prevent multiple simultaneous saves
+    if (isSaving || updateProductMutation.isPending) {
+      console.log('🚫 Save operation already in progress, skipping...');
+      return;
+    }
 
-      if (!product.category.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Product category is required.",
-          variant: "destructive",
-        });
-        return;
-      }
+    console.log('🚀 Starting save operation...');
+    setIsSaving(true);
 
-      // Update product in store
-      const updatedProduct = productStore.updateProduct(product.id, product);
-
-      if (updatedProduct) {
-        toast({
-          title: "Success!",
-          description: "Product updated successfully.",
-        });
-
-        // Navigate back after short delay
-        setTimeout(() => {
-          navigate("/admin/products");
-        }, 1000);
-      } else {
-        throw new Error("Failed to update product");
-      }
-    } catch (error) {
+    // Validate required fields
+    if (!localProduct.name?.trim()) {
       toast({
-        title: "Error",
-        description: "Failed to save product. Please try again.",
+        title: "Validation Error",
+        description: "Product name is required.",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
+      setIsSaving(false);
+      return;
     }
+
+    if (!localProduct.category?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product category is required.",
+        variant: "destructive",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    if (!localProduct.status?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product status is required.",
+        variant: "destructive",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    // Clean up empty features
+    const cleanFeatures = localProduct.features?.filter((f) => f.trim() !== "") || [];
+    if (cleanFeatures.length === 0) {
+      cleanFeatures.push(""); // Keep at least one empty feature
+    }
+
+    console.log('📁 Files to upload:', imageFiles.length);
+
+    // Update product via API
+    updateProductMutation.mutate({
+      productId: id,
+      data: {
+        ...localProduct,
+        features: cleanFeatures,
+      }
+    }, {
+      onSuccess: () => {
+        // Upload new images if any
+        if (imageFiles.length > 0) {
+          // Store the files to upload
+          const filesToUpload = [...imageFiles];
+          console.log('📤 Uploading', filesToUpload.length, 'images...');
+          
+          // Clear the imageFiles array to prevent duplicate uploads
+          setImageFiles([]);
+          
+          // Upload each image
+          filesToUpload.forEach((file, index) => {
+            setTimeout(() => {
+              console.log(`📤 Uploading image ${index + 1}/${filesToUpload.length}:`, file.name);
+              uploadImageMutation.mutate({
+                productId: id,
+                imageFile: file
+              });
+            }, index * 500); // Stagger uploads
+          });
+        }
+        
+        // Navigate to products page
+        navigate("/admin/products");
+      },
+      onError: (error) => {
+        console.error('❌ Product update failed:', error);
+        setIsSaving(false);
+      }
+    });
   };
 
   const addFeature = () => {
-    setProduct({
-      ...product,
-      features: [...product.features, ""],
+    setLocalProduct({
+      ...localProduct,
+      features: [...(localProduct.features || []), ""],
     });
   };
 
   const updateFeature = (index: number, value: string) => {
-    const newFeatures = [...product.features];
+    const newFeatures = [...(localProduct.features || [])];
     newFeatures[index] = value;
-    setProduct({ ...product, features: newFeatures });
+    setLocalProduct({ ...localProduct, features: newFeatures });
   };
 
   const removeFeature = (index: number) => {
-    const newFeatures = product.features.filter((_, i) => i !== index);
-    setProduct({ ...product, features: newFeatures });
+    const newFeatures = (localProduct.features || []).filter((_, i) => i !== index);
+    setLocalProduct({ ...localProduct, features: newFeatures });
+  };
+
+  const handlePreview = () => {
+    setIsPreviewModalOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewModalOpen(false);
   };
 
   const tabs = [
     { id: "basic", label: "Basic Info", icon: Package },
     { id: "description", label: "Description", icon: FileText },
     { id: "features", label: "Features", icon: List },
-    { id: "specs", label: "Specifications", icon: Settings },
     { id: "images", label: "Images", icon: ImageIcon },
-    { id: "seo", label: "SEO", icon: Search },
   ];
 
   return (
@@ -177,30 +257,26 @@ export default function ProductEdit() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
                 Edit Product
               </h1>
-              <p className="text-muted-foreground mt-1">{product.name}</p>
+              <p className="text-muted-foreground mt-2">
+                Update product information and settings
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="published">Published</Label>
-              <Switch
-                id="published"
-                checked={product.isPublished}
-                onCheckedChange={(checked) =>
-                  setProduct({ ...product, isPublished: checked })
-                }
-              />
-            </div>
-            <Button variant="outline" size="sm">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={handlePreview}
+              disabled={!localProduct.name?.trim()}
+            >
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving}
+              disabled={!localProduct.name || !localProduct.category || !localProduct.status || updateProductMutation.isPending || isSaving}
               className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
             >
-              {saving ? (
+              {updateProductMutation.isPending || isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
@@ -259,54 +335,67 @@ export default function ProductEdit() {
             <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name</Label>
+                  <Label htmlFor="name">Product Name *</Label>
                   <Input
                     id="name"
-                    value={product.name}
+                    value={localProduct.name || ""}
                     onChange={(e) =>
-                      setProduct({ ...product, name: e.target.value })
+                      setLocalProduct({ ...localProduct, name: e.target.value })
                     }
+                    placeholder="Enter product name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={product.category}
-                    onChange={(e) =>
-                      setProduct({ ...product, category: e.target.value })
+                  <Label htmlFor="category">Category *</Label>
+                  <Select
+                    value={localProduct.category || ""}
+                    onValueChange={(value) =>
+                      setLocalProduct({ ...localProduct, category: value })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (USD)</Label>
-                  <Input
-                    id="price"
-                    value={product.price}
-                    onChange={(e) =>
-                      setProduct({ ...product, price: e.target.value })
+                  <Label htmlFor="status">Status *</Label>
+                  <Select
+                    value={localProduct.status || ""}
+                    onValueChange={(value) =>
+                      setLocalProduct({ 
+                        ...localProduct, 
+                        status: value,
+                        isPublished: value === "Published"
+                      })
                     }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
-                    value={product.status}
-                    onChange={(e) =>
-                      setProduct({ ...product, status: e.target.value })
-                    }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                      <SelectItem value="Published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="shortDesc">Short Description</Label>
                 <Textarea
                   id="shortDesc"
-                  value={product.shortDescription}
+                  value={localProduct.shortDescription || ""}
                   onChange={(e) =>
-                    setProduct({ ...product, shortDescription: e.target.value })
+                    setLocalProduct({ ...localProduct, shortDescription: e.target.value })
                   }
+                  placeholder="Brief description for product listings"
                   rows={2}
                 />
               </div>
@@ -324,9 +413,9 @@ export default function ProductEdit() {
                 <Label htmlFor="fullDesc">Full Description</Label>
                 <Textarea
                   id="fullDesc"
-                  value={product.fullDescription}
+                  value={localProduct.fullDescription || ""}
                   onChange={(e) =>
-                    setProduct({ ...product, fullDescription: e.target.value })
+                    setLocalProduct({ ...localProduct, fullDescription: e.target.value })
                   }
                   rows={8}
                   placeholder="Enter detailed product description..."
@@ -349,7 +438,7 @@ export default function ProductEdit() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {product.features.map((feature, index) => (
+                {(localProduct.features || []).map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <Input
                       value={feature}
@@ -360,71 +449,7 @@ export default function ProductEdit() {
                       onClick={() => removeFeature(index)}
                       size="sm"
                       variant="ghost"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "specs" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Technical Specifications
-                <Button
-                  onClick={() => {
-                    const key = prompt("Enter specification name:");
-                    if (key) {
-                      setProduct({
-                        ...product,
-                        specifications: {
-                          ...product.specifications,
-                          [key]: "",
-                        },
-                      });
-                    }
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Spec
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="grid grid-cols-3 gap-2 items-center"
-                  >
-                    <Label className="font-medium">{key}</Label>
-                    <Input
-                      value={value}
-                      onChange={(e) =>
-                        setProduct({
-                          ...product,
-                          specifications: {
-                            ...product.specifications,
-                            [key]: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="Enter value..."
-                    />
-                    <Button
-                      onClick={() => {
-                        const newSpecs = { ...product.specifications };
-                        delete newSpecs[key];
-                        setProduct({ ...product, specifications: newSpecs });
-                      }}
-                      size="sm"
-                      variant="ghost"
+                      disabled={(localProduct.features || []).length === 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -442,53 +467,37 @@ export default function ProductEdit() {
             </CardHeader>
             <CardContent>
               <ImageUpload
-                images={product.images}
-                onImagesChange={(images) => setProduct({ ...product, images })}
-                maxImages={8}
+                images={localProduct.images || []}
+                onImagesChange={(images, files) => {
+                  setLocalProduct({ 
+                    ...localProduct, 
+                    images,
+                  });
+                  setImageFiles(files || []);
+                }}
+                maxImages={3}
+                productId={id}
               />
             </CardContent>
           </Card>
         )}
-
-        {activeTab === "seo" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>SEO Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="seoTitle">SEO Title</Label>
-                <Input
-                  id="seoTitle"
-                  value={product.seoTitle}
-                  onChange={(e) =>
-                    setProduct({ ...product, seoTitle: e.target.value })
-                  }
-                  placeholder="Enter SEO title..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  {product.seoTitle.length}/60 characters
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="seoDesc">SEO Description</Label>
-                <Textarea
-                  id="seoDesc"
-                  value={product.seoDescription}
-                  onChange={(e) =>
-                    setProduct({ ...product, seoDescription: e.target.value })
-                  }
-                  placeholder="Enter SEO description..."
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {product.seoDescription.length}/160 characters
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </motion.div>
+
+      {/* Product Preview Modal */}
+      <ProductPreview
+        product={{
+          _id: localProduct._id || "preview",
+          name: localProduct.name || "",
+          category: localProduct.category || "",
+          status: localProduct.status || "",
+          shortDescription: localProduct.shortDescription || "",
+          fullDescription: localProduct.fullDescription || "",
+          features: (localProduct.features || []).filter(f => f.trim() !== ""),
+          images: localProduct.images || [],
+        }}
+        isOpen={isPreviewModalOpen}
+        onClose={handleClosePreview}
+      />
     </div>
   );
 }

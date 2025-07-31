@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft,
   Save,
@@ -15,15 +16,14 @@ import {
   Image as ImageIcon,
   FileText,
   List,
-  Settings,
-  Search,
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { productStore } from "@/lib/productStore";
+import { useCreateProduct, useUploadProductImage } from "@/api/hooks/useProducts";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { ProductPreview } from "@/components/admin/ProductPreview";
 import { useToast } from "@/hooks/use-toast";
 
 const initialProduct = {
@@ -32,75 +32,138 @@ const initialProduct = {
   status: "Draft",
   shortDescription: "",
   fullDescription: "",
-  price: "",
   features: [""],
-  specifications: {},
   images: [],
+  imageFiles: [] as File[], // Store actual file objects
   isPublished: false,
-  seoTitle: "",
-  seoDescription: "",
 };
+
+// Predefined medical categories
+const categories = [
+  "Diagnostic Equipment",
+  "Imaging Technology",
+  "Lab Equipment",
+  "Surgical Instruments",
+  "Patient Monitoring",
+  "Pharmaceuticals",
+  "Medical Devices",
+  "Rehabilitation Equipment",
+  "Emergency Medical",
+  "Dental Equipment",
+  "Ophthalmology",
+  "Cardiology",
+  "Neurology",
+  "Orthopedics",
+  "Pediatrics",
+  "Geriatrics",
+  "Oncology",
+  "Radiology",
+  "Pathology",
+  "Other Medical"
+];
 
 export default function ProductNew() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [product, setProduct] = useState(initialProduct);
   const [activeTab, setActiveTab] = useState("basic");
-  const [saving, setSaving] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const createProductMutation = useCreateProduct();
+  const uploadImageMutation = useUploadProductImage();
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      // Validate required fields
-      if (!product.name.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Product name is required.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Prevent multiple simultaneous saves
+    if (isSaving || createProductMutation.isPending) {
+      console.log('🚫 Save operation already in progress, skipping...');
+      return;
+    }
 
-      if (!product.category.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Product category is required.",
-          variant: "destructive",
-        });
-        return;
-      }
+    console.log('🚀 Starting save operation...');
+    setIsSaving(true);
 
-      // Clean up empty features
-      const cleanFeatures = product.features.filter((f) => f.trim() !== "");
-      if (cleanFeatures.length === 0) {
-        cleanFeatures.push(""); // Keep at least one empty feature
-      }
-
-      // Create product in store
-      const newProduct = productStore.addProduct({
-        ...product,
-        features: cleanFeatures,
-        image: product.images[0] || "/placeholder.svg", // Use first image as main image
-      });
-
+    // Validate required fields
+    if (!product.name.trim()) {
       toast({
-        title: "Success!",
-        description: `Product "${newProduct.name}" created successfully.`,
-      });
-
-      // Navigate back after short delay
-      setTimeout(() => {
-        navigate("/admin/products");
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create product. Please try again.",
+        title: "Validation Error",
+        description: "Product name is required.",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
+      setIsSaving(false);
+      return;
     }
+
+    if (!product.category.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product category is required.",
+        variant: "destructive",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    if (!product.status.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product status is required.",
+        variant: "destructive",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+    // Clean up empty features
+    const cleanFeatures = product.features.filter((f) => f.trim() !== "");
+    if (cleanFeatures.length === 0) {
+      cleanFeatures.push(""); // Keep at least one empty feature
+    }
+
+    console.log('📁 Files to upload:', product.imageFiles.length);
+
+    // Create product via API
+    createProductMutation.mutate({
+      ...product,
+      features: cleanFeatures,
+      images: [], // Start with empty images array
+    }, {
+      onSuccess: (response) => {
+        const newProductId = response.data._id;
+        console.log('✅ Product created with ID:', newProductId);
+        
+        // Upload images if any
+        if (product.imageFiles.length > 0) {
+          // Store the files to upload
+          const filesToUpload = [...product.imageFiles];
+          console.log('📤 Uploading', filesToUpload.length, 'images...');
+          
+          // Clear the imageFiles array to prevent duplicate uploads
+          setProduct(prev => ({ ...prev, imageFiles: [] }));
+          
+          // Upload each image
+          filesToUpload.forEach((file, index) => {
+            setTimeout(() => {
+              console.log(`📤 Uploading image ${index + 1}/${filesToUpload.length}:`, file.name);
+              uploadImageMutation.mutate({
+                productId: newProductId,
+                imageFile: file
+              });
+            }, index * 500); // Stagger uploads
+          });
+        }
+        
+        // Close preview modal if it's open
+        setIsPreviewModalOpen(false);
+        
+        // Navigate to products page
+        navigate("/admin/products");
+      },
+      onError: (error) => {
+        console.error('❌ Product creation failed:', error);
+        setIsSaving(false);
+      }
+    });
   };
 
   const addFeature = () => {
@@ -121,13 +184,19 @@ export default function ProductNew() {
     setProduct({ ...product, features: newFeatures });
   };
 
+  const handlePreview = () => {
+    setIsPreviewModalOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewModalOpen(false);
+  };
+
   const tabs = [
     { id: "basic", label: "Basic Info", icon: Package },
     { id: "description", label: "Description", icon: FileText },
     { id: "features", label: "Features", icon: List },
-    { id: "specs", label: "Specifications", icon: Settings },
     { id: "images", label: "Images", icon: ImageIcon },
-    { id: "seo", label: "SEO", icon: Search },
   ];
 
   return (
@@ -155,26 +224,21 @@ export default function ProductNew() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="published">Published</Label>
-              <Switch
-                id="published"
-                checked={product.isPublished}
-                onCheckedChange={(checked) =>
-                  setProduct({ ...product, isPublished: checked })
-                }
-              />
-            </div>
-            <Button variant="outline" size="sm" disabled={!product.name}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePreview}
+              disabled={!product.name.trim()}
+            >
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!product.name || !product.category || saving}
+              disabled={!product.name || !product.category || !product.status || createProductMutation.isPending || isSaving}
               className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
             >
-              {saving ? (
+              {createProductMutation.isPending || isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
@@ -245,36 +309,44 @@ export default function ProductNew() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
-                  <Input
-                    id="category"
+                  <Select
                     value={product.category}
-                    onChange={(e) =>
-                      setProduct({ ...product, category: e.target.value })
+                    onValueChange={(value) =>
+                      setProduct({ ...product, category: value })
                     }
-                    placeholder="Enter category"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (USD)</Label>
-                  <Input
-                    id="price"
-                    value={product.price}
-                    onChange={(e) =>
-                      setProduct({ ...product, price: e.target.value })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
+                  <Label htmlFor="status">Status *</Label>
+                  <Select
                     value={product.status}
-                    onChange={(e) =>
-                      setProduct({ ...product, status: e.target.value })
+                    onValueChange={(value) =>
+                      setProduct({ 
+                        ...product, 
+                        status: value,
+                        isPublished: value === "Published"
+                      })
                     }
-                    placeholder="Draft"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                      <SelectItem value="Published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">
@@ -350,77 +422,6 @@ export default function ProductNew() {
           </Card>
         )}
 
-        {activeTab === "specs" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Technical Specifications
-                <Button
-                  onClick={() => {
-                    const key = prompt("Enter specification name:");
-                    if (key) {
-                      setProduct({
-                        ...product,
-                        specifications: {
-                          ...product.specifications,
-                          [key]: "",
-                        },
-                      });
-                    }
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Spec
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="grid grid-cols-3 gap-2 items-center"
-                  >
-                    <Label className="font-medium">{key}</Label>
-                    <Input
-                      value={value}
-                      onChange={(e) =>
-                        setProduct({
-                          ...product,
-                          specifications: {
-                            ...product.specifications,
-                            [key]: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="Enter value..."
-                    />
-                    <Button
-                      onClick={() => {
-                        const newSpecs = { ...product.specifications };
-                        delete newSpecs[key];
-                        setProduct({ ...product, specifications: newSpecs });
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                {Object.keys(product.specifications).length === 0 && (
-                  <p className="text-muted-foreground text-center py-4">
-                    No specifications added yet. Click "Add Spec" to get
-                    started.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {activeTab === "images" && (
           <Card>
             <CardHeader>
@@ -429,52 +430,38 @@ export default function ProductNew() {
             <CardContent>
               <ImageUpload
                 images={product.images}
-                onImagesChange={(images) => setProduct({ ...product, images })}
-                maxImages={8}
+                onImagesChange={(images, files) => {
+                  setProduct({ 
+                    ...product, 
+                    images,
+                    imageFiles: files || []
+                  });
+                }}
+                maxImages={3}
               />
             </CardContent>
           </Card>
         )}
-
-        {activeTab === "seo" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>SEO Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="seoTitle">SEO Title</Label>
-                <Input
-                  id="seoTitle"
-                  value={product.seoTitle}
-                  onChange={(e) =>
-                    setProduct({ ...product, seoTitle: e.target.value })
-                  }
-                  placeholder="Enter SEO title..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  {product.seoTitle.length}/60 characters
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="seoDesc">SEO Description</Label>
-                <Textarea
-                  id="seoDesc"
-                  value={product.seoDescription}
-                  onChange={(e) =>
-                    setProduct({ ...product, seoDescription: e.target.value })
-                  }
-                  placeholder="Enter SEO description..."
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {product.seoDescription.length}/160 characters
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </motion.div>
+
+      {/* Product Preview Modal */}
+      <ProductPreview
+        product={{
+          _id: "preview",
+          name: product.name,
+          category: product.category,
+          status: product.status,
+          shortDescription: product.shortDescription,
+          fullDescription: product.fullDescription,
+          features: product.features.filter(f => f.trim() !== ""),
+          images: product.images,
+        }}
+        isOpen={isPreviewModalOpen}
+        onClose={handleClosePreview}
+        onSave={handleSave}
+        isCreating={true}
+        isSaving={createProductMutation.isPending || isSaving}
+      />
     </div>
   );
 }

@@ -269,13 +269,13 @@ const AboutUs = () => {
         <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
           <Building className="h-6 w-6 text-blue-600 dark:text-blue-400" />
         </div>
-        <div>
+          <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             About Us
-          </h1>
+            </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Manage your company's About Us page content
-          </p>
+            </p>
         </div>
       </motion.div>
 
@@ -415,12 +415,12 @@ const AboutUs = () => {
                           <div className="text-center">
                             <p className="text-sm text-red-600 font-medium">Image marked for removal</p>
                             <p className="text-xs text-red-500">Click "Save Changes" to confirm</p>
-                            <Button
+                          <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                            size="sm"
                               className="mt-2"
-                              onClick={() => {
+                            onClick={() => {
                                 setRemoveMainImage(false);
                               }}
                             >
@@ -518,14 +518,14 @@ const AboutUs = () => {
                               onClick={() => setEditingSection(section)}
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
+                          </Button>
+                          <Button
+                            size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteSection(section)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                           </div>
                         </div>
                         
@@ -587,22 +587,22 @@ const AboutUs = () => {
                         <div className="flex items-center justify-between mb-4">
                           <Badge variant="outline">Order: {member.order}</Badge>
                           <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
+                          <Button
+                            size="sm"
                               variant="outline"
                               onClick={() => setEditingMember(member)}
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
+                          </Button>
+                          <Button
+                            size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteTeamMember(member)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
+                      </div>
                         
                         <div className="text-center space-y-2">
                           {member.image && (
@@ -639,18 +639,18 @@ const AboutUs = () => {
 
         {/* Preview Tab */}
         <TabsContent value="preview" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader>
+            >
+              <Card>
+                <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="h-5 w-5" />
                   Preview
-                </CardTitle>
-              </CardHeader>
+                  </CardTitle>
+                </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <h1 className="text-3xl font-bold mb-4">{mainTitle || "About Us"}</h1>
@@ -688,11 +688,11 @@ const AboutUs = () => {
                                   // Hide image if it fails to load
                                   e.currentTarget.style.display = 'none';
                                 }}
-                              />
-                            </div>
+                    />
+                  </div>
                           )}
                           <p className="text-gray-600 dark:text-gray-400">{section.content}</p>
-                        </div>
+                    </div>
                       ))}
                     </div>
                   )}
@@ -722,9 +722,9 @@ const AboutUs = () => {
                             <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
                               {member.bio}
                             </p>
-                          </div>
+                  </div>
                         ))}
-                      </div>
+                    </div>
                     </div>
                   )}
                 </div>

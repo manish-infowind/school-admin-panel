@@ -8,13 +8,9 @@ export interface Product {
   image: string;
   shortDescription: string;
   fullDescription: string;
-  price: string;
   features: string[];
-  specifications: Record<string, string>;
   images: string[];
   isPublished: boolean;
-  seoTitle: string;
-  seoDescription: string;
 }
 
 // Initial products data
@@ -30,7 +26,6 @@ const initialProducts: Product[] = [
       "Advanced diagnostic imaging system with AI-powered analysis",
     fullDescription:
       "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems. Built for modern healthcare facilities that demand precision and reliability.",
-    price: "49,999",
     features: [
       "AI-powered diagnostic analysis",
       "4K high-resolution imaging",
@@ -39,20 +34,8 @@ const initialProducts: Product[] = [
       "Advanced noise reduction",
       "Multi-modal integration",
     ],
-    specifications: {
-      Resolution: "4K Ultra HD",
-      Weight: "2.5 kg",
-      Connectivity: "WiFi 6, Bluetooth 5.0",
-      "Battery Life": "8 hours continuous use",
-      Certifications: "FDA Approved, CE Marked",
-      Dimensions: "30 x 20 x 15 cm",
-      "Operating Temperature": "-10°C to 50°C",
-    },
     images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
     isPublished: true,
-    seoTitle: "MedScope Pro X1 - Advanced Medical Imaging System",
-    seoDescription:
-      "Professional-grade medical imaging system with AI analysis capabilities for precise diagnostics and seamless workflow integration.",
   },
   {
     id: 2,
@@ -64,7 +47,6 @@ const initialProducts: Product[] = [
     shortDescription: "Next-generation medical imaging with enhanced clarity",
     fullDescription:
       "Our Advanced Imaging System delivers unprecedented image quality with enhanced clarity and detail. Perfect for complex diagnostic procedures requiring the highest level of precision and accuracy in medical imaging.",
-    price: "75,999",
     features: [
       "Ultra-high resolution imaging",
       "Advanced noise reduction",
@@ -73,20 +55,8 @@ const initialProducts: Product[] = [
       "Real-time processing",
       "Enhanced contrast detection",
     ],
-    specifications: {
-      Resolution: "8K Ultra HD",
-      Weight: "3.2 kg",
-      Connectivity: "WiFi 6E, Bluetooth 5.2",
-      "Battery Life": "12 hours continuous use",
-      Certifications: "FDA Approved, CE Marked, ISO 13485",
-      Dimensions: "35 x 25 x 18 cm",
-      Storage: "1TB SSD",
-    },
     images: ["/placeholder.svg", "/placeholder.svg"],
     isPublished: false,
-    seoTitle: "Advanced Imaging System - Ultra High Resolution Medical Device",
-    seoDescription:
-      "Next-generation medical imaging system with 8K resolution and advanced processing capabilities for superior diagnostic accuracy.",
   },
   {
     id: 3,
@@ -98,7 +68,6 @@ const initialProducts: Product[] = [
     shortDescription: "Compact, portable diagnostic analyzer for field use",
     fullDescription:
       "The Portable Analyzer brings laboratory-grade diagnostic capabilities to any location. Ideal for field research, remote clinics, and emergency medical situations where immediate analysis is critical.",
-    price: "12,999",
     features: [
       "Portable and lightweight design",
       "Real-time analysis",
@@ -107,20 +76,8 @@ const initialProducts: Product[] = [
       "Long battery life",
       "Rugged construction",
     ],
-    specifications: {
-      Weight: "1.2 kg",
-      Dimensions: "25 x 15 x 8 cm",
-      "Battery Life": "24 hours continuous use",
-      Connectivity: "WiFi, Bluetooth, USB-C",
-      Certifications: "FDA Approved, CE Marked",
-      "Operating Range": "-20°C to 60°C",
-      "Water Resistance": "IP67",
-    },
     images: ["/placeholder.svg"],
     isPublished: true,
-    seoTitle: "Portable Medical Analyzer - Field Diagnostic Equipment",
-    seoDescription:
-      "Lightweight, portable diagnostic analyzer for field use with 24-hour battery life and laboratory-grade accuracy.",
   },
 ];
 

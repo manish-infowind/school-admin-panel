@@ -40,11 +40,6 @@ const navigation = [
     icon: Home,
   },
   {
-    name: "Product Details",
-    href: "/admin/product-details",
-    icon: FileText,
-  },
-  {
     name: "About Us",
     href: "/admin/about-us",
     icon: Building,
