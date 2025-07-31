@@ -21,6 +21,9 @@ import Enquiries from "./pages/admin/Enquiries";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
 import PrivacyPolicy from "./pages/admin/PrivacyPolicy";
+import FAQ from "./pages/admin/FAQ";
+import FAQNew from "./pages/admin/FAQNew";
+import FAQEdit from "./pages/admin/FAQEdit";
 
 const queryClient = new QueryClient();
 
@@ -31,118 +34,118 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
+        <Routes>
+          <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
 
             {/* Admin Routes - Protected */}
-            <Route
-              path="/admin"
-              element={
+          <Route
+            path="/admin"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <Dashboard />
-                  </AdminLayout>
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/products"
-              element={
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <ProductPage />
-                  </AdminLayout>
+              <AdminLayout>
+                <ProductPage />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/products/edit/:id"
-              element={
+            }
+          />
+          <Route
+            path="/admin/products/edit/:id"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <ProductEdit />
-                  </AdminLayout>
+              <AdminLayout>
+                <ProductEdit />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/products/new"
-              element={
+            }
+          />
+          <Route
+            path="/admin/products/new"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <ProductNew />
-                  </AdminLayout>
+              <AdminLayout>
+                <ProductNew />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/index-page"
-              element={
+            }
+          />
+          <Route
+            path="/admin/index-page"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <IndexPage />
-                  </AdminLayout>
+              <AdminLayout>
+                <IndexPage />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/product-details"
-              element={
+            }
+          />
+          <Route
+            path="/admin/product-details"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <ProductDetails />
-                  </AdminLayout>
+              <AdminLayout>
+                <ProductDetails />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/about-us"
-              element={
+            }
+          />
+          <Route
+            path="/admin/about-us"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <AboutUs />
-                  </AdminLayout>
+              <AdminLayout>
+                <AboutUs />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/enquiries"
-              element={
+            }
+          />
+          <Route
+            path="/admin/enquiries"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <Enquiries />
-                  </AdminLayout>
+              <AdminLayout>
+                <Enquiries />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/advertisement"
-              element={
+            }
+          />
+          <Route
+            path="/admin/advertisement"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <Advertisement />
-                  </AdminLayout>
+              <AdminLayout>
+                <Advertisement />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/profile"
-              element={
+            }
+          />
+          <Route
+            path="/admin/profile"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <Profile />
-                  </AdminLayout>
+              <AdminLayout>
+                <Profile />
+              </AdminLayout>
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/settings"
-              element={
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
                 <ProtectedRoute>
-                  <AdminLayout>
-                    <Settings />
-                  </AdminLayout>
+              <AdminLayout>
+                <Settings />
+              </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -156,10 +159,40 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/faqs"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <FAQ />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/faqs/new"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <FAQNew />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/faqs/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <FAQEdit />
+                  </AdminLayout>
+                </ProtectedRoute>
+            }
+          />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

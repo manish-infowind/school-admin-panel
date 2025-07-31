@@ -13,6 +13,7 @@ import {
   Building,
   Mail,
   Shield,
+  HelpCircle,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,6 +59,11 @@ const navigation = [
     name: "Privacy Policy",
     href: "/admin/privacy-policy",
     icon: Shield,
+  },
+  {
+    name: "FAQ",
+    href: "/admin/faqs",
+    icon: HelpCircle,
   },
 ];
 
