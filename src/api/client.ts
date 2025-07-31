@@ -199,10 +199,24 @@ class ApiClient {
       config.data = body;
     }
 
+    console.log('🔗 API Client: Making request');
+    console.log('🔗 Method:', method);
+    console.log('🔗 URL:', endpoint);
+    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
+    console.log('🔗 Headers:', config.headers);
+    console.log('📤 Request body:', config.data);
+
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
+      console.log('✅ API Client: Response received');
+      console.log('✅ Status:', response.status);
+      console.log('✅ Response data:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ API Client: Request failed');
+      console.error('❌ Error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
       const apiError = this.handleError(error);
       throw apiError;
     }
@@ -222,10 +236,17 @@ class ApiClient {
   }
 
   async patch<T = any>(endpoint: string, body?: any, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+    console.log('🔗 API Client: PATCH request');
+    console.log('🔗 Endpoint:', endpoint);
+    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
+    console.log('📤 Request body:', body);
     return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
   }
 
   async delete<T = any>(endpoint: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<ApiResponse<T>> {
+    console.log('🔗 API Client: DELETE request');
+    console.log('🔗 Endpoint:', endpoint);
+    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 

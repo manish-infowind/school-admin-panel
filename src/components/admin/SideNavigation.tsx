@@ -9,7 +9,6 @@ import {
   FileText,
   ChevronRight,
   X,
-  Megaphone,
   Building,
   Mail,
   Shield,
@@ -49,11 +48,6 @@ const navigation = [
     name: "Enquiries",
     href: "/admin/enquiries",
     icon: Mail,
-  },
-  {
-    name: "Advertisement",
-    href: "/admin/advertisement",
-    icon: Megaphone,
   },
   {
     name: "Privacy Policy",

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Home,
   Edit3,
@@ -18,28 +19,51 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ProductService, Product } from "@/api/services/productService";
+import { IndexPageService, IndexPageSection } from "@/api/services/indexPageService";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-interface PageSection {
-  id: number;
-  name: string;
-  description: string;
-  status: "Active" | "Draft";
-  lastModified: string;
-  content: {
-    title: string;
-    subtitle: string;
-    description: string;
-    buttonText: string;
-    buttonLink: string;
-  };
-  isActive: boolean;
-}
+// Use the API interface instead of local one
+type PageSection = IndexPageSection;
+
+// Available section names for dropdown
+const availableSectionNames = [
+  {
+    value: "Hero Section",
+    label: "Hero Section",
+    description: "Main banner with company branding",
+  },
+  {
+    value: "About Section", 
+    label: "About Section",
+    description: "Company overview and mission",
+  },
+  {
+    value: "Featured Products",
+    label: "Featured Products",
+    description: "Showcase 4 selected products",
+  },
+  {
+    value: "Contact Information",
+    label: "Contact Information", 
+    description: "Contact details and location",
+  },
+];
 
 const initialSections: PageSection[] = [
   {
-    id: 1,
+    id: "1",
     name: "Hero Section",
     description: "Main banner with company branding",
     status: "Active",
@@ -53,9 +77,10 @@ const initialSections: PageSection[] = [
       buttonLink: "/products",
     },
     isActive: true,
+    order: 1,
   },
   {
-    id: 2,
+    id: "2",
     name: "About Section",
     description: "Company overview and mission",
     status: "Active",
@@ -69,25 +94,10 @@ const initialSections: PageSection[] = [
       buttonLink: "/about",
     },
     isActive: true,
+    order: 2,
   },
   {
-    id: 3,
-    name: "Services Overview",
-    description: "Brief overview of services offered",
-    status: "Draft",
-    lastModified: "3 days ago",
-    content: {
-      title: "Our Services",
-      subtitle: "Comprehensive Medical Solutions",
-      description:
-        "From diagnostic equipment to pharmaceutical solutions, we provide comprehensive medical technologies for healthcare providers.",
-      buttonText: "View Services",
-      buttonLink: "/services",
-    },
-    isActive: false,
-  },
-  {
-    id: 4,
+    id: "3",
     name: "Contact Information",
     description: "Contact details and location",
     status: "Active",
@@ -101,27 +111,149 @@ const initialSections: PageSection[] = [
       buttonLink: "/contact",
     },
     isActive: true,
+    order: 3,
   },
 ];
 
 export default function IndexPage() {
   const { toast } = useToast();
-  const [sections, setSections] = useState(initialSections);
+  const [sections, setSections] = useState<PageSection[]>([]);
   const [selectedSection, setSelectedSection] = useState<PageSection | null>(
     null,
   );
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("sections");
+  const [newSectionType, setNewSectionType] = useState<string>("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSectionData, setNewSectionData] = useState({
+    title: "",
+    subtitle: "",
+    description: "",
+    buttonText: "",
+    buttonLink: "",
+  });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    section: PageSection | null;
+  }>({
+    isOpen: false,
+    section: null,
+  });
+
+  // Load sections and products from API
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Load sections
+        const sectionsResponse = await IndexPageService.getSections();
+        console.log('Sections response:', sectionsResponse);
+        if (sectionsResponse.success && sectionsResponse.data) {
+          setSections(sectionsResponse.data);
+        } else {
+          // Fallback to initial sections if API fails
+          console.log('Using fallback sections');
+          setSections(initialSections);
+        }
+
+        // Load products
+        const productsResponse = await ProductService.getProducts({ limit: 100 });
+        console.log('Products response:', productsResponse);
+        if (productsResponse.success && productsResponse.data) {
+          setProducts(productsResponse.data.products);
+        } else {
+          // Fallback to mock products if API fails
+          console.log('Using fallback products');
+          setProducts([
+            {
+              _id: "1",
+              name: "Paracitamol",
+              category: "Ophthalmology",
+              status: "Published",
+              shortDescription: "Test product",
+              fullDescription: "Test description",
+              features: [],
+              images: ["/placeholder.svg"],
+              isPublished: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              _id: "2", 
+              name: "Test Product 2",
+              category: "Diagnostic Equipment",
+              status: "Published",
+              shortDescription: "Test product 2",
+              fullDescription: "Test description 2",
+              features: [],
+              images: ["/placeholder.svg"],
+              isPublished: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        // Use fallback data
+        setSections(initialSections);
+        setProducts([
+          {
+            _id: "1",
+            name: "Paracitamol",
+            category: "Ophthalmology", 
+            status: "Published",
+            shortDescription: "Test product",
+            fullDescription: "Test description",
+            features: [],
+            images: ["/placeholder.svg"],
+            isPublished: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            _id: "2",
+            name: "Test Product 2",
+            category: "Diagnostic Equipment",
+            status: "Published", 
+            shortDescription: "Test product 2",
+            fullDescription: "Test description 2",
+            features: [],
+            images: ["/placeholder.svg"],
+            isPublished: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        ]);
+        toast({
+          title: "Warning",
+          description: "Using fallback data. API connection failed.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [toast]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Success!",
-        description: "Homepage content saved successfully.",
+      const response = await IndexPageService.updateIndexPage({
+        pageTitle: "Homepage",
+        sections: sections,
       });
+
+      if (response.success) {
+        toast({
+          title: "Success!",
+          description: "Homepage content saved successfully.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -134,18 +266,86 @@ export default function IndexPage() {
   };
 
   const handleSaveSection = async (section: PageSection) => {
+    // Get the correct ID (either id or _id)
+    const sectionId = section.id || section._id;
+    
+    console.log('🚀 Starting save section process...');
+    console.log('📋 Section to save:', section);
+    console.log('🆔 Section ID:', sectionId);
+    
+    // Validate required fields
+    if (!section.content.title.trim() || !section.content.subtitle.trim() || 
+        !section.content.description.trim() || !section.content.buttonText.trim() || 
+        !section.content.buttonLink.trim()) {
+      console.log('❌ Validation failed - missing required fields');
+      toast({
+        title: "Error",
+        description: "All fields are required. Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('✅ Validation passed, starting save...');
     setSaving(true);
     try {
-      const updatedSections = sections.map((s) =>
-        s.id === section.id ? { ...section, lastModified: "Just now" } : s,
-      );
-      setSections(updatedSections);
+      if (sectionId) {
+        console.log('📡 Making API call to update section...');
+        console.log('🔗 Endpoint:', `/index-page/sections/${sectionId}`);
+        console.log('📤 Request data:', {
+          name: section.name,
+          description: section.description,
+          content: section.content,
+          isActive: section.isActive,
+          order: section.order,
+        });
+        
+        // Update existing section via API
+        const response = await IndexPageService.updateSection(sectionId, {
+          name: section.name,
+          description: section.description,
+          content: section.content,
+          isActive: section.isActive,
+          order: section.order,
+        });
 
-      toast({
-        title: "Success!",
-        description: `${section.name} updated successfully.`,
-      });
+        console.log('✅ Update API response:', response);
+
+        if (response.success) {
+          console.log('✅ API update successful, updating local state...');
+          // Update local state
+          const updatedSections = sections.map((s) =>
+            (s.id || s._id) === sectionId ? { ...section, lastModified: "Just now" } : s,
+          );
+          setSections(updatedSections);
+
+          toast({
+            title: "Success!",
+            description: `${section.name} updated successfully.`,
+          });
+        } else {
+          console.log('❌ API update failed - response not successful:', response);
+          toast({
+            title: "Error",
+            description: "Failed to save section - API response not successful.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        console.log('❌ No section ID available for update');
+        toast({
+          title: "Error",
+          description: "No section ID available for update.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('❌ Error in save section process:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.status,
+        type: error.type
+      });
       toast({
         title: "Error",
         description: "Failed to save section.",
@@ -156,19 +356,612 @@ export default function IndexPage() {
     }
   };
 
-  const handleDeleteSection = (id: number) => {
-    const section = sections.find((s) => s.id === id);
-    if (section && window.confirm(`Delete "${section.name}"?`)) {
-      setSections(sections.filter((s) => s.id !== id));
-      if (selectedSection?.id === id) {
-        setSelectedSection(null);
+  const handleDeleteSection = (id: string) => {
+    const section = sections.find((s) => (s.id || s._id) === id);
+    if (!section) return;
+
+    // Open delete confirmation dialog
+    setDeleteDialog({
+      isOpen: true,
+      section: section,
+    });
+  };
+
+  const confirmDeleteSection = async () => {
+    const section = deleteDialog.section;
+    if (!section) return;
+
+    // Get the correct ID (either id or _id)
+    const sectionId = section.id || section._id;
+    const sectionIdForComparison = section.id || section._id;
+
+    try {
+      console.log('🚀 Starting delete section process...');
+      console.log('📋 Section to delete:', section);
+      console.log('🆔 Section ID:', sectionId);
+      console.log('📝 Section name:', section.name);
+      
+      // Try API call first
+      try {
+        if (sectionId) {
+          console.log('📡 Making API call to delete section...');
+          console.log('🔗 Endpoint:', `/index-page/sections/${sectionId}`);
+          
+          const response = await IndexPageService.deleteSection(sectionId);
+          console.log('✅ Delete API response:', response);
+          
+          if (response.success) {
+            console.log('✅ API delete successful, updating local state...');
+            // Update local state
+            setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
+            if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
+              setSelectedSection(null);
+              setActiveTab("sections");
+            }
+            
+            toast({
+              title: "Success!",
+              description: `${section.name} deleted successfully.`,
+            });
+            setDeleteDialog({ isOpen: false, section: null });
+            return;
+          } else {
+            console.log('❌ API delete failed - response not successful:', response);
+          }
+        } else {
+          console.log('❌ No section ID available for deletion');
+        }
+      } catch (apiError) {
+        console.error('❌ API delete failed with error:', apiError);
+        console.error('❌ Error details:', {
+          message: apiError.message,
+          status: apiError.status,
+          type: apiError.type
+        });
       }
+
+      // Fallback: Update local state only if API fails
+      console.log('🔄 Using fallback - updating local state only...');
+      setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
+      if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
+        setSelectedSection(null);
+        setActiveTab("sections");
+      }
+      
       toast({
-        title: "Deleted",
-        description: `${section.name} deleted successfully.`,
+        title: "Success!",
+        description: `${section.name} deleted successfully (local only).`,
+      });
+      setDeleteDialog({ isOpen: false, section: null });
+    } catch (error) {
+      console.error('❌ Error in delete section process:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete section. Please try again.",
+        variant: "destructive",
       });
     }
   };
+
+  const cancelDeleteSection = () => {
+    setDeleteDialog({ isOpen: false, section: null });
+  };
+
+  const handleAddSection = () => {
+    if (!newSectionType) {
+      toast({
+        title: "Error",
+        description: "Please select a section type to add.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if section already exists
+    const existingSection = sections.find(s => s.name === newSectionType);
+    if (existingSection) {
+      toast({
+        title: "Error",
+        description: `${newSectionType} already exists.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For Featured Products, create directly without form
+    if (newSectionType === "Featured Products") {
+      handleCreateFeaturedProductsSection();
+      return;
+    }
+
+    // Initialize form data with section type
+    setNewSectionData({
+      title: newSectionType,
+      subtitle: "",
+      description: "",
+      buttonText: "",
+      buttonLink: "",
+    });
+    
+    setShowAddForm(true);
+    setActiveTab("edit");
+  };
+
+  const handleCreateFeaturedProductsSection = async () => {
+    setSaving(true);
+    try {
+      const response = await IndexPageService.createSection({
+        name: "Featured Products",
+        description: "Showcase 4 selected products",
+        content: {
+          title: "Featured Products",
+          subtitle: "Our Best Solutions",
+          description: "Discover our most popular medical technologies",
+          buttonText: "View All Products",
+          buttonLink: "/products",
+          featuredProducts: [],
+        },
+        isActive: false,
+        order: sections.length + 1,
+      });
+
+      if (response.success && response.data) {
+        setSections([...sections, response.data]);
+        setNewSectionType("");
+        
+        toast({
+          title: "Success!",
+          description: "Featured Products section created successfully. You can now select products.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create Featured Products section.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNewSection = async () => {
+    // Validate required fields
+    if (!newSectionData.title.trim() || !newSectionData.subtitle.trim() || 
+        !newSectionData.description.trim() || !newSectionData.buttonText.trim() || 
+        !newSectionData.buttonLink.trim()) {
+      toast({
+        title: "Error",
+        description: "All fields are required. Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const sectionTemplate = availableSectionNames.find(s => s.value === newSectionType);
+      if (!sectionTemplate) return;
+
+      const response = await IndexPageService.createSection({
+        name: newSectionType,
+        description: sectionTemplate.description,
+        content: {
+          title: newSectionData.title,
+          subtitle: newSectionData.subtitle,
+          description: newSectionData.description,
+          buttonText: newSectionData.buttonText,
+          buttonLink: newSectionData.buttonLink,
+          featuredProducts: newSectionType === "Featured Products" ? [] : undefined,
+        },
+        isActive: false,
+        order: sections.length + 1,
+      });
+
+      if (response.success && response.data) {
+        setSections([...sections, response.data]);
+        setNewSectionType("");
+        setShowAddForm(false);
+        setNewSectionData({
+          title: "",
+          subtitle: "",
+          description: "",
+          buttonText: "",
+          buttonLink: "",
+        });
+        
+        toast({
+          title: "Success!",
+          description: `${newSectionType} added successfully.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add section.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelAddSection = () => {
+    setShowAddForm(false);
+    setNewSectionType("");
+    setNewSectionData({
+      title: "",
+      subtitle: "",
+      description: "",
+      buttonText: "",
+      buttonLink: "",
+    });
+    setActiveTab("sections");
+  };
+
+  const handleAddFeaturedProduct = async (productId: string) => {
+    console.log('Adding featured product:', productId);
+    console.log('Selected section:', selectedSection);
+    
+    // Get the correct ID (either id or _id)
+    const sectionId = selectedSection?.id || selectedSection?._id;
+    
+    if (!selectedSection || selectedSection.name !== "Featured Products" || !sectionId) {
+      console.log('Invalid section for adding featured product');
+      console.log('Selected section name:', selectedSection?.name);
+      console.log('Section ID:', sectionId);
+      return;
+    }
+    
+    const currentProducts = selectedSection.content.featuredProducts || [];
+    console.log('Current featured products:', currentProducts);
+    
+    // Check if product is already featured
+    if (currentProducts.includes(productId)) {
+      toast({
+        title: "Error",
+        description: "Product is already featured.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if we're at the limit
+    if (currentProducts.length >= 4) {
+      toast({
+        title: "Error",
+        description: "Maximum 4 products can be featured.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Safety check: If current products array is corrupted (more than 4 items), reset it
+    let newFeaturedProducts: string[];
+    if (currentProducts.length > 4) {
+      console.warn('⚠️ Warning: Current featured products array has more than 4 items, resetting to empty');
+      const updatedSection = {
+        ...selectedSection,
+        content: {
+          ...selectedSection.content,
+          featuredProducts: [],
+        },
+      };
+      setSelectedSection(updatedSection);
+      
+      // Update sections list
+      const updatedSections = sections.map(s => 
+        (s.id || s._id) === sectionId ? updatedSection : s
+      );
+      setSections(updatedSections);
+      
+      // Try again with empty array
+      newFeaturedProducts = [productId];
+      console.log('Reset featured products array to:', newFeaturedProducts);
+    } else {
+      newFeaturedProducts = [...currentProducts, productId];
+      console.log('New featured products array:', newFeaturedProducts);
+    }
+    
+    // Double-check: Ensure we never send more than 4 items
+    if (newFeaturedProducts.length > 4) {
+      console.error('❌ Error: Attempting to send more than 4 featured products');
+      toast({
+        title: "Error",
+        description: "Cannot add more than 4 featured products.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const newFeaturedProducts = [...currentProducts, productId];
+      console.log('New featured products array:', newFeaturedProducts);
+      
+      // Double-check: Ensure we never send more than 4 items
+      if (newFeaturedProducts.length > 4) {
+        console.error('❌ Error: Attempting to send more than 4 featured products');
+        toast({
+          title: "Error",
+          description: "Cannot add more than 4 featured products.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Try API call first
+      try {
+        const requestData = {
+          content: {
+            ...selectedSection.content,
+            featuredProducts: newFeaturedProducts,
+          },
+        };
+        
+        console.log('📤 Sending API request with data:', requestData);
+        console.log('📊 Featured products array length:', newFeaturedProducts.length);
+        console.log('📋 Featured products array:', newFeaturedProducts);
+        
+        const response = await IndexPageService.updateSection(sectionId, requestData);
+
+        console.log('API response:', response);
+
+        if (response.success && response.data) {
+          // Update local state
+          const updatedSection = {
+            ...selectedSection,
+            content: {
+              ...selectedSection.content,
+              featuredProducts: newFeaturedProducts,
+            },
+          };
+          setSelectedSection(updatedSection);
+
+          // Update sections list
+          const updatedSections = sections.map(s => 
+            (s.id || s._id) === sectionId ? updatedSection : s
+          );
+          setSections(updatedSections);
+
+          toast({
+            title: "Success!",
+            description: "Product added to featured products.",
+          });
+          return;
+        }
+      } catch (apiError) {
+        console.log('API call failed, updating local state only:', apiError);
+        
+        // Check if it's a validation error
+        if (apiError.status === 400) {
+          console.error('❌ API validation error:', apiError.message);
+          toast({
+            title: "Validation Error",
+            description: apiError.message || "Invalid data sent to server.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Fallback: Update local state only if API fails
+      const updatedSection = {
+        ...selectedSection,
+        content: {
+          ...selectedSection.content,
+          featuredProducts: newFeaturedProducts,
+        },
+      };
+      setSelectedSection(updatedSection);
+
+      // Update sections list
+      const updatedSections = sections.map(s => 
+        (s.id || s._id) === sectionId ? updatedSection : s
+      );
+      setSections(updatedSections);
+
+      toast({
+        title: "Success!",
+        description: "Product added to featured products (local only).",
+      });
+    } catch (error) {
+      console.error('Error adding featured product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product to featured products.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveFeaturedProduct = async (productId: string) => {
+    // Get the correct ID (either id or _id)
+    const sectionId = selectedSection?.id || selectedSection?._id;
+    
+    if (!selectedSection || selectedSection.name !== "Featured Products" || !sectionId) return;
+    
+    const currentProducts = selectedSection.content.featuredProducts || [];
+    const newFeaturedProducts = currentProducts.filter(id => id !== productId);
+
+    try {
+      // Try API call first
+      try {
+        const requestData = {
+          content: {
+            ...selectedSection.content,
+            featuredProducts: newFeaturedProducts,
+          },
+        };
+        
+        console.log('📤 Sending API request to remove featured product:', requestData);
+        
+        const response = await IndexPageService.updateSection(sectionId, requestData);
+
+        if (response.success && response.data) {
+          // Update local state
+          const updatedSection = {
+            ...selectedSection,
+            content: {
+              ...selectedSection.content,
+              featuredProducts: newFeaturedProducts,
+            },
+          };
+          setSelectedSection(updatedSection);
+
+          // Update sections list
+          const updatedSections = sections.map(s => 
+            (s.id || s._id) === sectionId ? updatedSection : s
+          );
+          setSections(updatedSections);
+
+          toast({
+            title: "Success!",
+            description: "Product removed from featured products.",
+          });
+          return;
+        }
+      } catch (apiError) {
+        console.log('API call failed, updating local state only:', apiError);
+        
+        // Check if it's a validation error
+        if (apiError.status === 400) {
+          console.error('❌ API validation error:', apiError.message);
+          toast({
+            title: "Validation Error",
+            description: apiError.message || "Invalid data sent to server.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Fallback: Update local state only if API fails
+      const updatedSection = {
+        ...selectedSection,
+        content: {
+          ...selectedSection.content,
+          featuredProducts: newFeaturedProducts,
+        },
+      };
+      setSelectedSection(updatedSection);
+
+      // Update sections list
+      const updatedSections = sections.map(s => 
+        (s.id || s._id) === sectionId ? updatedSection : s
+      );
+      setSections(updatedSections);
+
+      toast({
+        title: "Success!",
+        description: "Product removed from featured products (local only).",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove product from featured products.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleSectionStatus = async (section: PageSection, newStatus: boolean) => {
+    const sectionId = section.id || section._id;
+    if (!sectionId) return;
+
+    console.log('🚀 Toggling section status:', section.name, 'to:', newStatus);
+    console.log('🆔 Section ID:', sectionId);
+
+    try {
+      // Try API call first
+      try {
+        const response = await IndexPageService.updateSectionStatus(sectionId, {
+          isActive: newStatus,
+        });
+
+        console.log('✅ Status update API response:', response);
+
+        if (response.success && response.data) {
+          // Update local state
+          const updatedSection: IndexPageSection = {
+            ...section,
+            isActive: newStatus,
+            status: newStatus ? "Active" : "Draft",
+          };
+
+          // Update sections list
+          const updatedSections = sections.map(s => 
+            (s.id || s._id) === sectionId ? updatedSection : s
+          );
+          setSections(updatedSections);
+
+          // Update selected section if it's the same one
+          if (selectedSection && (selectedSection.id || selectedSection._id) === sectionId) {
+            setSelectedSection(updatedSection);
+          }
+
+          toast({
+            title: "Success!",
+            description: `${section.name} ${newStatus ? 'activated' : 'deactivated'} successfully.`,
+          });
+          return;
+        }
+      } catch (apiError) {
+        console.log('API call failed, updating local state only:', apiError);
+        
+        // Check if it's a validation error
+        if (apiError.status === 400) {
+          console.error('❌ API validation error:', apiError.message);
+          toast({
+            title: "Validation Error",
+            description: apiError.message || "Invalid data sent to server.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Fallback: Update local state only if API fails
+      const updatedSection: IndexPageSection = {
+        ...section,
+        isActive: newStatus,
+        status: newStatus ? "Active" : "Draft",
+      };
+
+      // Update sections list
+      const updatedSections = sections.map(s => 
+        (s.id || s._id) === sectionId ? updatedSection : s
+      );
+      setSections(updatedSections);
+
+      // Update selected section if it's the same one
+      if (selectedSection && (selectedSection.id || selectedSection._id) === sectionId) {
+        setSelectedSection(updatedSection);
+      }
+
+      toast({
+        title: "Success!",
+        description: `${section.name} ${newStatus ? 'activated' : 'deactivated'} (local only).`,
+      });
+    } catch (error) {
+      console.error('Error toggling section status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update section status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading index page data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -234,7 +1027,7 @@ export default function IndexPage() {
               <CardContent className="space-y-4">
                 {sections.map((section, index) => (
                   <motion.div
-                    key={section.id}
+                    key={section.id || section._id}
                     className="flex items-center gap-4 p-4 border rounded-lg hover:bg-sidebar-accent transition-colors"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -265,6 +1058,13 @@ export default function IndexPage() {
                       >
                         {section.status}
                       </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={section.isActive}
+                          onCheckedChange={(checked) => handleToggleSectionStatus(section, checked)}
+                        />
+                        <Label className="text-xs">Active</Label>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -278,7 +1078,7 @@ export default function IndexPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteSection(section.id)}
+                        onClick={() => handleDeleteSection(section.id || section._id)}
                         className="hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -286,13 +1086,200 @@ export default function IndexPage() {
                     </div>
                   </motion.div>
                 ))}
+                
+                {/* Add New Section */}
+                <motion.div
+                  className="flex items-center gap-4 p-4 border-2 border-dashed border-muted-foreground/25 rounded-lg hover:border-muted-foreground/50 transition-colors"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: sections.length * 0.1 }}
+                >
+                  <div className="h-12 w-12 bg-gradient-to-br from-brand-green/10 to-brand-teal/10 rounded-lg flex items-center justify-center">
+                    <Plus className="h-6 w-6 text-brand-green" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-muted-foreground">Add New Section</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Select a section type to add to your homepage
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={newSectionType} onValueChange={setNewSectionType}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select section type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSectionNames.map((section) => {
+                          const exists = sections.some(s => s.name === section.value);
+                          return (
+                            <SelectItem 
+                              key={section.value} 
+                              value={section.value}
+                              disabled={exists}
+                              className={exists ? "opacity-50 cursor-not-allowed" : ""}
+                            >
+                              <div>
+                                <div className="font-medium">
+                                  {section.label}
+                                  {exists && <span className="text-xs text-muted-foreground ml-2">(Already exists)</span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground">{section.description}</div>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleAddSection}
+                      disabled={!newSectionType}
+                      size="sm"
+                      className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+                </motion.div>
               </CardContent>
             </Card>
           </motion.div>
         </TabsContent>
 
         <TabsContent value="edit" className="space-y-4">
-          {selectedSection ? (
+          {showAddForm && newSectionType !== "Featured Products" ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Create New {newSectionType}
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={false}
+                        disabled
+                      />
+                      <Label className="text-muted-foreground">Active (will be Draft initially)</Label>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="newTitle" className="text-red-500">* Title</Label>
+                      <Input
+                        id="newTitle"
+                        value={newSectionData.title}
+                        onChange={(e) =>
+                          setNewSectionData({
+                            ...newSectionData,
+                            title: e.target.value,
+                          })
+                        }
+                        placeholder="Section title"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newSubtitle" className="text-red-500">* Subtitle</Label>
+                      <Input
+                        id="newSubtitle"
+                        value={newSectionData.subtitle}
+                        onChange={(e) =>
+                          setNewSectionData({
+                            ...newSectionData,
+                            subtitle: e.target.value,
+                          })
+                        }
+                        placeholder="Section subtitle"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="newDescription" className="text-red-500">* Description</Label>
+                    <Textarea
+                      id="newDescription"
+                      value={newSectionData.description}
+                      onChange={(e) =>
+                        setNewSectionData({
+                          ...newSectionData,
+                          description: e.target.value,
+                        })
+                      }
+                      placeholder="Section description"
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="newButtonText" className="text-red-500">* Button Text</Label>
+                      <Input
+                        id="newButtonText"
+                        value={newSectionData.buttonText}
+                        onChange={(e) =>
+                          setNewSectionData({
+                            ...newSectionData,
+                            buttonText: e.target.value,
+                          })
+                        }
+                        placeholder="Button text"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newButtonLink" className="text-red-500">* Button Link</Label>
+                      <Input
+                        id="newButtonLink"
+                        value={newSectionData.buttonLink}
+                        onChange={(e) =>
+                          setNewSectionData({
+                            ...newSectionData,
+                            buttonLink: e.target.value,
+                          })
+                        }
+                        placeholder="/page-url"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={handleSaveNewSection}
+                      disabled={saving}
+                      className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Create Section
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleCancelAddSection}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : selectedSection ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -305,13 +1292,7 @@ export default function IndexPage() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={selectedSection.isActive}
-                        onCheckedChange={(checked) =>
-                          setSelectedSection({
-                            ...selectedSection,
-                            isActive: checked,
-                            status: checked ? "Active" : "Draft",
-                          })
-                        }
+                        onCheckedChange={(checked) => handleToggleSectionStatus(selectedSection, checked)}
                       />
                       <Label>Active</Label>
                     </div>
@@ -320,7 +1301,7 @@ export default function IndexPage() {
                 <CardContent className="space-y-6">
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="title">Title</Label>
+                      <Label htmlFor="title" className="text-red-500">* Title</Label>
                       <Input
                         id="title"
                         value={selectedSection.content.title}
@@ -334,10 +1315,11 @@ export default function IndexPage() {
                           })
                         }
                         placeholder="Section title"
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="subtitle">Subtitle</Label>
+                      <Label htmlFor="subtitle" className="text-red-500">* Subtitle</Label>
                       <Input
                         id="subtitle"
                         value={selectedSection.content.subtitle}
@@ -351,12 +1333,13 @@ export default function IndexPage() {
                           })
                         }
                         placeholder="Section subtitle"
+                        required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-red-500">* Description</Label>
                     <Textarea
                       id="description"
                       value={selectedSection.content.description}
@@ -371,12 +1354,13 @@ export default function IndexPage() {
                       }
                       placeholder="Section description"
                       rows={4}
+                      required
                     />
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="buttonText">Button Text</Label>
+                      <Label htmlFor="buttonText" className="text-red-500">* Button Text</Label>
                       <Input
                         id="buttonText"
                         value={selectedSection.content.buttonText}
@@ -390,10 +1374,11 @@ export default function IndexPage() {
                           })
                         }
                         placeholder="Button text"
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="buttonLink">Button Link</Label>
+                      <Label htmlFor="buttonLink" className="text-red-500">* Button Link</Label>
                       <Input
                         id="buttonLink"
                         value={selectedSection.content.buttonLink}
@@ -407,9 +1392,95 @@ export default function IndexPage() {
                           })
                         }
                         placeholder="/page-url"
+                        required
                       />
                     </div>
                   </div>
+
+                  {/* Featured Products Selection */}
+                  {selectedSection.name === "Featured Products" && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-medium">Featured Products</Label>
+                        <Badge variant="outline">
+                          {selectedSection.content.featuredProducts?.length || 0}/4 selected
+                        </Badge>
+                      </div>
+                      
+                      {/* Selected Products */}
+                      {selectedSection.content.featuredProducts && selectedSection.content.featuredProducts.length > 0 && (
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {selectedSection.content.featuredProducts.map((productId) => {
+                            const product = products.find(p => p._id === productId);
+                            if (!product) return null;
+                            
+                            return (
+                              <div key={productId} className="flex items-center gap-3 p-3 border rounded-lg">
+                                <img 
+                                  src={product.images[0] || "/placeholder.svg"} 
+                                  alt={product.name}
+                                  className="h-12 w-12 rounded object-cover"
+                                />
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-sm">{product.name}</h4>
+                                  <p className="text-xs text-muted-foreground">{product.category}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveFeaturedProduct(productId)}
+                                  className="hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Available Products */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">
+                          Available Products ({products.length} total)
+                        </Label>
+                        {products.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            No products available. Please check if products are loaded correctly.
+                          </div>
+                        ) : (
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {products
+                              .filter(product => !selectedSection.content.featuredProducts?.includes(product._id))
+                              .map((product) => (
+                                <div key={product._id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-sidebar-accent transition-colors">
+                                  <img 
+                                    src={product.images[0] || "/placeholder.svg"} 
+                                    alt={product.name}
+                                    className="h-12 w-12 rounded object-cover"
+                                  />
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-sm">{product.name}</h4>
+                                    <p className="text-xs text-muted-foreground">{product.category}</p>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      console.log('Clicking add button for product:', product._id, product.name);
+                                      handleAddFeaturedProduct(product._id);
+                                    }}
+                                    disabled={selectedSection.content.featuredProducts?.length >= 4}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex gap-4">
                     <Button
@@ -459,6 +1530,31 @@ export default function IndexPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.isOpen} onOpenChange={(open) => !open && cancelDeleteSection()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Section</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>"{deleteDialog.section?.name}"</strong>?
+              <br /><br />
+              This action cannot be undone and will permanently remove this section from your homepage.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteSection}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteSection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Section
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -15,7 +15,6 @@ import ProductEdit from "./pages/admin/ProductEdit";
 import ProductNew from "./pages/admin/ProductNew";
 import IndexPage from "./pages/admin/IndexPage";
 import ProductDetails from "./pages/admin/ProductDetails";
-import Advertisement from "./pages/admin/Advertisement";
 import AboutUs from "./pages/admin/AboutUs";
 import Enquiries from "./pages/admin/Enquiries";
 import Profile from "./pages/admin/Profile";
@@ -119,16 +118,7 @@ const App = () => (
                 </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin/advertisement"
-            element={
-                <ProtectedRoute>
-              <AdminLayout>
-                <Advertisement />
-              </AdminLayout>
-                </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/admin/profile"
             element={

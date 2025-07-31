@@ -128,30 +128,7 @@ export class ContentService {
     }
   }
 
-  // Get advertisements
-  static async getAdvertisements(): Promise<ApiResponse<any[]>> {
-    try {
-      const response = await apiClient.get<any[]>(
-        API_CONFIG.ENDPOINTS.CONTENT.ADVERTISEMENTS
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 
-  // Update advertisements
-  static async updateAdvertisements(advertisements: any[]): Promise<ApiResponse<any[]>> {
-    try {
-      const response = await apiClient.put<any[]>(
-        API_CONFIG.ENDPOINTS.CONTENT.ADVERTISEMENTS,
-        { advertisements }
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 
   // Upload image for content
   static async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {

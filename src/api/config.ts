@@ -42,8 +42,19 @@ export const API_CONFIG = {
       ABOUT_US_SECTIONS: '/about-us/sections',
       ABOUT_US_TEAM_MEMBERS: '/about-us/team-members',
       ABOUT_US_MAIN_IMAGE: '/about-us/upload-main-image',
-      ADVERTISEMENTS: '/content/advertisements',
       PRIVACY_POLICY: '/privacy-policy',
+    },
+    INDEX_PAGE: {
+      MAIN: '/index-page',
+      SECTIONS: '/index-page/sections',
+      SECTION: '/index-page/sections/:id',
+      SECTION_STATUS: '/index-page/sections/:id/status',
+      REORDER_SECTIONS: '/index-page/sections/reorder',
+    },
+    DASHBOARD: {
+      MAIN: '/dashboard',
+      STATS: '/dashboard/stats',
+      ACTIVITY: '/dashboard/activity',
     },
     ENQUIRIES: {
       LIST: '/enquiries',
