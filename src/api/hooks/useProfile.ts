@@ -6,7 +6,12 @@ import {
   ChangePasswordRequest,
   VerifyOtpRequest,
   ResetPasswordRequest,
-  ResetPasswordConfirmRequest
+  ResetPasswordConfirmRequest,
+  TwoFactorSetupRequest,
+  TwoFactorEnableRequest,
+  TwoFactorDisableRequest,
+  UpdatePreferencesRequest,
+  UserActivity
 } from '../services/profileService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +25,11 @@ export interface UseProfileReturn {
   verifyingOtp: boolean;
   requestingReset: boolean;
   resettingPassword: boolean;
+  settingUp2FA: boolean;
+  enabling2FA: boolean;
+  disabling2FA: boolean;
+  updatingPreferences: boolean;
+  loadingActivity: boolean;
   
   // Actions
   loadProfile: () => Promise<void>;
@@ -29,6 +39,11 @@ export interface UseProfileReturn {
   verifyOtp: (data: VerifyOtpRequest) => Promise<boolean>;
   requestPasswordReset: (data: ResetPasswordRequest) => Promise<void>;
   resetPassword: (data: ResetPasswordConfirmRequest) => Promise<void>;
+  setup2FA: () => Promise<boolean>;
+  enable2FA: (data: TwoFactorEnableRequest) => Promise<boolean>;
+  disable2FA: (data: TwoFactorDisableRequest) => Promise<boolean>;
+  updatePreferences: (data: UpdatePreferencesRequest) => Promise<void>;
+  getUserActivity: (page?: number, limit?: number) => Promise<UserActivity[]>;
   resetError: () => void;
 }
 
@@ -43,6 +58,11 @@ export function useProfile(): UseProfileReturn {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [requestingReset, setRequestingReset] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [settingUp2FA, setSettingUp2FA] = useState(false);
+  const [enabling2FA, setEnabling2FA] = useState(false);
+  const [disabling2FA, setDisabling2FA] = useState(false);
+  const [updatingPreferences, setUpdatingPreferences] = useState(false);
+  const [loadingActivity, setLoadingActivity] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -332,14 +352,237 @@ export function useProfile(): UseProfileReturn {
     }
   }, [toast]);
 
+  const setup2FA = useCallback(async (): Promise<boolean> => {
+    setSettingUp2FA(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Setting up 2FA...');
+      const response = await profileService.setup2FA();
+      console.log('📥 Setup 2FA response:', response);
+      
+      if (response.success) {
+        console.log('✅ 2FA setup initiated successfully');
+        toast({
+          title: "OTP Sent",
+          description: response.message || "OTP sent to your email for 2FA setup",
+        });
+        return true;
+      } else {
+        console.log('❌ 2FA setup failed:', response);
+        setError(response.message || 'Failed to setup 2FA');
+        toast({
+          title: "Error",
+          description: response.message || 'Failed to setup 2FA',
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (err) {
+      console.error('💥 Error setting up 2FA:', err);
+      let errorMessage = 'Failed to setup 2FA';
+      if (err && typeof err === 'object') {
+        if ('message' in err) {
+          errorMessage = (err as any).message;
+        } else if ('data' in err && (err as any).data?.message) {
+          errorMessage = (err as any).data.message;
+        }
+      }
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setSettingUp2FA(false);
+    }
+  }, [toast]);
+
+  const enable2FA = useCallback(async (data: TwoFactorEnableRequest): Promise<boolean> => {
+    setEnabling2FA(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Enabling 2FA with data:', data);
+      const response = await profileService.enable2FA(data);
+      console.log('📥 Enable 2FA response:', response);
+      
+      if (response.success) {
+        console.log('✅ 2FA enabled successfully');
+        toast({
+          title: "Success",
+          description: response.message || "Two-factor authentication enabled successfully",
+        });
+        
+        // Refresh profile data to get updated 2FA status
+        await loadProfile();
+        
+        return true;
+      } else {
+        console.log('❌ 2FA enable failed:', response);
+        setError(response.message || 'Failed to enable 2FA');
+        toast({
+          title: "Error",
+          description: response.message || 'Failed to enable 2FA',
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (err) {
+      console.error('💥 Error enabling 2FA:', err);
+      let errorMessage = 'Failed to enable 2FA';
+      if (err && typeof err === 'object') {
+        if ('message' in err) {
+          errorMessage = (err as any).message;
+        } else if ('data' in err && (err as any).data?.message) {
+          errorMessage = (err as any).data.message;
+        }
+      }
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setEnabling2FA(false);
+    }
+  }, [toast, loadProfile]);
+
+  const disable2FA = useCallback(async (data: TwoFactorDisableRequest): Promise<boolean> => {
+    setDisabling2FA(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Disabling 2FA with data:', data);
+      const response = await profileService.disable2FA(data);
+      console.log('📥 Disable 2FA response:', response);
+      
+      if (response.success) {
+        console.log('✅ 2FA disabled successfully');
+        toast({
+          title: "Success",
+          description: response.message || "Two-factor authentication disabled successfully",
+        });
+        
+        // Refresh profile data to get updated 2FA status
+        await loadProfile();
+        
+        return true;
+      } else {
+        console.log('❌ 2FA disable failed:', response);
+        setError(response.message || 'Failed to disable 2FA');
+        toast({
+          title: "Error",
+          description: response.message || 'Failed to disable 2FA',
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (err) {
+      console.error('💥 Error disabling 2FA:', err);
+      let errorMessage = 'Failed to disable 2FA';
+      if (err && typeof err === 'object') {
+        if ('message' in err) {
+          errorMessage = (err as any).message;
+        } else if ('data' in err && (err as any).data?.message) {
+          errorMessage = (err as any).data.message;
+        }
+      }
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setDisabling2FA(false);
+    }
+  }, [toast, loadProfile]);
+
+  const updatePreferences = useCallback(async (data: UpdatePreferencesRequest) => {
+    setUpdatingPreferences(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Updating preferences with data:', data);
+      const response = await profileService.updatePreferences(data);
+      console.log('📥 Update preferences response:', response);
+      
+      if (response.success && response.data) {
+        console.log('✅ Preferences updated successfully:', response.data);
+        setProfile(response.data);
+        toast({
+          title: "Success",
+          description: response.message || "Preferences updated successfully",
+        });
+      } else {
+        console.log('❌ Preferences update failed:', response);
+        setError(response.message || 'Failed to update preferences');
+        toast({
+          title: "Error",
+          description: response.message || 'Failed to update preferences',
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error('💥 Error updating preferences:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update preferences';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingPreferences(false);
+    }
+  }, [toast]);
+
+  const getUserActivity = useCallback(async (page: number = 1, limit: number = 10): Promise<UserActivity[]> => {
+    setLoadingActivity(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Getting user activity...');
+      const response = await profileService.getUserActivity(page, limit);
+      console.log('📥 User activity response:', response);
+      
+      if (response.success && response.data) {
+        console.log('✅ User activity retrieved successfully:', response.data);
+        return response.data;
+      } else {
+        console.log('❌ User activity retrieval failed:', response);
+        setError(response.message || 'Failed to get user activity');
+        toast({
+          title: "Error",
+          description: response.message || 'Failed to get user activity',
+          variant: "destructive",
+        });
+        return [];
+      }
+    } catch (err) {
+      console.error('💥 Error getting user activity:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get user activity';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoadingActivity(false);
+    }
+  }, [toast]);
+
   const resetError = useCallback(() => {
     setError(null);
   }, []);
-
-  // Don't auto-load profile on mount - let components call it explicitly when needed
-  // useEffect(() => {
-  //   loadProfile();
-  // }, [loadProfile]);
 
   return {
     profile,
@@ -351,6 +594,11 @@ export function useProfile(): UseProfileReturn {
     verifyingOtp,
     requestingReset,
     resettingPassword,
+    settingUp2FA,
+    enabling2FA,
+    disabling2FA,
+    updatingPreferences,
+    loadingActivity,
     loadProfile,
     updateProfile,
     uploadAvatar,
@@ -358,6 +606,11 @@ export function useProfile(): UseProfileReturn {
     verifyOtp,
     requestPasswordReset,
     resetPassword,
+    setup2FA,
+    enable2FA,
+    disable2FA,
+    updatePreferences,
+    getUserActivity,
     resetError,
   };
 } 

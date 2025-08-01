@@ -55,6 +55,16 @@ export interface LoginResponse {
   };
 }
 
+export interface LoginResponse2FA extends LoginResponse {
+  requiresOTP?: boolean;
+  tempToken?: string;
+}
+
+export interface Verify2FARequest {
+  otp: string;
+  tempToken: string;
+}
+
 export interface RefreshTokenResponse {
   accessToken: string;
   user: {
@@ -207,27 +217,57 @@ export interface UpdateTeamMemberRequest {
 }
 
 // Enquiry Types
+export interface Reply {
+  adminName: string;
+  adminEmail: string;
+  replyMessage: string;
+  repliedAt: string;
+}
+
 export interface Enquiry {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
+  phone: string;
   subject: string;
+  inquiryCategory: string;
   message: string;
-  status: 'new' | 'in_progress' | 'resolved' | 'closed';
+  status: 'new' | 'replied' | 'in-progress' | 'closed';
+  isStarred: boolean;
+  ipAddress: string;
+  userAgent: string;
+  adminNotes?: string;
+  repliedAt?: string;
+  replies?: Reply[];
   createdAt: string;
   updatedAt: string;
 }
 
+export interface EnquiriesResponse {
+  enquiries: Enquiry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface CreateEnquiryRequest {
-  name: string;
+  fullName: string;
   email: string;
+  phone: string;
   subject: string;
+  inquiryCategory: string;
   message: string;
 }
 
 export interface UpdateEnquiryRequest {
-  status: 'new' | 'in_progress' | 'resolved' | 'closed';
-  response?: string;
+  status?: 'new' | 'replied' | 'in-progress' | 'closed';
+  isStarred?: boolean;
+  adminNotes?: string;
+}
+
+export interface ReplyToEnquiryRequest {
+  replyMessage: string;
 }
 
 // Settings Types
@@ -283,5 +323,49 @@ export interface QueryParams {
   sortOrder?: 'asc' | 'desc';
   status?: string;
   category?: string;
+  starred?: boolean;
+  email?: string;
+  phone?: string;
+  startDate?: string;
+  endDate?: string;
+  hasReplies?: boolean;
+  hasAdminNotes?: boolean;
   [key: string]: any;
+}
+
+export interface EnquiryStats {
+  total: number;
+  new: number;
+  inProgress: number;
+  replied: number;
+  closed: number;
+  starred: number;
+}
+
+export interface FilterOption {
+  value: string;
+  count: number;
+}
+
+export interface FilterOptions {
+  categories: FilterOption[];
+  statuses: FilterOption[];
+  dateRanges: {
+    today: number;
+    yesterday: number;
+    last7Days: number;
+    last30Days: number;
+    thisMonth: number;
+    lastMonth: number;
+  };
+}
+
+export interface EnquiryListResponse {
+  enquiries: Enquiry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 } 

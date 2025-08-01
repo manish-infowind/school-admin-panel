@@ -4,17 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle, Shield } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/authContext";
 import { LogoIcon } from "@/components/ui/logo-icon";
+import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [loginResponse, setLoginResponse] = useState<any>(null);
+  const [is2FAFlow, setIs2FAFlow] = useState(false);
   
   // Validation states
   const [emailError, setEmailError] = useState('');
@@ -24,7 +28,7 @@ const Login = () => {
     password: false
   });
   
-  const { login, isAuthenticated, isLoggingIn, loginError } = useAuth();
+  const { login, verify2FA, isAuthenticated, isLoggingIn, isVerifying2FA, loginError, verify2FAError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -117,7 +121,21 @@ const Login = () => {
     login(email, password);
   };
 
-  // Handle login error
+  // Handle 2FA verification
+  const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
+    try {
+      await verify2FA(otpData);
+      setShow2FAModal(false);
+      setLoginResponse(null);
+      setIs2FAFlow(false);
+      return true;
+    } catch (error) {
+      console.error('2FA verification failed:', error);
+      return false;
+    }
+  };
+
+  // Handle login response and 2FA
   React.useEffect(() => {
     if (loginError) {
       console.log('🔍 Login error received:', loginError);
@@ -138,7 +156,45 @@ const Login = () => {
     }
   }, [loginError]);
 
+  // Check for 2FA requirement
+  React.useEffect(() => {
+    const tempToken = localStorage.getItem('tempToken');
+    if (tempToken && !isLoggingIn && !isVerifying2FA) {
+      console.log('🔐 2FA required, showing modal');
+      setShow2FAModal(true);
+      setIs2FAFlow(true);
+    }
+  }, [isLoggingIn, isVerifying2FA]);
 
+
+
+  // Don't show login form if user is already authenticated
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
+        <div className="max-w-md w-full space-y-8 p-8">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center justify-center mb-6">
+              <LogoIcon size="xl" />
+            </div>
+
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent mb-2">
+              MedoScopic Pharma
+            </h1>
+
+            <p className="text-sm text-muted-foreground mb-8">
+              Redirecting to Dashboard...
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
@@ -290,6 +346,20 @@ const Login = () => {
           <p>© 2024 MedoScopic Pharma. All rights reserved.</p>
         </motion.div>
       </div>
+
+      {/* Two-Factor Authentication Modal */}
+      <TwoFactorLoginModal
+        isOpen={show2FAModal}
+        onClose={() => {
+          setShow2FAModal(false);
+          setIs2FAFlow(false);
+          // Clear temp token if user cancels
+          localStorage.removeItem('tempToken');
+        }}
+        onVerify2FA={handleVerify2FA}
+        verifying2FA={isVerifying2FA}
+        userEmail={email}
+      />
     </div>
   );
 };

@@ -1,255 +1,181 @@
-# Profile API Integration
+# API Integration Documentation
 
-This document outlines the complete Profile API integration for the MedoScopic Admin Panel.
+This directory contains the API integration layer for the admin panel, including services, hooks, and types for communicating with the backend.
 
-## Overview
+## Services
 
-The Profile API integration provides full CRUD operations for user profiles, including:
-- Profile data retrieval and updates
-- Avatar upload functionality
-- Secure password changes with OTP verification
-- Password reset capabilities
-- User activity tracking
+### EnquiryService
+
+The `EnquiryService` provides methods for managing enquiries through the API.
+
+#### Methods
+
+- `getEnquiries(params?)` - Fetch enquiries with pagination, search, and filters
+- `getEnquiry(id)` - Get a single enquiry by ID
+- `createEnquiry(data)` - Create a new enquiry
+- `updateEnquiry(id, data)` - Update an enquiry
+- `updateEnquiryStatus(id, status)` - Update enquiry status
+- `toggleEnquiryStar(id, isStarred)` - Star/unstar an enquiry
+- `updateAdminNotes(id, adminNotes)` - Update admin notes
+- `deleteEnquiry(id)` - Delete an enquiry
+
+#### Example Usage
+
+```typescript
+import { EnquiryService } from '@/api';
+
+// Fetch enquiries with filters
+const response = await EnquiryService.getEnquiries({
+  page: 1,
+  limit: 10,
+  search: "Sarah",
+  status: "new",
+  category: "Product Inquiry"
+});
+
+// Update enquiry status
+await EnquiryService.updateEnquiryStatus("enquiry-id", "replied");
+
+// Toggle star
+await EnquiryService.toggleEnquiryStar("enquiry-id", true);
+```
+
+## Hooks
+
+### useEnquiries
+
+The `useEnquiries` hook provides React state management for enquiries with built-in API integration.
+
+#### Features
+
+- Automatic data fetching
+- Loading states
+- Error handling
+- Real-time updates
+- Search and filtering
+- Pagination support
+
+#### Example Usage
+
+```typescript
+import { useEnquiries } from '@/api/hooks/useEnquiries';
+
+function EnquiriesPage() {
+  const {
+    enquiries,
+    selectedEnquiry,
+    pagination,
+    isLoading,
+    isUpdating,
+    error,
+    fetchEnquiries,
+    updateStatus,
+    toggleStar,
+    deleteEnquiry,
+    setSelectedEnquiry,
+  } = useEnquiries({
+    autoFetch: true,
+    limit: 10,
+  });
+
+  const handleStatusChange = async (id: string, status: string) => {
+    await updateStatus(id, status);
+  };
+
+  return (
+    <div>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        enquiries.map(enquiry => (
+          <div key={enquiry.id}>
+            {enquiry.fullName} - {enquiry.status}
+            <button onClick={() => handleStatusChange(enquiry.id, "replied")}>
+              Mark as Replied
+            </button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+```
 
 ## API Endpoints
 
-### Base URL
-```
-http://localhost:3000/admin
-```
+The enquiries API supports the following endpoints:
 
-### Authentication
-All endpoints require JWT token authentication:
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
+- `GET /admin/enquiries` - List enquiries with query parameters
+- `GET /admin/enquiries/:id` - Get single enquiry
+- `PUT /admin/enquiries/:id` - Update enquiry
+- `DELETE /admin/enquiries/:id` - Delete enquiry
 
-## Endpoint Details
+### Query Parameters
 
-### 1. Get User Profile
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 10)
+- `search` - Search term for name, email, subject, or category
+- `status` - Filter by status (new, replied, in-progress, closed)
+- `category` - Filter by inquiry category
+
+### Request/Response Examples
+
+#### List Enquiries
 ```bash
-GET /admin/users/profile?userId=YOUR_USER_ID
+curl -X GET "http://localhost:3000/admin/enquiries?page=1&limit=10" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-**Response:**
+Response:
 ```json
 {
   "success": true,
-  "message": "Profile retrieved successfully",
+  "message": "Enquiries retrieved successfully",
   "data": {
-    "id": "68810a3ca1ce8410258de5b9",
-    "firstName": "Admin",
-    "lastName": "User",
-    "email": "admin@medoscopic.com",
-    "phone": "+1 (555) 123-4567",
-    "location": "San Francisco, CA",
-    "bio": "Admin user for MedoScopic Pharma content management system.",
-    "avatar": "/uploads/avatars/admin-avatar.jpg",
-    "role": "admin",
-    "joinDate": "2024-01-15T00:00:00Z",
-    "lastLogin": "2024-01-20T10:30:00Z",
-    "isActive": true,
-    "permissions": ["read", "write", "delete", "admin"]
+    "enquiries": [...],
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3
   }
 }
 ```
 
-### 2. Update User Profile
+#### Update Enquiry Status
 ```bash
-PUT /admin/users/profile?userId=YOUR_USER_ID
-Content-Type: application/json
-
-{
-  "firstName": "Admin",
-  "lastName": "User",
-  "email": "admin@medoscopic.com",
-  "phone": "+1 (555) 123-4567",
-  "location": "San Francisco, CA",
-  "bio": "Admin user for MedoScopic Pharma content management system."
-}
+curl -X PUT http://localhost:3000/admin/enquiries/65f8a1b2c3d4e5f6a7b8c9d0 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "replied"}'
 ```
 
-### 3. Upload Avatar
-```bash
-POST /admin/users/profile/avatar?userId=YOUR_USER_ID
-Content-Type: multipart/form-data
+## Types
 
-file: [image file]
-```
+The API types are defined in `types.ts` and include:
 
-### 4. Change Password (Sends OTP)
-```bash
-PUT /admin/users/profile/password?userId=YOUR_USER_ID
-Content-Type: application/json
-
-{
-  "currentPassword": "oldPassword123",
-  "newPassword": "NewPassword456!",
-  "confirmPassword": "NewPassword456!"
-}
-```
-
-### 5. Verify OTP
-```bash
-POST /admin/users/profile/password/verify-otp?userId=YOUR_USER_ID
-Content-Type: application/json
-
-{
-  "otp": "123456"
-}
-```
-
-## Frontend Integration
-
-### Profile Service
-The `ProfileService` class handles all API interactions:
-
-```typescript
-import { profileService } from '@/api/services/profileService';
-
-// Get profile
-const profile = await profileService.getProfile();
-
-// Update profile
-await profileService.updateProfile({
-  firstName: "Admin",
-  lastName: "User",
-  email: "admin@medoscopic.com",
-  phone: "+1 (555) 123-4567",
-  location: "San Francisco, CA",
-  bio: "Admin user for MedoScopic Pharma content management system."
-});
-
-// Upload avatar
-await profileService.uploadAvatar(file);
-
-// Change password
-await profileService.changePassword({
-  currentPassword: "oldPassword123",
-  newPassword: "NewPassword456!",
-  confirmPassword: "NewPassword456!"
-});
-
-// Verify OTP
-await profileService.verifyOtp({ otp: "123456" });
-```
-
-### Profile Hook
-The `useProfile` hook provides React state management:
-
-```typescript
-import { useProfile } from '@/api/hooks/useProfile';
-
-function ProfileComponent() {
-  const {
-    profile,
-    loading,
-    error,
-    saving,
-    uploadingAvatar,
-    changingPassword,
-    verifyingOtp,
-    updateProfile,
-    uploadAvatar,
-    changePassword,
-    verifyOtp,
-    resetError
-  } = useProfile();
-
-  // Use the hook methods and states
-}
-```
-
-## User ID Management
-
-The service automatically retrieves the user ID from localStorage:
-
-```typescript
-// Expected localStorage structure
-{
-  "user": {
-    "id": "68810a3ca1ce8410258de5b9",
-    "firstName": "Admin",
-    "lastName": "User",
-    "email": "admin@medoscopic.com",
-    // ... other user data
-  }
-}
-```
+- `Enquiry` - Enquiry data structure
+- `EnquiriesResponse` - Paginated response structure
+- `CreateEnquiryRequest` - Request for creating enquiries
+- `UpdateEnquiryRequest` - Request for updating enquiries
 
 ## Error Handling
 
-The service includes comprehensive error handling:
+All API calls include comprehensive error handling:
 
-- **401 Unauthorized**: User needs to login again
-- **403 Forbidden**: User lacks permission
-- **404 Not Found**: Profile not found
-- **422 Validation Error**: Invalid input data
-- **500 Server Error**: Backend error
+- Network errors
+- Authentication errors
+- Validation errors
+- Server errors
 
-## Features
+Errors are automatically displayed as toast notifications and can be handled programmatically through the hook's error state.
 
-### ✅ Implemented Features
-- [x] Profile data retrieval
-- [x] Profile updates
-- [x] Avatar upload
-- [x] Password change with OTP
-- [x] OTP verification
-- [x] Error handling
-- [x] Loading states
-- [x] Toast notifications
-- [x] Form validation
-- [x] User ID auto-detection
+## Loading States
 
-### 🔄 User Experience Flow
-1. **Profile Loading**: Automatically loads user profile on page load
-2. **Profile Updates**: Users can update their information and save changes
-3. **Avatar Upload**: Click camera icon to upload new profile picture
-4. **Password Change**: 
-   - Click "Change Password" button
-   - Enter current and new passwords
-   - Receive OTP via email
-   - Enter OTP to complete change
+The `useEnquiries` hook provides multiple loading states:
 
-## Testing
+- `isLoading` - Initial data loading
+- `isCreating` - Creating new enquiry
+- `isUpdating` - Updating enquiry
+- `isDeleting` - Deleting enquiry
 
-### Manual Testing
-1. Navigate to Profile page
-2. Verify profile data loads correctly
-3. Update profile information
-4. Upload new avatar
-5. Test password change flow
-
-### API Testing
-Use the provided cURL commands to test each endpoint manually.
-
-## Security Considerations
-
-- All endpoints require JWT authentication
-- Password changes require OTP verification
-- User ID is automatically included from authenticated session
-- Form data is validated before submission
-- File uploads are restricted to image types
-
-## Troubleshooting
-
-### Common Issues
-1. **Profile not loading**: Check localStorage for user data
-2. **API errors**: Verify JWT token is valid
-3. **Upload failures**: Check file size and type restrictions
-4. **OTP issues**: Verify email is correct and OTP is valid
-
-### Debug Logging
-The service includes console logging for debugging:
-- User ID retrieval
-- API call URLs
-- Response data
-- Error details
-
-## Dependencies
-
-- `axios` for HTTP requests
-- `react` for UI components
-- `framer-motion` for animations
-- `lucide-react` for icons
-- `@/hooks/use-toast` for notifications 
+These states can be used to show loading indicators and disable actions during API calls. 

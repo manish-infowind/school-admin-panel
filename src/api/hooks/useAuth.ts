@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthService } from '../services/authService';
-import { LoginRequest, User } from '../types';
+import { LoginRequest, User, Verify2FARequest } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 // Query keys for authentication
@@ -30,6 +30,13 @@ export const useAuth = () => {
     onSuccess: (response) => {
       console.log('🎉 Login mutation success:', response);
       if (response.success && response.data) {
+        // Check if 2FA is required
+        if (response.data.requiresOTP) {
+          console.log('🔐 2FA required, not navigating yet');
+          // Don't navigate - 2FA verification is needed
+          return;
+        }
+        
         // Update user in cache
         queryClient.setQueryData(authKeys.user(), response.data.user);
         
@@ -40,6 +47,29 @@ export const useAuth = () => {
     },
     onError: (error) => {
       console.error('💥 Login mutation error:', error);
+      // Don't navigate on error - let the component handle it
+    },
+  });
+
+  // Verify 2FA mutation
+  const verify2FAMutation = useMutation({
+    mutationFn: (otpData: Verify2FARequest) => {
+      console.log('🔐 2FA verification triggered with data:', otpData);
+      return AuthService.verify2FA(otpData);
+    },
+    onSuccess: (response) => {
+      console.log('🎉 2FA verification success:', response);
+      if (response.success && response.data) {
+        // Update user in cache
+        queryClient.setQueryData(authKeys.user(), response.data.user);
+        
+        // Navigate to admin dashboard after successful 2FA verification
+        console.log('🔄 Navigating to admin dashboard after 2FA...');
+        navigate('/admin', { replace: true });
+      }
+    },
+    onError: (error) => {
+      console.error('💥 2FA verification error:', error);
       // Don't navigate on error - let the component handle it
     },
   });
@@ -84,16 +114,19 @@ export const useAuth = () => {
     
     // Actions
     login: loginMutation.mutate,
+    verify2FA: verify2FAMutation.mutate,
     logout: logoutMutation.mutate,
     refreshToken: refreshTokenMutation.mutate,
     
     // Mutation states
     isLoggingIn: loginMutation.isPending,
+    isVerifying2FA: verify2FAMutation.isPending,
     isLoggingOut: logoutMutation.isPending,
     isRefreshingToken: refreshTokenMutation.isPending,
     
     // Errors
     loginError: loginMutation.error,
+    verify2FAError: verify2FAMutation.error,
     logoutError: logoutMutation.error,
     refreshTokenError: refreshTokenMutation.error,
   };

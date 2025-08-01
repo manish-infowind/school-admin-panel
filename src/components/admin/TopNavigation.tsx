@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./ThemeToggle";
-import { Settings, LogOut, User, Menu, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Settings, LogOut, User, Menu, Loader2, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/authContext";
@@ -103,6 +104,15 @@ export function TopNavigation({
                 <p className="text-xs leading-none text-muted-foreground">
                   {profile?.email || user?.email || 'admin@medoscopic.com'}
                 </p>
+                {profile?.role && (
+                  <Badge
+                    variant="secondary"
+                    className="w-fit bg-gradient-to-r from-brand-green to-brand-teal text-white font-medium shadow-sm border-0 text-xs"
+                  >
+                    <Shield className="h-2 w-2 mr-1" />
+                    {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+                  </Badge>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

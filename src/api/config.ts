@@ -18,6 +18,7 @@ export const API_CONFIG = {
       LOGIN: '/auth/login',
       LOGOUT: '/auth/logout',
       REFRESH: '/auth/refresh',
+      VERIFY_2FA: '/auth/verify-2fa',
     },
     USERS: {
       LIST: '/users',
@@ -25,6 +26,16 @@ export const API_CONFIG = {
       UPDATE: '/users/:id',
       DELETE: '/users/:id',
       PROFILE: '/users/profile',
+      PROFILE_AVATAR: '/users/profile/avatar',
+      PROFILE_PASSWORD: '/users/profile/password',
+      PROFILE_PASSWORD_VERIFY_OTP: '/users/profile/password/verify-otp',
+      PROFILE_PASSWORD_RESET_REQUEST: '/users/profile/password/reset-request',
+      PROFILE_PASSWORD_RESET: '/users/profile/password/reset',
+      PROFILE_PREFERENCES: '/users/profile/preferences',
+      PROFILE_ACTIVITY: '/users/profile/activity',
+      PROFILE_2FA_SETUP: '/users/profile/2fa/setup',
+      PROFILE_2FA_ENABLE: '/users/profile/2fa/enable',
+      PROFILE_2FA_DISABLE: '/users/profile/2fa/disable',
     },
     PRODUCTS: {
       LIST: '/products',
@@ -60,6 +71,12 @@ export const API_CONFIG = {
       CREATE: '/enquiries',
       UPDATE: '/enquiries/:id',
       DELETE: '/enquiries/:id',
+      REPLY: '/enquiries/:id/reply',
+      STATS: '/enquiries/stats/overview',
+      FILTER_OPTIONS: '/enquiries/filter-options',
+    },
+    CONTACT: {
+      SUBMIT: '/contact',
     },
     FAQS: {
       LIST: '/faqs',

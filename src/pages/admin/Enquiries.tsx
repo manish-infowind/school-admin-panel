@@ -33,164 +33,316 @@ import {
   CheckCircle,
   XCircle,
   User,
+  Loader2,
+  CalendarDays,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Enquiry {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  subject: string;
-  message: string;
-  status: "new" | "replied" | "in-progress" | "closed";
-  priority: "low" | "medium" | "high";
-  submittedAt: string;
-  lastReply?: string;
-  source: "contact-form" | "product-inquiry" | "support";
-  isStarred: boolean;
-}
-
-const initialEnquiries: Enquiry[] = [
-  {
-    id: 1,
-    name: "Dr. Sarah Mitchell",
-    email: "sarah.mitchell@hospital.com",
-    phone: "+1 (555) 123-4567",
-    subject: "MedScope Pro X1 Product Inquiry",
-    message:
-      "Hello, I'm interested in learning more about the MedScope Pro X1 for our cardiology department. Could you please provide detailed specifications and pricing information? We're looking to upgrade our diagnostic equipment.",
-    status: "new",
-    priority: "high",
-    submittedAt: "2024-01-15T10:30:00Z",
-    source: "product-inquiry",
-    isStarred: true,
-  },
-  {
-    id: 2,
-    name: "Michael Rodriguez",
-    email: "m.rodriguez@clinic.org",
-    phone: "+1 (555) 987-6543",
-    subject: "Technical Support Request",
-    message:
-      "We're experiencing some connectivity issues with our current MedoScopic device. The WiFi connection keeps dropping during procedures. Can someone assist us with troubleshooting?",
-    status: "in-progress",
-    priority: "medium",
-    submittedAt: "2024-01-14T14:22:00Z",
-    lastReply: "2024-01-14T16:45:00Z",
-    source: "support",
-    isStarred: false,
-  },
-  {
-    id: 3,
-    name: "Dr. Emily Chen",
-    email: "emily.chen@research.edu",
-    subject: "Partnership Opportunity",
-    message:
-      "I'm reaching out from the University Medical Research Center. We're interested in exploring potential research partnerships and would like to discuss collaboration opportunities with your R&D team.",
-    status: "replied",
-    priority: "medium",
-    submittedAt: "2024-01-13T09:15:00Z",
-    lastReply: "2024-01-13T11:30:00Z",
-    source: "contact-form",
-    isStarred: false,
-  },
-  {
-    id: 4,
-    name: "James Thompson",
-    email: "j.thompson@healthcare.com",
-    phone: "+1 (555) 456-7890",
-    subject: "Bulk Order Inquiry",
-    message:
-      "We're a medical equipment distributor interested in becoming an authorized reseller. Could you provide information about your partner program and bulk pricing for hospitals?",
-    status: "new",
-    priority: "high",
-    submittedAt: "2024-01-12T16:45:00Z",
-    source: "contact-form",
-    isStarred: true,
-  },
-  {
-    id: 5,
-    name: "Dr. Lisa Wang",
-    email: "lisa.wang@medicalcenter.org",
-    subject: "Training and Certification",
-    message:
-      "Our medical staff needs training on the latest MedoScopic devices. Do you offer certification programs or on-site training sessions?",
-    status: "closed",
-    priority: "low",
-    submittedAt: "2024-01-10T11:20:00Z",
-    lastReply: "2024-01-11T09:15:00Z",
-    source: "support",
-    isStarred: false,
-  },
-];
+import { useEnquiries } from "@/api/hooks/useEnquiries";
+import { Enquiry } from "@/api/types";
+import { format } from "date-fns";
+import { API_CONFIG } from "@/api/config";
 
 export default function Enquiries() {
   const { toast } = useToast();
-  const [enquiries, setEnquiries] = useState(initialEnquiries);
-  const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [starredFilter, setStarredFilter] = useState<string>("all");
+  const [repliesFilter, setRepliesFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [datePickerPosition, setDatePickerPosition] = useState<'bottom' | 'top'>('bottom');
+  const [datePickerHorizontalPosition, setDatePickerHorizontalPosition] = useState<'left' | 'right'>('left');
   const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [enquiryToDelete, setEnquiryToDelete] = useState<Enquiry | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Ref for date picker click outside
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  // Use the API hook
+  const {
+    enquiries,
+    selectedEnquiry,
+    pagination,
+    isLoading,
+    isUpdating,
+    isDeleting,
+    error,
+    fetchEnquiries,
+    getEnquiry,
+    setSelectedEnquiry,
+    updateStatus,
+    toggleStar,
+    deleteEnquiry,
+    replyToEnquiry,
+    clearError,
+  } = useEnquiries({
+    autoFetch: true,
+    limit: 10,
+  });
+
+  // Filter enquiries based on search and status
   const filteredEnquiries = enquiries.filter((enquiry) => {
     const matchesSearch =
-      enquiry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enquiry.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enquiry.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enquiry.subject.toLowerCase().includes(searchTerm.toLowerCase());
+      enquiry.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enquiry.inquiryCategory.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" || enquiry.status === statusFilter;
-    const matchesPriority =
-      priorityFilter === "all" || enquiry.priority === priorityFilter;
 
-    return matchesSearch && matchesStatus && matchesPriority;
+    const matchesCategory =
+      categoryFilter === "all" || enquiry.inquiryCategory === categoryFilter;
+
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const handleStatusChange = (
-    enquiryId: number,
-    newStatus: Enquiry["status"],
-  ) => {
-    setEnquiries((prev) =>
-      prev.map((enquiry) =>
-        enquiry.id === enquiryId
-          ? {
-              ...enquiry,
-              status: newStatus,
-              lastReply:
-                newStatus === "replied"
-                  ? new Date().toISOString()
-                  : enquiry.lastReply,
-            }
-          : enquiry,
-      ),
-    );
+  // Check if any filters are active
+  const hasActiveFilters = 
+    searchTerm || 
+    statusFilter !== "all" || 
+    categoryFilter !== "all" || 
+    starredFilter !== "all" || 
+    repliesFilter !== "all" || 
+    startDate || 
+    endDate;
 
-    toast({
-      title: "Status Updated",
-      description: `Enquiry status changed to ${newStatus}.`,
+  // Handle search and filter changes with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when filters change
+      
+      const params = {
+        page: 1,
+        search: searchTerm || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        category: categoryFilter !== "all" ? categoryFilter : undefined,
+        starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
+        hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+      };
+      
+      console.log('📅 Raw dates:', { startDate, endDate });
+      console.log('📅 Formatted dates:', { 
+        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined
+      });
+      
+      console.log('🔍 Fetching enquiries with params:', params);
+      console.log('📅 Date filters:', { startDate, endDate });
+      console.log('🎯 Active filters count:', Object.values(params).filter(v => v !== undefined).length);
+      console.log('🎯 Sort params:', { sortBy, sortOrder });
+      console.log('🎯 Date params:', { 
+        startDate: params.startDate, 
+        endDate: params.endDate,
+        startDateType: typeof params.startDate,
+        endDateType: typeof params.endDate
+      });
+      
+
+      
+      fetchEnquiries(params);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, statusFilter, categoryFilter, starredFilter, repliesFilter, sortBy, sortOrder, startDate, endDate, fetchEnquiries]);
+
+  // Handle click outside date picker and window resize
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsDatePickerOpen(false);
+      }
+    };
+
+    const handleWindowResize = () => {
+      if (isDatePickerOpen) {
+        setIsDatePickerOpen(false);
+      }
+    };
+
+    if (isDatePickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('resize', handleWindowResize);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleWindowResize);
+    };
+  }, [isDatePickerOpen]);
+
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchEnquiries({
+      page,
+      search: searchTerm || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      category: categoryFilter !== "all" ? categoryFilter : undefined,
+      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
+      hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+      endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
     });
   };
 
-  const handleStarToggle = (enquiryId: number) => {
-    setEnquiries((prev) =>
-      prev.map((enquiry) =>
-        enquiry.id === enquiryId
-          ? { ...enquiry, isStarred: !enquiry.isStarred }
-          : enquiry,
-      ),
-    );
+  // Handle date range changes
+  const handleDateRangeChange = (from: Date | undefined, to: Date | undefined) => {
+    console.log('📅 Date range changed:', { from, to });
+    console.log('📅 Formatted dates:', { 
+      from: from ? format(from, 'yyyy-MM-dd') : undefined,
+      to: to ? format(to, 'yyyy-MM-dd') : undefined
+    });
+    setStartDate(from);
+    setEndDate(to);
+    setIsDatePickerOpen(false);
+    
+    // Immediately trigger API call with new dates
+    const params = {
+      page: 1,
+      search: searchTerm || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      category: categoryFilter !== "all" ? categoryFilter : undefined,
+      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
+      hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      startDate: from ? format(from, 'yyyy-MM-dd') : undefined,
+      endDate: to ? format(to, 'yyyy-MM-dd') : undefined,
+    };
+    
+    console.log('📅 Immediate API call with params:', params);
+    fetchEnquiries(params);
   };
 
-  const handleDelete = (enquiryId: number) => {
+  // Clear date filters
+  const clearDateFilters = () => {
+    console.log('🗑️ Clearing date filters');
+    setStartDate(undefined);
+    setEndDate(undefined);
+    
+    // Immediately trigger API call without dates
+    const params = {
+      page: 1,
+      search: searchTerm || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      category: categoryFilter !== "all" ? categoryFilter : undefined,
+      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
+      hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+    };
+    
+    console.log('🗑️ Immediate API call after clearing dates:', params);
+    fetchEnquiries(params);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    console.log('🗑️ Clearing all filters');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setStarredFilter("all");
+    setRepliesFilter("all");
+    setSortBy("createdAt");
+    setSortOrder("desc");
+    setStartDate(undefined);
+    setEndDate(undefined);
+    
+    // Immediately trigger API call with cleared filters
+    console.log('🗑️ Immediate API call after clearing all filters');
+    fetchEnquiries({
+      page: 1,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+  };
+
+  // Toggle date picker with positioning logic
+  const toggleDatePicker = () => {
+    if (!isDatePickerOpen) {
+      // Calculate position before opening
+      const button = datePickerRef.current?.querySelector('button');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const spaceRight = viewportWidth - rect.left;
+        const spaceLeft = rect.left;
+        
+        // Vertical positioning
+        if (spaceBelow < 400 && spaceAbove > 400) {
+          setDatePickerPosition('top');
+        } else {
+          setDatePickerPosition('bottom');
+        }
+        
+        // Horizontal positioning
+        if (spaceRight < 320 && spaceLeft > 320) {
+          setDatePickerHorizontalPosition('right');
+        } else {
+          setDatePickerHorizontalPosition('left');
+        }
+      }
+    }
+    setIsDatePickerOpen(!isDatePickerOpen);
+  };
+
+  const handleStatusChange = async (enquiryId: string, newStatus: Enquiry["status"]) => {
+    const success = await updateStatus(enquiryId, newStatus);
+    if (success) {
+      toast({
+        title: "Status Updated",
+        description: `Enquiry status changed to ${newStatus}.`,
+      });
+    }
+  };
+
+  const handleStarToggle = async (enquiryId: string) => {
     const enquiry = enquiries.find((e) => e.id === enquiryId);
-    if (enquiry && window.confirm(`Delete enquiry from ${enquiry.name}?`)) {
-      setEnquiries((prev) => prev.filter((e) => e.id !== enquiryId));
-      if (selectedEnquiry?.id === enquiryId) {
+    if (enquiry) {
+      const success = await toggleStar(enquiryId, !enquiry.isStarred);
+      if (success) {
+        toast({
+          title: "Star Updated",
+          description: `Enquiry ${enquiry.isStarred ? "unstarred" : "starred"}.`,
+        });
+      }
+    }
+  };
+
+  const handleDeleteClick = (enquiryId: string) => {
+    const enquiry = enquiries.find((e) => e.id === enquiryId);
+    if (enquiry) {
+      setEnquiryToDelete(enquiry);
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!enquiryToDelete) return;
+
+    const success = await deleteEnquiry(enquiryToDelete.id);
+    if (success) {
+      if (selectedEnquiry?.id === enquiryToDelete.id) {
         setSelectedEnquiry(null);
       }
       toast({
@@ -198,18 +350,42 @@ export default function Enquiries() {
         description: "The enquiry has been deleted successfully.",
       });
     }
+
+    setIsDeleteDialogOpen(false);
+    setEnquiryToDelete(null);
   };
 
-  const handleReply = () => {
-    if (selectedEnquiry && replyMessage.trim()) {
-      handleStatusChange(selectedEnquiry.id, "replied");
-      setReplyMessage("");
-      setIsReplyDialogOpen(false);
+  const handleDeleteCancel = () => {
+    setIsDeleteDialogOpen(false);
+    setEnquiryToDelete(null);
+  };
 
+  const handleEnquirySelect = async (enquiryId: string) => {
+    try {
+      await getEnquiry(enquiryId);
+    } catch (error) {
+      console.error('Failed to fetch enquiry details:', error);
       toast({
-        title: "Reply Sent",
-        description: `Your reply has been sent to ${selectedEnquiry.name}.`,
+        title: "Error",
+        description: "Failed to load enquiry details. Please try again.",
+        variant: "destructive",
       });
+    }
+  };
+
+  const handleReply = async () => {
+    if (selectedEnquiry && replyMessage.trim()) {
+      const success = await replyToEnquiry(selectedEnquiry.id, {
+        replyMessage: replyMessage.trim()
+      });
+      if (success) {
+        setReplyMessage("");
+        setIsReplyDialogOpen(false);
+        toast({
+          title: "Reply Sent",
+          description: `Your reply has been sent to ${selectedEnquiry.fullName}.`,
+        });
+      }
     }
   };
 
@@ -233,21 +409,6 @@ export default function Enquiries() {
       >
         {config.label}
       </Badge>
-    );
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const priorityConfig = {
-      low: { color: "text-green-600", label: "Low" },
-      medium: { color: "text-yellow-600", label: "Medium" },
-      high: { color: "text-red-600", label: "High" },
-    };
-
-    const config = priorityConfig[priority as keyof typeof priorityConfig];
-    return (
-      <span className={`text-xs font-medium ${config.color}`}>
-        {config.label}
-      </span>
     );
   };
 
@@ -294,6 +455,62 @@ export default function Enquiries() {
       {/* Filters and Search */}
       <Card>
         <CardContent className="pt-6">
+          {hasActiveFilters && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Active Filters:</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {searchTerm && (
+                  <Badge variant="outline" className="text-xs">
+                    Search: "{searchTerm}"
+                  </Badge>
+                )}
+                {statusFilter !== "all" && (
+                  <Badge variant="outline" className="text-xs">
+                    Status: {statusFilter}
+                  </Badge>
+                )}
+                {categoryFilter !== "all" && (
+                  <Badge variant="outline" className="text-xs">
+                    Category: {categoryFilter}
+                  </Badge>
+                )}
+                {starredFilter !== "all" && (
+                  <Badge variant="outline" className="text-xs">
+                    Starred: {starredFilter === "true" ? "Yes" : "No"}
+                  </Badge>
+                )}
+                {repliesFilter !== "all" && (
+                  <Badge variant="outline" className="text-xs">
+                    Replies: {repliesFilter === "true" ? "Has" : "None"}
+                  </Badge>
+                )}
+
+                {startDate && (
+                  <Badge variant="outline" className="text-xs">
+                    From: {format(startDate, 'MMM dd, yyyy')}
+                  </Badge>
+                )}
+                {endDate && (
+                  <Badge variant="outline" className="text-xs">
+                    To: {format(endDate, 'MMM dd, yyyy')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -304,7 +521,20 @@ export default function Enquiries() {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <Button
+              variant={hasActiveFilters ? "default" : "outline"}
+              onClick={clearAllFilters}
+              className={`px-3 py-2 text-sm ${hasActiveFilters ? 'bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white' : ''}`}
+            >
+              Clear All Filters
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  Active
+                </Badge>
+              )}
+            </Button>
+
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -316,148 +546,457 @@ export default function Enquiries() {
                 <option value="replied">Replied</option>
                 <option value="closed">Closed</option>
               </select>
+
               <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-3 py-2 border border-border rounded-md bg-background text-sm"
               >
-                <option value="all">All Priority</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="all">All Categories</option>
+                <option value="Product Inquiry">Product Inquiry</option>
+                <option value="Technical Support">Technical Support</option>
+                <option value="General Inquiry">General Inquiry</option>
+                <option value="Sales Inquiry">Sales Inquiry</option>
+                <option value="Partnership">Partnership</option>
+                <option value="Other">Other</option>
               </select>
+
+              <select
+                value={starredFilter}
+                onChange={(e) => setStarredFilter(e.target.value)}
+                className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+              >
+                <option value="all">All Starred</option>
+                <option value="true">Starred</option>
+                <option value="false">Not Starred</option>
+              </select>
+
+              <select
+                value={repliesFilter}
+                onChange={(e) => setRepliesFilter(e.target.value)}
+                className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+              >
+                <option value="all">All Replies</option>
+                <option value="true">Has Replies</option>
+                <option value="false">No Replies</option>
+              </select>
+
+
+
+
+
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
+              </select>
+
+              {/* Date Range Filter */}
+              <div className="relative" ref={datePickerRef}>
+                <Button
+                  variant={startDate || endDate ? "default" : "outline"}
+                  onClick={toggleDatePicker}
+                  className={`px-3 py-2 h-auto text-sm ${startDate || endDate ? 'bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white' : ''}`}
+                >
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  {startDate && endDate ? (
+                    `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`
+                  ) : startDate ? (
+                    `From ${format(startDate, 'MMM dd, yyyy')}`
+                  ) : endDate ? (
+                    `Until ${format(endDate, 'MMM dd, yyyy')}`
+                  ) : (
+                    "Date Range"
+                  )}
+                  {(startDate || endDate) && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      Active
+                    </Badge>
+                  )}
+                </Button>
+
+                {isDatePickerOpen && (
+                  <div 
+                    className={`absolute z-50 bg-background border border-border rounded-lg shadow-lg p-4 min-w-[300px] max-h-[400px] overflow-y-auto ${
+                      datePickerPosition === 'bottom' 
+                        ? 'top-full mt-1' 
+                        : 'bottom-full mb-1'
+                    } ${
+                      datePickerHorizontalPosition === 'left'
+                        ? 'left-0'
+                        : 'right-0'
+                    }`}
+                    style={{ 
+                      maxHeight: 'calc(100vh - 200px)',
+                      maxWidth: 'calc(100vw - 40px)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-sm">Select Date Range</h4>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearDateFilters}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
+                          onChange={(e) => {
+                            console.log('📅 Start date input changed:', e.target.value);
+                            const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined;
+                            handleDateRangeChange(date, endDate);
+                          }}
+                          className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
+                          onChange={(e) => {
+                            console.log('📅 End date input changed:', e.target.value);
+                            const date = e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined;
+                            handleDateRangeChange(startDate, date);
+                          }}
+                          className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Date Presets */}
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const today = new Date();
+                            const yesterday = new Date(today);
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            console.log('📅 Last 2 Days preset clicked:', { yesterday, today });
+                            handleDateRangeChange(yesterday, today);
+                          }}
+                          className="h-7 text-xs justify-start"
+                        >
+                          Last 2 Days
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const today = new Date();
+                            const weekAgo = new Date(today);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            handleDateRangeChange(weekAgo, today);
+                          }}
+                          className="h-7 text-xs justify-start"
+                        >
+                          Last 7 Days
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const today = new Date();
+                            const monthAgo = new Date(today);
+                            monthAgo.setDate(monthAgo.getDate() - 30);
+                            handleDateRangeChange(monthAgo, today);
+                          }}
+                          className="h-7 text-xs justify-start"
+                        >
+                          Last 30 Days
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const today = new Date();
+                            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                            handleDateRangeChange(startOfMonth, today);
+                          }}
+                          className="h-7 text-xs justify-start"
+                        >
+                          This Month
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsDatePickerOpen(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsDatePickerOpen(false)}
+                        className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+          
+
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-200px)]">
         {/* Enquiries List */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex flex-col">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex-1 flex flex-col"
           >
-            <Card>
-              <CardHeader>
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="h-5 w-5" />
-                  Enquiries ({filteredEnquiries.length})
+                  Enquiries ({pagination.total})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {filteredEnquiries.map((enquiry, index) => (
-                    <motion.div
-                      key={enquiry.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedEnquiry?.id === enquiry.id
-                          ? "bg-sidebar-accent border-brand-green"
-                          : "hover:bg-sidebar-accent"
-                      }`}
-                      onClick={() => setSelectedEnquiry(enquiry)}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium truncate">
-                              {enquiry.name}
-                            </h3>
-                            {enquiry.isStarred && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            )}
-                            {getStatusBadge(enquiry.status)}
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {enquiry.email}
-                          </p>
-                          <p className="text-sm font-medium truncate mt-1">
-                            {enquiry.subject}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatDate(enquiry.submittedAt)}
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
+                {error && (
+                  <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-destructive text-sm">{error}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fetchEnquiries()}
+                      >
+                        Retry
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearError}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Loading enquiries...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                                                {enquiries.map((enquiry, index) => (
+                          <motion.div
+                            key={enquiry.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                              selectedEnquiry?.id === enquiry.id
+                                ? "bg-sidebar-accent border-brand-green"
+                                : "hover:bg-sidebar-accent"
+                            }`}
+                            onClick={() => handleEnquirySelect(enquiry.id)}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-medium truncate">
+                                    {enquiry.fullName}
+                                  </h3>
+                                  {enquiry.isStarred && (
+                                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                  )}
+                                  {getStatusBadge(enquiry.status)}
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {enquiry.email}
+                                </p>
+                                <p className="text-sm font-medium truncate mt-1">
+                                  {enquiry.subject}
+                                </p>
+                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {formatDate(enquiry.createdAt)}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {enquiry.inquiryCategory}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStarToggle(enquiry.id);
+                                    }}
+                                    disabled={isUpdating}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Star className="h-4 w-4 mr-2" />
+                                    )}
+                                    {enquiry.isStarred ? "Unstar" : "Star"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(enquiry.id, "replied");
+                                    }}
+                                    disabled={isUpdating}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                    )}
+                                    Mark as Replied
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(enquiry.id, "closed");
+                                    }}
+                                    disabled={isUpdating}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                    )}
+                                    Close Enquiry
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteClick(enquiry.id);
+                                    }}
+                                    disabled={isDeleting}
+                                    className="text-destructive"
+                                  >
+                                    {isDeleting ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                    )}
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 rounded-full bg-current" />
-                              {getPriorityBadge(enquiry.priority)}
+                          </motion.div>
+                        ))}
+
+                        {enquiries.length === 0 && !isLoading && (
+                          <div className="text-center py-8">
+                            <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-medium mb-2">
+                              No Enquiries Found
+                            </h3>
+                            <p className="text-muted-foreground">
+                              {searchTerm ||
+                              statusFilter !== "all" ||
+                              categoryFilter !== "all"
+                                ? "Try adjusting your search or filters."
+                                : "No enquiries have been submitted yet."}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Pagination */}
+                      {pagination.totalPages > 1 && (
+                        <div className="flex-shrink-0 pt-4 border-t">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                              Showing {((pagination.page - 1) * pagination.limit) + 1} to{" "}
+                              {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+                              {pagination.total} enquiries
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                                disabled={pagination.page <= 1 || isLoading}
+                              >
+                                Previous
+                              </Button>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                  const page = i + 1;
+                                  return (
+                                    <Button
+                                      key={page}
+                                      variant={page === pagination.page ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => handlePageChange(page)}
+                                      disabled={isLoading}
+                                      className="w-8 h-8 p-0"
+                                    >
+                                      {page}
+                                    </Button>
+                                  );
+                                })}
+                                {pagination.totalPages > 5 && (
+                                  <span className="text-sm text-muted-foreground px-2">...</span>
+                                )}
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                                disabled={pagination.page >= pagination.totalPages || isLoading}
+                              >
+                                Next
+                              </Button>
                             </div>
                           </div>
                         </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStarToggle(enquiry.id);
-                              }}
-                            >
-                              <Star className="h-4 w-4 mr-2" />
-                              {enquiry.isStarred ? "Unstar" : "Star"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(enquiry.id, "replied");
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Mark as Replied
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(enquiry.id, "closed");
-                              }}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Close Enquiry
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(enquiry.id);
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </motion.div>
-                  ))}
-
-                  {filteredEnquiries.length === 0 && (
-                    <div className="text-center py-8">
-                      <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">
-                        No Enquiries Found
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {searchTerm ||
-                        statusFilter !== "all" ||
-                        priorityFilter !== "all"
-                          ? "Try adjusting your search or filters."
-                          : "No enquiries have been submitted yet."}
-                      </p>
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -470,15 +1009,16 @@ export default function Enquiries() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-col"
         >
-          <Card>
-            <CardHeader>
+          <Card className="flex-1 flex flex-col">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
                 Enquiry Details
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-auto">
               {selectedEnquiry ? (
                 <div className="space-y-6">
                   <div className="space-y-4">
@@ -487,7 +1027,7 @@ export default function Enquiries() {
                         <User className="h-5 w-5 text-brand-green" />
                       </div>
                       <div>
-                        <h3 className="font-medium">{selectedEnquiry.name}</h3>
+                        <h3 className="font-medium">{selectedEnquiry.fullName}</h3>
                         <p className="text-sm text-muted-foreground">
                           {selectedEnquiry.email}
                         </p>
@@ -500,14 +1040,16 @@ export default function Enquiries() {
                         {getStatusBadge(selectedEnquiry.status)}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Priority:</span>
-                        {getPriorityBadge(selectedEnquiry.priority)}
+                        <span className="text-sm font-medium">Category:</span>
+                        <Badge variant="outline" className="capitalize">
+                          {selectedEnquiry.inquiryCategory}
+                        </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Source:</span>
-                        <Badge variant="outline" className="capitalize">
-                          {selectedEnquiry.source.replace("-", " ")}
-                        </Badge>
+                        <span className="text-sm font-medium">IP Address:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedEnquiry.ipAddress}
+                        </span>
                       </div>
                     </div>
 
@@ -521,15 +1063,15 @@ export default function Enquiries() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">
-                        Submitted {formatDate(selectedEnquiry.submittedAt)}
+                        Submitted {formatDate(selectedEnquiry.createdAt)}
                       </span>
                     </div>
 
-                    {selectedEnquiry.lastReply && (
+                    {selectedEnquiry.repliedAt && (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          Last reply {formatDate(selectedEnquiry.lastReply)}
+                          Last reply {formatDate(selectedEnquiry.repliedAt)}
                         </span>
                       </div>
                     )}
@@ -549,21 +1091,69 @@ export default function Enquiries() {
                     </div>
                   </div>
 
+                  {/* Replies Section */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Replies</h4>
+                    {selectedEnquiry.replies && selectedEnquiry.replies.length > 0 ? (
+                      <div className="space-y-3">
+                        {selectedEnquiry.replies.map((reply, index) => (
+                          <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="h-3 w-3 text-blue-600" />
+                                </div>
+                                <span className="text-sm font-medium text-blue-900">
+                                  {reply.adminName}
+                                </span>
+                                <span className="text-xs text-blue-600">
+                                  {reply.adminEmail}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-blue-600">
+                                <Clock className="h-3 w-3" />
+                                {formatDate(reply.repliedAt)}
+                              </div>
+                            </div>
+                            <div className="bg-white rounded border p-2">
+                              <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                {reply.replyMessage}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <Reply className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-500">No replies yet</p>
+                        <p className="text-xs text-gray-400 mt-1">Send the first reply to this enquiry</p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <Dialog
                       open={isReplyDialogOpen}
                       onOpenChange={setIsReplyDialogOpen}
                     >
                       <DialogTrigger asChild>
-                        <Button className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
-                          <Reply className="h-4 w-4 mr-2" />
+                        <Button 
+                          className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Reply className="h-4 w-4 mr-2" />
+                          )}
                           Reply
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>
-                            Reply to {selectedEnquiry.name}
+                            Reply to {selectedEnquiry.fullName}
                           </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
@@ -587,11 +1177,15 @@ export default function Enquiries() {
                             </Button>
                             <Button
                               onClick={handleReply}
-                              disabled={!replyMessage.trim()}
+                              disabled={!replyMessage.trim() || isUpdating}
                               className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
                             >
-                              <Reply className="h-4 w-4 mr-2" />
-                              Send Reply
+                              {isUpdating ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Reply className="h-4 w-4 mr-2" />
+                              )}
+                              {isUpdating ? "Sending..." : "Send Reply"}
                             </Button>
                           </div>
                         </div>
@@ -623,6 +1217,81 @@ export default function Enquiries() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Enquiry
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">
+                  Are you sure you want to delete this enquiry?
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  This action cannot be undone. The enquiry from{" "}
+                  <span className="font-medium text-gray-900">
+                    {enquiryToDelete?.fullName}
+                  </span>{" "}
+                  will be permanently removed.
+                </p>
+              </div>
+            </div>
+
+            {enquiryToDelete && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">
+                    {enquiryToDelete.subject}
+                  </p>
+                  <p className="text-gray-500 mt-1">
+                    {enquiryToDelete.email}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Submitted {formatDate(enquiryToDelete.createdAt)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Enquiry
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

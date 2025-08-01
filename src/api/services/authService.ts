@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
-import { LoginRequest, LoginResponse, RefreshTokenResponse, User, ApiResponse } from '../types';
+import { LoginRequest, LoginResponse, LoginResponse2FA, Verify2FARequest, RefreshTokenResponse, User, ApiResponse } from '../types';
 
 export class AuthService {
   // Get device information
@@ -203,7 +203,7 @@ export class AuthService {
   }
 
   // Login user
-  static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
+  static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse2FA>> {
     try {
       console.log('🔐 Starting login process...');
       
@@ -229,7 +229,7 @@ export class AuthService {
       console.log('📤 Sending login request to:', API_CONFIG.ENDPOINTS.AUTH.LOGIN);
       console.log('📦 Login payload:', loginData);
 
-      const response = await apiClient.post<LoginResponse>(
+      const response = await apiClient.post<LoginResponse2FA>(
         API_CONFIG.ENDPOINTS.AUTH.LOGIN,
         loginData
       );
@@ -237,11 +237,20 @@ export class AuthService {
       console.log('📥 Login response:', response);
 
       if (response.success && response.data) {
-        // Store tokens in localStorage
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        console.log('✅ Login successful, tokens stored');
+        // Check if 2FA is required
+        if (response.data.requiresOTP) {
+          console.log('✅ Login successful (2FA required)');
+          // Store temp token for 2FA verification
+          if (response.data.tempToken) {
+            localStorage.setItem('tempToken', response.data.tempToken);
+          }
+        } else {
+          console.log('✅ Login successful (no 2FA required)');
+          // Store tokens in localStorage
+          localStorage.setItem('accessToken', response.data.accessToken);
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
       }
 
       return response;
@@ -363,10 +372,16 @@ export class AuthService {
     return localStorage.getItem('refreshToken');
   }
 
+  // Get temp token for 2FA
+  static getTempToken(): string | null {
+    return localStorage.getItem('tempToken');
+  }
+
   // Clear all authentication data from localStorage
   static clearLocalStorage(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('tempToken');
     localStorage.removeItem('user');
   }
 
@@ -382,6 +397,38 @@ export class AuthService {
       return payload.exp < currentTime;
     } catch (error) {
       return true;
+    }
+  }
+
+  // Verify 2FA OTP
+  static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponse>> {
+    try {
+      console.log('🔄 Verifying 2FA OTP...');
+      
+      const response = await apiClient.post<LoginResponse>(
+        API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
+        otpData
+      );
+
+      console.log('📥 Verify 2FA response:', response);
+
+      if (response.success && response.data) {
+        console.log('✅ 2FA verification successful');
+        
+        // Store tokens and user data
+        localStorage.setItem('accessToken', response.data.accessToken);
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+        if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+      }
+
+      return response;
+    } catch (error) {
+      console.error('💥 Error verifying 2FA:', error);
+      throw error;
     }
   }
 }

@@ -21,10 +21,14 @@ export interface UserProfile {
     timeAgo: string;
   };
   isActive: boolean;
+  twoFactorEnabled: boolean;
   permissions: string[];
   preferences?: {
+    theme?: string;
+    language?: string;
     notifications: {
       email: boolean;
+      push?: boolean;
     };
   };
 }
@@ -57,6 +61,40 @@ export interface ResetPasswordConfirmRequest {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface TwoFactorSetupRequest {
+  // No additional data needed for setup
+}
+
+export interface TwoFactorEnableRequest {
+  otp: string;
+}
+
+export interface TwoFactorDisableRequest {
+  otp: string;
+}
+
+export interface Verify2FARequest {
+  otp: string;
+  tempToken: string;
+}
+
+export interface UserActivity {
+  id: string;
+  action: string;
+  entity: string;
+  entityName: string;
+  timestamp: string;
+  type: string;
+  details: string;
+}
+
+export interface UpdatePreferencesRequest {
+  theme?: string;
+  language?: string;
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -472,18 +510,81 @@ class ProfileService {
   }
 
   /**
-   * Get user activity
+   * Setup 2FA (send OTP)
    */
-  async getUserActivity(page: number = 1, limit: number = 10): Promise<ApiResponse<any>> {
+  async setup2FA(): Promise<ApiResponse<void>> {
     try {
       const userId = this.getUserId();
-      const baseUrl = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/activity?userId=${userId}&page=${page}&limit=${limit}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/activity?page=${page}&limit=${limit}`;
+      const url = userId 
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}`;
       
-      const response = await apiClient.get(baseUrl);
-      return response.data;
+      console.log('🔄 Setting up 2FA...');
+      const response = await apiClient.post<void>(url);
+      console.log('📥 Setup 2FA response:', response);
+      return response;
     } catch (error) {
+      console.error('❌ Error setting up 2FA:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Enable 2FA
+   */
+  async enable2FA(otpData: TwoFactorEnableRequest): Promise<ApiResponse<void>> {
+    try {
+      const userId = this.getUserId();
+      const url = userId 
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}`;
+      
+      console.log('🔄 Enabling 2FA with OTP:', otpData);
+      const response = await apiClient.post<void>(url, otpData);
+      console.log('📥 Enable 2FA response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error enabling 2FA:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Disable 2FA
+   */
+  async disable2FA(otpData: TwoFactorDisableRequest): Promise<ApiResponse<void>> {
+    try {
+      const userId = this.getUserId();
+      const url = userId 
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}`;
+      
+      console.log('🔄 Disabling 2FA with OTP:', otpData);
+      const response = await apiClient.post<void>(url, otpData);
+      console.log('📥 Disable 2FA response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error disabling 2FA:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get user activity
+   */
+  async getUserActivity(page: number = 1, limit: number = 10): Promise<ApiResponse<UserActivity[]>> {
+    try {
+      const userId = this.getUserId();
+      const url = userId 
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?userId=${userId}&page=${page}&limit=${limit}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?page=${page}&limit=${limit}`;
+      
+      console.log('🔄 Getting user activity from:', url);
+      const response = await apiClient.get(url);
+      console.log('📥 User activity response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Error getting user activity:', error);
       throw this.handleError(error);
     }
   }
@@ -491,16 +592,19 @@ class ProfileService {
   /**
    * Update user preferences
    */
-  async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
+  async updatePreferences(preferences: UpdatePreferencesRequest): Promise<ApiResponse<UserProfile>> {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/preferences?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/preferences`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}`;
       
+      console.log('🔄 Updating preferences with data:', preferences);
       const response = await apiClient.put(url, preferences);
-      return response.data;
+      console.log('📥 Update preferences response:', response);
+      return response;
     } catch (error) {
+      console.error('❌ Error updating preferences:', error);
       throw this.handleError(error);
     }
   }
