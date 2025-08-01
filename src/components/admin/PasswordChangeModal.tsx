@@ -1,0 +1,542 @@
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, Lock, Eye, EyeOff, Check, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/authContext";
+
+// Password validation functions
+const validatePassword = (password: string) => {
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  const isLongEnough = password.length >= 8;
+  
+  return {
+    hasUpperCase,
+    hasLowerCase,
+    hasNumber,
+    hasSpecialChar,
+    isLongEnough,
+    isValid: hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && isLongEnough
+  };
+};
+
+const validatePasswordMatch = (password: string, confirmPassword: string) => {
+  return password === confirmPassword && password.length > 0;
+};
+
+interface PasswordChangeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onChangePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => Promise<boolean>;
+  onVerifyOtp: (data: { otp: string; newPassword: string }) => Promise<boolean>;
+  changingPassword: boolean;
+  verifyingOtp: boolean;
+}
+
+export function PasswordChangeModal({
+  isOpen,
+  onClose,
+  onChangePassword,
+  onVerifyOtp,
+  changingPassword,
+  verifyingOtp,
+}: PasswordChangeModalProps) {
+  const { toast } = useToast();
+  const { logout } = useAuth();
+  const [step, setStep] = useState<'password' | 'otp' | 'success'>('password');
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    otp: '',
+  });
+
+  // Real-time validation state
+  const [passwordValidation, setPasswordValidation] = useState(validatePassword(''));
+  const [passwordMatch, setPasswordMatch] = useState(true);
+
+  // Error state for current password
+  const [currentPasswordError, setCurrentPasswordError] = useState<string | null>(null);
+  // Error state for OTP
+  const [otpError, setOtpError] = useState<string | null>(null);
+
+  // Success countdown state
+  const [countdown, setCountdown] = useState(5);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Flag to track if password was changed successfully
+  const [passwordChanged, setPasswordChanged] = useState(false);
+
+  // Update validation when passwords change
+  const handlePasswordChange = (field: 'newPassword' | 'confirmPassword', value: string) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    
+    if (field === 'newPassword') {
+      setPasswordValidation(validatePassword(value));
+    }
+    
+    // Check password match
+    if (field === 'newPassword' || field === 'confirmPassword') {
+      const newPassword = field === 'newPassword' ? value : newFormData.newPassword;
+      const confirmPassword = field === 'confirmPassword' ? value : newFormData.confirmPassword;
+      const isMatch = validatePasswordMatch(newPassword, confirmPassword);
+      setPasswordMatch(isMatch);
+    }
+  };
+
+  // Handle current password change - clear error when user starts typing
+  const handleCurrentPasswordChange = (value: string) => {
+    setFormData({ ...formData, currentPassword: value });
+    // Clear error when user starts typing
+    if (currentPasswordError) {
+      setCurrentPasswordError(null);
+    }
+  };
+
+  // Handle send OTP
+  const handleSendOtp = async () => {
+    if (!passwordValidation.isValid || !passwordMatch) {
+      toast({
+        title: "Error",
+        description: "Please fix password validation errors before sending OTP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const success = await onChangePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
+      });
+      
+      // Only proceed to OTP step if successful
+      if (success) {
+        setStep('otp');
+        toast({
+          title: "Success",
+          description: "OTP sent to your email. Please check your inbox.",
+        });
+      } else {
+        // Show error in current password field instead of toast
+        setCurrentPasswordError("Current password is incorrect");
+        // Stay on password step
+        console.log('Password change failed, staying on password step');
+      }
+    } catch (error) {
+      // Show error in current password field instead of toast
+      setCurrentPasswordError("Current password is incorrect");
+      // Don't proceed to OTP step, stay on password step
+      console.log('Password change failed, staying on password step');
+    }
+  };
+
+  // Handle OTP verification
+  const handleVerifyOtp = async () => {
+    if (formData.otp.length !== 6) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid 6-digit OTP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const success = await onVerifyOtp({ 
+        otp: formData.otp,
+        newPassword: formData.newPassword 
+      });
+      
+      // Only proceed to success step if successful
+      if (success) {
+        console.log('✅ Password change successful, setting success state...');
+        setPasswordChanged(true);
+        // Store flag in localStorage for hard reload scenarios
+        localStorage.setItem('passwordChanged', 'true');
+        setStep('success');
+        console.log('✅ Starting countdown...');
+        startCountdown();
+      } else {
+        // Show error in OTP field
+        setOtpError("Invalid OTP. Please try again.");
+        // Don't proceed to success step, stay on OTP step
+        console.log('OTP verification failed, staying on OTP step');
+      }
+    } catch (error) {
+      // Show error in OTP field
+      setOtpError("Invalid OTP. Please try again.");
+      // Don't proceed to success step, stay on OTP step
+      console.log('OTP verification failed, staying on OTP step');
+    }
+  };
+
+  // Start countdown and logout
+  const startCountdown = () => {
+    setCountdown(5);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          // Clear interval and logout
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+          }
+          
+          // Logout after countdown
+          console.log('🔄 Logging out after password change countdown...');
+          logout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, []);
+
+  // Handle hard reload scenarios
+  useEffect(() => {
+    const passwordChangedFlag = localStorage.getItem('passwordChanged');
+    if (passwordChangedFlag === 'true') {
+      console.log('🔄 Detected password change from previous session, logging out...');
+      // Clear the flag
+      localStorage.removeItem('passwordChanged');
+      // Logout immediately
+      logout();
+    }
+  }, [logout]);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSendOtp();
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleVerifyOtp();
+  };
+
+  const handleSuccessClose = () => {
+    // Clear any pending countdown
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
+    
+    // Logout when manually closing success modal
+    console.log('🔄 Manual logout after password change...');
+    logout();
+  };
+
+  const handleClose = () => {
+    // Don't allow closing if password was changed successfully
+    if (passwordChanged) {
+      return;
+    }
+
+    setStep('password');
+    setFormData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+      otp: '',
+    });
+    setShowPasswords({
+      current: false,
+      new: false,
+      confirm: false,
+    });
+    setPasswordValidation(validatePassword(''));
+    setPasswordMatch(true);
+    setCurrentPasswordError(null);
+    setOtpError(null);
+    setCountdown(5);
+    setPasswordChanged(false);
+    
+    // Clear any pending countdown
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
+    
+    onClose();
+  };
+
+  console.log('🔍 Modal render - step:', step, 'passwordChanged:', passwordChanged);
+  
+  return (
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={passwordChanged ? undefined : handleClose}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            {step === 'password' ? 'Change Password' : step === 'otp' ? 'Verify OTP' : 'Success'}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 'password' 
+              ? 'Enter your current password and choose a new one. You will receive an OTP to verify the change.'
+              : step === 'otp'
+              ? 'Enter the 6-digit OTP sent to your email to complete the password change.'
+              : 'Password changed successfully! You will be redirected to login page.'
+            }
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === 'password' ? (
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            {/* Password form content */}
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showPasswords.current ? "text" : "password"}
+                  value={formData.currentPassword}
+                  onChange={(e) => handleCurrentPasswordChange(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                  className={currentPasswordError ? "border-red-500 focus:border-red-500" : ""}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                >
+                  {showPasswords.current ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {currentPasswordError && (
+                <p className="text-sm text-red-500 flex items-center">
+                  <X className="h-4 w-4 mr-1" />
+                  {currentPasswordError}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPasswords.new ? "text" : "password"}
+                  value={formData.newPassword}
+                  onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                >
+                  {showPasswords.new ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {formData.newPassword && (
+                <div className="space-y-2 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm font-medium text-gray-700">Password Requirements:</p>
+                  <div className="space-y-1">
+                    <div className={`flex items-center text-xs ${passwordValidation.hasUpperCase ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordValidation.hasUpperCase ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                      At least one uppercase letter (A-Z)
+                    </div>
+                    <div className={`flex items-center text-xs ${passwordValidation.hasLowerCase ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordValidation.hasLowerCase ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                      At least one lowercase letter (a-z)
+                    </div>
+                    <div className={`flex items-center text-xs ${passwordValidation.hasNumber ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordValidation.hasNumber ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                      At least one number (0-9)
+                    </div>
+                    <div className={`flex items-center text-xs ${passwordValidation.hasSpecialChar ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordValidation.hasSpecialChar ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                      At least one special character (!@#$%^&*)
+                    </div>
+                    <div className={`flex items-center text-xs ${passwordValidation.isLongEnough ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordValidation.isLongEnough ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                      At least 8 characters long
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                >
+                  {showPasswords.confirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+                {passwordMatch && formData.confirmPassword && formData.newPassword && (
+                  <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                    <Check className="h-4 w-4 text-green-600" />
+                  </div>
+                )}
+              </div>
+              {formData.confirmPassword && !passwordMatch && (
+                <p className="text-sm text-red-500 flex items-center">
+                  <X className="h-4 w-4 mr-1" />
+                  Passwords do not match
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={changingPassword || !passwordValidation.isValid || !passwordMatch || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
+                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              >
+                {changingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending OTP...
+                  </>
+                ) : (
+                  'Send OTP'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : step === 'otp' ? (
+          <form onSubmit={handleOtpSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="otp">Enter OTP</Label>
+              <Input
+                id="otp"
+                type="text"
+                value={formData.otp}
+                onChange={(e) => {
+                  setFormData({ ...formData, otp: e.target.value });
+                  // Clear error when user starts typing
+                  if (otpError) {
+                    setOtpError(null);
+                  }
+                }}
+                placeholder="Enter 6-digit OTP"
+                maxLength={6}
+                required
+                className={`text-center text-lg tracking-widest ${otpError ? "border-red-500 focus:border-red-500" : ""}`}
+              />
+              <p className="text-sm text-muted-foreground">
+                Enter the 6-digit OTP sent to your email address
+              </p>
+              {otpError && (
+                <p className="text-sm text-red-500 flex items-center">
+                  <X className="h-4 w-4 mr-1" />
+                  {otpError}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setStep('password')}>
+                Back
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={verifyingOtp || formData.otp.length !== 6}
+                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              >
+                {verifyingOtp ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify OTP'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div className="space-y-4 text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-green-600">Password Changed Successfully!</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Your password has been updated. You will be redirected to the login page in {countdown} seconds.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => {
+                  console.log('🔄 Manual logout after password change...');
+                  logout();
+                }}
+                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              >
+                Go to Login Now
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+} 

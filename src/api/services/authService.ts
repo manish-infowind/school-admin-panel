@@ -296,49 +296,6 @@ export class AuthService {
     }
   }
 
-  // Get user profile
-  static async getProfile(): Promise<ApiResponse<User>> {
-    try {
-      console.log('👤 Fetching user profile...');
-      
-      const response = await apiClient.get<User>(
-        API_CONFIG.ENDPOINTS.AUTH.PROFILE
-      );
-
-      console.log('📥 Profile response:', response);
-
-      if (response.success && response.data) {
-        // Update user in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data));
-        console.log('✅ Profile updated in localStorage');
-      }
-
-      return response;
-    } catch (error) {
-      console.error('❌ Failed to fetch profile:', error);
-      throw error;
-    }
-  }
-
-  // Update user profile
-  static async updateProfile(userData: Partial<User>): Promise<ApiResponse<User>> {
-    try {
-      const response = await apiClient.put<User>(
-        API_CONFIG.ENDPOINTS.AUTH.PROFILE,
-        userData
-      );
-
-      if (response.success && response.data) {
-        // Update user in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data));
-      }
-
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
-
   // Refresh access token
   static async refreshToken(): Promise<boolean> {
     try {

@@ -10,4 +10,8 @@ export { AuthService } from './services/authService';
 export { ProductService } from './services/productService';
 export { ContentService } from './services/contentService';
 export { PrivacyPolicyService } from './services/privacyPolicyService';
-export { AboutUsService } from './services/aboutUsService'; 
+export { AboutUsService } from './services/aboutUsService';
+export { profileService } from './services/profileService';
+
+// Export hooks
+export { useProfile } from './hooks/useProfile'; 

@@ -1,280 +1,255 @@
-# API System Documentation
+# Profile API Integration
+
+This document outlines the complete Profile API integration for the MedoScopic Admin Panel.
 
 ## Overview
 
-This API system provides a complete solution for handling API calls, state management, and authentication in the MedoScopic Pharma admin panel. It uses React Query (TanStack Query) for efficient caching and state management.
+The Profile API integration provides full CRUD operations for user profiles, including:
+- Profile data retrieval and updates
+- Avatar upload functionality
+- Secure password changes with OTP verification
+- Password reset capabilities
+- User activity tracking
 
-## Structure
+## API Endpoints
 
+### Base URL
 ```
-src/api/
-├── config.ts              # API configuration and endpoints
-├── types.ts               # TypeScript interfaces and types
-├── client.ts              # Main API client with error handling
-├── index.ts               # Main exports
-├── services/              # Service layer for different API domains
-│   ├── authService.ts     # Authentication operations
-│   ├── productService.ts  # Product management
-│   ├── contentService.ts  # Content management
-│   └── enquiryService.ts  # Enquiry management
-└── hooks/                 # React Query hooks
-    ├── useAuth.ts         # Authentication hooks
-    └── useProducts.ts     # Product management hooks
+http://localhost:3000/admin
 ```
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in your project root:
-
-```env
-VITE_API_BASE_URL=http://localhost:3000/api
-```
-
-### API Endpoints
-
-All endpoints are configured in `config.ts`:
-
-```typescript
-export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
-  TIMEOUT: 10000,
-  ENDPOINTS: {
-    AUTH: {
-      LOGIN: '/auth/login',
-      LOGOUT: '/auth/logout',
-      REFRESH: '/auth/refresh',
-      PROFILE: '/auth/profile',
-    },
-    // ... other endpoints
-  },
-}
-```
-
-## Usage Examples
 
 ### Authentication
+All endpoints require JWT token authentication:
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
 
-```typescript
-import { useAuth } from '@/api/hooks/useAuth';
+## Endpoint Details
 
-const LoginComponent = () => {
-  const { login, isLoggingIn, loginError, isAuthenticated } = useAuth();
+### 1. Get User Profile
+```bash
+GET /admin/users/profile?userId=YOUR_USER_ID
+```
 
-  const handleLogin = (email: string, password: string) => {
-    login({ email, password });
-  };
-
-  // Handle success/error states
-  if (isAuthenticated) {
-    // Redirect to dashboard
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "id": "68810a3ca1ce8410258de5b9",
+    "firstName": "Admin",
+    "lastName": "User",
+    "email": "admin@medoscopic.com",
+    "phone": "+1 (555) 123-4567",
+    "location": "San Francisco, CA",
+    "bio": "Admin user for MedoScopic Pharma content management system.",
+    "avatar": "/uploads/avatars/admin-avatar.jpg",
+    "role": "admin",
+    "joinDate": "2024-01-15T00:00:00Z",
+    "lastLogin": "2024-01-20T10:30:00Z",
+    "isActive": true,
+    "permissions": ["read", "write", "delete", "admin"]
   }
-
-  if (loginError) {
-    // Show error message
-  }
-};
-```
-
-### Product Management
-
-```typescript
-import { useProducts, useProduct } from '@/api/hooks/useProducts';
-
-const ProductList = () => {
-  const { 
-    products, 
-    isLoading, 
-    createProduct, 
-    updateProduct, 
-    deleteProduct 
-  } = useProducts({ page: 1, limit: 10 });
-
-  const handleCreate = (productData) => {
-    createProduct(productData);
-  };
-
-  const handleUpdate = (id, data) => {
-    updateProduct({ id, data });
-  };
-};
-
-const ProductDetail = ({ id }) => {
-  const { product, isLoading, refetch } = useProduct(id);
-};
-```
-
-### Content Management
-
-```typescript
-import { ContentService } from '@/api/services/contentService';
-
-const ContentEditor = () => {
-  const updatePage = async (id, content) => {
-    try {
-      const response = await ContentService.updatePage(id, content);
-      // Handle success
-    } catch (error) {
-      // Handle error
-    }
-  };
-};
-```
-
-## Features
-
-### 1. **Automatic Token Management**
-- JWT tokens are automatically stored in localStorage
-- Automatic token refresh on expiration
-- Automatic logout on authentication failure
-
-### 2. **Error Handling**
-- Comprehensive error types and messages
-- Network error handling
-- Timeout handling
-- Validation error handling
-
-### 3. **Caching & State Management**
-- React Query for efficient caching
-- Automatic cache invalidation
-- Optimistic updates
-- Background refetching
-
-### 4. **File Upload Support**
-- Built-in FormData handling
-- Image upload for products
-- Progress tracking support
-
-### 5. **Pagination & Filtering**
-- Built-in pagination support
-- Query parameter handling
-- Search functionality
-- Sorting and filtering
-
-## API Response Format
-
-All API responses follow this format:
-
-```typescript
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: Record<string, string[]>;
 }
+```
 
-interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+### 2. Update User Profile
+```bash
+PUT /admin/users/profile?userId=YOUR_USER_ID
+Content-Type: application/json
+
+{
+  "firstName": "Admin",
+  "lastName": "User",
+  "email": "admin@medoscopic.com",
+  "phone": "+1 (555) 123-4567",
+  "location": "San Francisco, CA",
+  "bio": "Admin user for MedoScopic Pharma content management system."
+}
+```
+
+### 3. Upload Avatar
+```bash
+POST /admin/users/profile/avatar?userId=YOUR_USER_ID
+Content-Type: multipart/form-data
+
+file: [image file]
+```
+
+### 4. Change Password (Sends OTP)
+```bash
+PUT /admin/users/profile/password?userId=YOUR_USER_ID
+Content-Type: application/json
+
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "NewPassword456!",
+  "confirmPassword": "NewPassword456!"
+}
+```
+
+### 5. Verify OTP
+```bash
+POST /admin/users/profile/password/verify-otp?userId=YOUR_USER_ID
+Content-Type: application/json
+
+{
+  "otp": "123456"
+}
+```
+
+## Frontend Integration
+
+### Profile Service
+The `ProfileService` class handles all API interactions:
+
+```typescript
+import { profileService } from '@/api/services/profileService';
+
+// Get profile
+const profile = await profileService.getProfile();
+
+// Update profile
+await profileService.updateProfile({
+  firstName: "Admin",
+  lastName: "User",
+  email: "admin@medoscopic.com",
+  phone: "+1 (555) 123-4567",
+  location: "San Francisco, CA",
+  bio: "Admin user for MedoScopic Pharma content management system."
+});
+
+// Upload avatar
+await profileService.uploadAvatar(file);
+
+// Change password
+await profileService.changePassword({
+  currentPassword: "oldPassword123",
+  newPassword: "NewPassword456!",
+  confirmPassword: "NewPassword456!"
+});
+
+// Verify OTP
+await profileService.verifyOtp({ otp: "123456" });
+```
+
+### Profile Hook
+The `useProfile` hook provides React state management:
+
+```typescript
+import { useProfile } from '@/api/hooks/useProfile';
+
+function ProfileComponent() {
+  const {
+    profile,
+    loading,
+    error,
+    saving,
+    uploadingAvatar,
+    changingPassword,
+    verifyingOtp,
+    updateProfile,
+    uploadAvatar,
+    changePassword,
+    verifyOtp,
+    resetError
+  } = useProfile();
+
+  // Use the hook methods and states
+}
+```
+
+## User ID Management
+
+The service automatically retrieves the user ID from localStorage:
+
+```typescript
+// Expected localStorage structure
+{
+  "user": {
+    "id": "68810a3ca1ce8410258de5b9",
+    "firstName": "Admin",
+    "lastName": "User",
+    "email": "admin@medoscopic.com",
+    // ... other user data
+  }
 }
 ```
 
 ## Error Handling
 
-The system handles various error types:
+The service includes comprehensive error handling:
 
-```typescript
-export const API_ERROR_TYPES = {
-  NETWORK_ERROR: 'NETWORK_ERROR',
-  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
-  AUTHORIZATION_ERROR: 'AUTHORIZATION_ERROR',
-  NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
-  SERVER_ERROR: 'SERVER_ERROR',
-  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
-};
-```
+- **401 Unauthorized**: User needs to login again
+- **403 Forbidden**: User lacks permission
+- **404 Not Found**: Profile not found
+- **422 Validation Error**: Invalid input data
+- **500 Server Error**: Backend error
 
-## Integration with Components
+## Features
 
-### Protected Routes
+### ✅ Implemented Features
+- [x] Profile data retrieval
+- [x] Profile updates
+- [x] Avatar upload
+- [x] Password change with OTP
+- [x] OTP verification
+- [x] Error handling
+- [x] Loading states
+- [x] Toast notifications
+- [x] Form validation
+- [x] User ID auto-detection
 
-```typescript
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-
-<Route
-  path="/admin"
-  element={
-    <ProtectedRoute>
-      <AdminLayout>
-        <Dashboard />
-      </AdminLayout>
-    </ProtectedRoute>
-  }
-/>
-```
-
-### Loading States
-
-```typescript
-const { isLoading, isCreating, isUpdating } = useProducts();
-
-if (isLoading) {
-  return <LoadingSpinner />;
-}
-
-if (isCreating) {
-  return <CreatingSpinner />;
-}
-```
-
-## Best Practices
-
-1. **Always use the hooks** instead of calling services directly
-2. **Handle loading states** in your components
-3. **Use error boundaries** for error handling
-4. **Implement proper validation** before API calls
-5. **Use optimistic updates** for better UX
-6. **Cache data appropriately** using React Query's staleTime
-
-## Adding New Services
-
-1. Create a new service file in `services/`
-2. Define types in `types.ts`
-3. Add endpoints to `config.ts`
-4. Create hooks in `hooks/`
-5. Export from `index.ts`
-
-Example:
-
-```typescript
-// services/newService.ts
-export class NewService {
-  static async getData() {
-    return apiClient.get('/new-endpoint');
-  }
-}
-
-// hooks/useNewData.ts
-export const useNewData = () => {
-  return useQuery({
-    queryKey: ['newData'],
-    queryFn: () => NewService.getData(),
-  });
-};
-```
+### 🔄 User Experience Flow
+1. **Profile Loading**: Automatically loads user profile on page load
+2. **Profile Updates**: Users can update their information and save changes
+3. **Avatar Upload**: Click camera icon to upload new profile picture
+4. **Password Change**: 
+   - Click "Change Password" button
+   - Enter current and new passwords
+   - Receive OTP via email
+   - Enter OTP to complete change
 
 ## Testing
 
-The API system is designed to be easily testable:
+### Manual Testing
+1. Navigate to Profile page
+2. Verify profile data loads correctly
+3. Update profile information
+4. Upload new avatar
+5. Test password change flow
 
-```typescript
-// Mock API responses
-jest.mock('@/api/services/authService', () => ({
-  AuthService: {
-    login: jest.fn(),
-    logout: jest.fn(),
-  },
-}));
+### API Testing
+Use the provided cURL commands to test each endpoint manually.
 
-// Test hooks
-const { result } = renderHook(() => useAuth());
-```
+## Security Considerations
 
-This API system provides a robust foundation for your admin panel with proper error handling, caching, and state management. 
+- All endpoints require JWT authentication
+- Password changes require OTP verification
+- User ID is automatically included from authenticated session
+- Form data is validated before submission
+- File uploads are restricted to image types
+
+## Troubleshooting
+
+### Common Issues
+1. **Profile not loading**: Check localStorage for user data
+2. **API errors**: Verify JWT token is valid
+3. **Upload failures**: Check file size and type restrictions
+4. **OTP issues**: Verify email is correct and OTP is valid
+
+### Debug Logging
+The service includes console logging for debugging:
+- User ID retrieval
+- API call URLs
+- Response data
+- Error details
+
+## Dependencies
+
+- `axios` for HTTP requests
+- `react` for UI components
+- `framer-motion` for animations
+- `lucide-react` for icons
+- `@/hooks/use-toast` for notifications 

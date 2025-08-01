@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 // Query keys for authentication
 export const authKeys = {
   all: ['auth'] as const,
-  profile: () => [...authKeys.all, 'profile'] as const,
   user: () => [...authKeys.all, 'user'] as const,
 };
 
@@ -22,15 +21,6 @@ export const useAuth = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Get user profile from API
-  const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery({
-    queryKey: authKeys.profile(),
-    queryFn: () => AuthService.getProfile(),
-    enabled: !!AuthService.isAuthenticated(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginRequest) => {
@@ -42,10 +32,6 @@ export const useAuth = () => {
       if (response.success && response.data) {
         // Update user in cache
         queryClient.setQueryData(authKeys.user(), response.data.user);
-        queryClient.setQueryData(authKeys.profile(), response.data.user);
-        
-        // Invalidate and refetch profile
-        queryClient.invalidateQueries({ queryKey: authKeys.profile() });
         
         // Navigate to admin dashboard after successful login
         console.log('🔄 Navigating to admin dashboard...');
@@ -75,32 +61,11 @@ export const useAuth = () => {
     },
   });
 
-  // Update profile mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: (userData: Partial<User>) => AuthService.updateProfile(userData),
-    onSuccess: (response) => {
-      if (response.success && response.data) {
-        // Update user in cache
-        queryClient.setQueryData(authKeys.user(), response.data);
-        queryClient.setQueryData(authKeys.profile(), response.data);
-        
-        // Invalidate and refetch profile
-        queryClient.invalidateQueries({ queryKey: authKeys.profile() });
-      }
-    },
-    onError: (error) => {
-      console.error('Profile update failed:', error);
-    },
-  });
-
   // Refresh token mutation
   const refreshTokenMutation = useMutation({
     mutationFn: () => AuthService.refreshToken(),
     onSuccess: (success) => {
-      if (success) {
-        // Refetch profile after token refresh
-        queryClient.invalidateQueries({ queryKey: authKeys.profile() });
-      } else {
+      if (!success) {
         // Token refresh failed, logout user
         logoutMutation.mutate();
       }
@@ -113,27 +78,23 @@ export const useAuth = () => {
 
   return {
     // State
-    user: user || profile?.data,
+    user,
     isAuthenticated: AuthService.isAuthenticated(),
-    isLoading: isLoadingUser || isLoadingProfile,
+    isLoading: isLoadingUser,
     
     // Actions
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    updateProfile: updateProfileMutation.mutate,
     refreshToken: refreshTokenMutation.mutate,
-    refetchProfile,
     
     // Mutation states
     isLoggingIn: loginMutation.isPending,
     isLoggingOut: logoutMutation.isPending,
-    isUpdatingProfile: updateProfileMutation.isPending,
     isRefreshingToken: refreshTokenMutation.isPending,
     
     // Errors
     loginError: loginMutation.error,
     logoutError: logoutMutation.error,
-    updateProfileError: updateProfileMutation.error,
     refreshTokenError: refreshTokenMutation.error,
   };
 }; 

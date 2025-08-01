@@ -40,11 +40,12 @@ class ApiClient {
       },
       async (error) => {
         if (error.response?.status === 401) {
-          // Only handle token refresh for authenticated requests (not login or refresh)
+          // Only handle token refresh for authenticated requests (not login, refresh, or password operations)
           const isLoginRequest = error.config?.url?.includes('/auth/login');
           const isRefreshRequest = error.config?.url?.includes('/auth/refresh');
+          const isPasswordRequest = error.config?.url?.includes('/password');
           
-          if (!isLoginRequest && !isRefreshRequest && this.getAuthToken()) {
+          if (!isLoginRequest && !isRefreshRequest && !isPasswordRequest && this.getAuthToken()) {
             console.log('🔄 401 detected, attempting token refresh...');
             
             try {

@@ -341,22 +341,14 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Welcome to your MedoScopic admin panel. Manage your website
-              content from here.
-            </p>
-          </div>
-          <Badge
-            variant="secondary"
-            className="bg-gradient-to-r from-brand-green/10 to-brand-teal/10 text-brand-green border-brand-green/20"
-          >
-            Admin Panel v2.0
-          </Badge>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Welcome to your MedoScopic admin panel. Manage your website
+            content from here.
+          </p>
         </div>
       </motion.div>
 

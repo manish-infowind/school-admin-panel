@@ -9,11 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./ThemeToggle";
-import { Settings, LogOut, User, Menu } from "lucide-react";
+import { Settings, LogOut, User, Menu, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/authContext";
-import { LogoIcon } from "@/components/ui/logo-icon";
+import { useProfile } from "@/api/hooks/useProfile";
+import { useEffect, useState } from "react";
 
 interface TopNavigationProps {
   onToggleSidebar: () => void;
@@ -26,6 +27,22 @@ export function TopNavigation({
 }: TopNavigationProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { profile, loading, loadProfile } = useProfile();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  // Load profile when component mounts (only if not already loaded)
+  useEffect(() => {
+    if (user && !profile && !loading) {
+      loadProfile();
+    }
+  }, [user, profile, loading, loadProfile]);
+
+  useEffect(() => {
+    if (profile?.avatar) {
+      setProfileImage(profile.avatar);
+    }
+  }, [profile]);
+
   return (
     <motion.header
       className="flex h-16 items-center justify-between border-b bg-background px-6 shadow-sm"
@@ -43,13 +60,6 @@ export function TopNavigation({
           <Menu className="h-4 w-4" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>
-
-        <div className="flex items-center gap-2">
-          <LogoIcon size="sm" />
-          <h1 className="text-xl font-semibold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-            MedoScopic Admin
-          </h1>
-        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -58,21 +68,40 @@ export function TopNavigation({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" alt="Admin" />
-                <AvatarFallback className="bg-gradient-to-br from-brand-green to-brand-teal text-white">
-                  {user?.fullName ? user.fullName.substring(0, 2).toUpperCase() : 
-                   user?.username ? user.username.substring(0, 2).toUpperCase() : 'AD'}
-                </AvatarFallback>
-              </Avatar>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Avatar className="h-8 w-8">
+                  {profileImage ? (
+                    <AvatarImage 
+                      src={`${profileImage}?t=${Date.now()}`} 
+                      alt={profile?.firstName || 'User'} 
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-brand-green to-brand-teal text-white">
+                      {profile?.firstName && profile?.lastName 
+                        ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
+                        : profile?.firstName 
+                          ? profile.firstName.charAt(0).toUpperCase()
+                          : profile?.lastName 
+                            ? profile.lastName.charAt(0).toUpperCase()
+                            : profile?.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.fullName || user?.username || 'Admin User'}</p>
+                <p className="text-sm font-medium leading-none">
+                  {profile?.firstName && profile?.lastName 
+                    ? `${profile.firstName} ${profile.lastName}`
+                    : profile?.firstName || profile?.lastName || user?.fullName || user?.username || 'Admin User'}
+                </p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email || 'admin@medoscopic.com'}
+                  {profile?.email || user?.email || 'admin@medoscopic.com'}
                 </p>
               </div>
             </DropdownMenuLabel>
