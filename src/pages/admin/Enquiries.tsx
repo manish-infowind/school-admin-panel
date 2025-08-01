@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useEnquiries } from "@/api/hooks/useEnquiries";
+import { EnquiryService } from "@/api/services/enquiryService";
 import { Enquiry } from "@/api/types";
 import { format } from "date-fns";
 import { API_CONFIG } from "@/api/config";
@@ -63,6 +65,13 @@ export default function Enquiries() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [enquiryToDelete, setEnquiryToDelete] = useState<Enquiry | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportDateRange, setExportDateRange] = useState<string>("today");
+  const [exportCustomStartDate, setExportCustomStartDate] = useState<Date | undefined>(undefined);
+  const [exportCustomEndDate, setExportCustomEndDate] = useState<Date | undefined>(undefined);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStage, setExportStage] = useState<string>("");
 
   // Ref for date picker click outside
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -274,6 +283,225 @@ export default function Enquiries() {
     });
   };
 
+  // Export enquiries to CSV
+  const exportEnquiries = async () => {
+    setIsExporting(true);
+    setExportProgress(0);
+    setExportStage("Initializing export...");
+    
+    const startTime = Date.now();
+    const minDuration = 5000; // 5 seconds minimum
+    
+    try {
+      let dateFilter: string;
+      let requestBody: any = {};
+
+      // Calculate date range based on selection
+      setExportProgress(10);
+      setExportStage("Calculating date range...");
+      
+      // Add small delay for smooth feel
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      switch (exportDateRange) {
+        case "today":
+          dateFilter = "today";
+          requestBody = { dateFilter };
+          break;
+        case "last7days":
+          dateFilter = "last7days";
+          requestBody = { dateFilter };
+          break;
+        case "month":
+          dateFilter = "thisMonth";
+          requestBody = { dateFilter };
+          break;
+        case "year":
+          dateFilter = "thisYear";
+          requestBody = { dateFilter };
+          break;
+        case "custom":
+          if (exportCustomStartDate && exportCustomEndDate) {
+            dateFilter = "custom";
+            requestBody = {
+              dateFilter,
+              startDate: format(exportCustomStartDate, 'yyyy-MM-dd'),
+              endDate: format(exportCustomEndDate, 'yyyy-MM-dd')
+            };
+          } else {
+            throw new Error("Custom date range requires both start and end dates");
+          }
+          break;
+        default:
+          throw new Error("Invalid date range selection");
+      }
+
+      setExportProgress(20);
+      setExportStage("Preparing export request...");
+      
+      // Add delay for smooth feel
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      // Call the export API endpoint
+      const response = await EnquiryService.exportEnquiries(requestBody);
+
+      setExportProgress(50);
+      setExportStage("Processing server response...");
+      
+      // Add delay for smooth feel
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      if (response.success && response.data) {
+        const { enquiries, totalCount } = response.data;
+        
+        console.log('📊 Export response data:', {
+          enquiriesCount: enquiries.length,
+          totalCount,
+          sampleEnquiry: enquiries[0],
+          allEnquiries: enquiries
+        });
+        
+        setExportProgress(70);
+        setExportStage("Preparing CSV file...");
+        
+        // Add delay for smooth feel
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Convert to CSV
+        const csvData = convertToCSV(enquiries);
+        
+        setExportProgress(85);
+        setExportStage("Finalizing export...");
+        
+        // Add delay for smooth feel
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Download file
+        const today = new Date();
+        downloadCSV(csvData, `enquiries_${exportDateRange}_${format(today, 'yyyy-MM-dd')}.csv`);
+        
+        setExportProgress(100);
+        setExportStage("Export completed!");
+        
+        // Calculate remaining time to ensure minimum 5 seconds
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, minDuration - elapsedTime);
+        
+        // Wait for remaining time to complete minimum duration
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+        
+        // Small delay to show completion
+        setTimeout(() => {
+          toast({
+            title: "Export Successful",
+            description: `Exported ${totalCount} enquiries to CSV.`,
+          });
+          
+          setIsExportModalOpen(false);
+          setExportProgress(0);
+          setExportStage("");
+        }, 1000);
+        
+      } else {
+        throw new Error("Failed to export enquiries");
+      }
+    } catch (error) {
+      console.error('❌ Export failed:', error);
+      setExportProgress(0);
+      setExportStage("Export failed");
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export enquiries. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Convert enquiries to CSV format
+  const convertToCSV = (enquiries: Array<{
+    fullName: string;
+    email: string;
+    phone: string;
+    message: string;
+    contactDate: string;
+  }>): string => {
+    const headers = ['Customer Name', 'Email', 'Phone', 'Message', 'Date of Contact'];
+    const rows = enquiries.map(enquiry => [
+      enquiry.fullName || '',
+      enquiry.email || '',
+      enquiry.phone || '',
+      enquiry.message.replace(/"/g, '""') || '', // Escape quotes in CSV
+      enquiry.contactDate || ''
+    ]);
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    console.log('📊 CSV file generated:', {
+      dataLength: enquiries.length,
+      csvLength: csvContent.length,
+      sampleData: enquiries[0]
+    });
+    
+    return csvContent;
+  };
+
+  // Test CSV generation with sample data
+  const testCSVGeneration = () => {
+    const sampleData = [
+      {
+        fullName: "Test User",
+        email: "test@example.com",
+        phone: "+1234567890",
+        message: "This is a test message",
+        contactDate: "2024-01-15"
+      }
+    ];
+    
+    console.log('🧪 Testing CSV generation with sample data:', sampleData);
+    const testCSV = convertToCSV(sampleData);
+    downloadCSV(testCSV, 'test_export.csv');
+  };
+
+  // Download CSV file
+  const downloadCSV = (csvContent: string, filename: string) => {
+    try {
+      console.log('📥 Downloading CSV file:', filename);
+      console.log('📥 CSV content length:', csvContent.length, 'characters');
+      
+      const blob = new Blob([csvContent], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      
+      console.log('📥 Blob created:', {
+        size: blob.size,
+        type: blob.type
+      });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+      
+      console.log('✅ CSV file download initiated:', filename);
+    } catch (error) {
+      console.error('❌ Error downloading CSV file:', error);
+      throw error;
+    }
+  };
+
   // Toggle date picker with positioning logic
   const toggleDatePicker = () => {
     if (!isDatePickerOpen) {
@@ -440,7 +668,10 @@ export default function Enquiries() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => setIsExportModalOpen(true)}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -1287,6 +1518,167 @@ export default function Enquiries() {
                     Delete Enquiry
                   </>
                 )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Modal */}
+      <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Export Enquiries
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Date Range</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={exportDateRange === "today" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportDateRange("today")}
+                  className="justify-start"
+                >
+                  Today
+                </Button>
+                <Button
+                  variant={exportDateRange === "last7days" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportDateRange("last7days")}
+                  className="justify-start"
+                >
+                  Last 7 Days
+                </Button>
+                <Button
+                  variant={exportDateRange === "month" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportDateRange("month")}
+                  className="justify-start"
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant={exportDateRange === "year" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportDateRange("year")}
+                  className="justify-start"
+                >
+                  This Year
+                </Button>
+                <Button
+                  variant={exportDateRange === "custom" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportDateRange("custom")}
+                  className="justify-start col-span-2"
+                >
+                  Custom Date Range
+                </Button>
+              </div>
+            </div>
+
+            {exportDateRange === "custom" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={exportCustomStartDate ? format(exportCustomStartDate, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined;
+                      setExportCustomStartDate(date);
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={exportCustomEndDate ? format(exportCustomEndDate, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined;
+                      setExportCustomEndDate(date);
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                  <Download className="h-3 w-3 text-blue-600" />
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900">Export Details</p>
+                  <p className="text-blue-700 mt-1">
+                    The CSV file will include: Customer Name, Email, Phone, Message, and Date of Contact.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {isExporting && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{exportStage}</span>
+                  <span className="font-medium">{exportProgress}%</span>
+                </div>
+                <Progress value={exportProgress} className="w-full" />
+                <div className="text-xs text-muted-foreground text-center">
+                  {exportProgress === 100 ? "CSV file will download automatically..." : "Please wait while we prepare your CSV export..."}
+                </div>
+              </div>
+            )}
+
+                        <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!isExporting) {
+                    setIsExportModalOpen(false);
+                  }
+                }}
+                disabled={isExporting}
+              >
+                {isExporting ? "Please Wait..." : "Cancel"}
+              </Button>
+              
+              {/* Test button for debugging */}
+              <Button
+                variant="outline"
+                onClick={testCSVGeneration}
+                disabled={isExporting}
+                className="text-xs"
+              >
+                Test CSV
+              </Button>
+              
+              <Button
+                onClick={exportEnquiries}
+                disabled={isExporting || (exportDateRange === "custom" && (!exportCustomStartDate || !exportCustomEndDate))}
+                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              >
+                                  {isExporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {exportProgress === 100 ? "Downloading..." : "Exporting..."}
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </>
+                  )}
               </Button>
             </div>
           </div>

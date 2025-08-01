@@ -74,6 +74,7 @@ export const API_CONFIG = {
       REPLY: '/enquiries/:id/reply',
       STATS: '/enquiries/stats/overview',
       FILTER_OPTIONS: '/enquiries/filter-options',
+      EXPORT: '/enquiries/export',
     },
     CONTACT: {
       SUBMIT: '/contact',

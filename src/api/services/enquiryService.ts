@@ -224,4 +224,52 @@ export class EnquiryService {
       throw error;
     }
   }
+
+  // Export enquiries to CSV
+  static async exportEnquiries(data: {
+    dateFilter: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<{
+    enquiries: Array<{
+      fullName: string;
+      email: string;
+      phone: string;
+      message: string;
+      contactDate: string;
+    }>;
+    totalCount: number;
+    exportDate: string;
+    filters: {
+      dateFilter: string;
+    };
+  }>> {
+    try {
+      console.log('📊 Exporting enquiries...', data);
+      
+      const response = await apiClient.post<{
+        enquiries: Array<{
+          fullName: string;
+          email: string;
+          phone: string;
+          message: string;
+          contactDate: string;
+        }>;
+        totalCount: number;
+        exportDate: string;
+        filters: {
+          dateFilter: string;
+        };
+      }>(
+        API_CONFIG.ENDPOINTS.ENQUIRIES.EXPORT,
+        data
+      );
+      
+      console.log('✅ Enquiries exported:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Failed to export enquiries:', error);
+      throw error;
+    }
+  }
 } 
