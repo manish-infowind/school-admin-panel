@@ -51,7 +51,6 @@ export const useCreateFAQ = () => {
       queryClient.invalidateQueries({ queryKey: faqKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Create FAQ error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create FAQ",
@@ -81,7 +80,6 @@ export const useUpdateFAQ = () => {
       queryClient.invalidateQueries({ queryKey: faqKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Update FAQ error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to update FAQ",
@@ -112,7 +110,6 @@ export const useDeleteFAQ = () => {
       queryClient.removeQueries({ queryKey: faqKeys.detail(faqId) });
     },
     onError: (error: any) => {
-      console.error('Delete FAQ error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to delete FAQ",
@@ -142,7 +139,6 @@ export const useUpdateFAQStatus = () => {
       queryClient.invalidateQueries({ queryKey: faqKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Update FAQ status error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to update FAQ status",

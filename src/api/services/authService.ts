@@ -161,7 +161,7 @@ export class AuthService {
         return browserLocation;
       }
     } catch (error) {
-      // No console.log or console.error
+      // intentionally left blank
     }
     
     // Method 2: Try IP-based geolocation
@@ -169,7 +169,7 @@ export class AuthService {
       const ipLocation = await this.getLocationFromIP(ipAddress);
       return ipLocation;
     } catch (error) {
-      // No console.log or console.error
+      // intentionally left blank
     }
     
     // Method 3: Fallback to default location
@@ -220,7 +220,6 @@ export class AuthService {
 
       return response;
     } catch (error) {
-      // No console.log or console.error
       throw error;
     }
   }
@@ -347,14 +346,12 @@ export class AuthService {
   // Verify 2FA OTP
   static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponse>> {
     try {
-      
       const response = await apiClient.post<LoginResponse>(
         API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
         otpData
       );
 
       if (response.success && response.data) {
-        
         // Store tokens and user data
         localStorage.setItem('accessToken', response.data.accessToken);
         if (response.data.refreshToken) {

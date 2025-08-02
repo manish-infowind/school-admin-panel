@@ -40,7 +40,7 @@ export const useAboutUs = () => {
       }
     },
     onError: (error) => {
-      console.error('About Us update failed:', error);
+      // Removed console
     },
   });
 
@@ -89,7 +89,7 @@ export const useSection = (sectionId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Section update failed:', error);
+      // Removed console
     },
   });
 
@@ -107,7 +107,7 @@ export const useSection = (sectionId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Section delete failed:', error);
+      // Removed console
     },
   });
 
@@ -124,7 +124,7 @@ export const useSection = (sectionId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Section image upload failed:', error);
+      // Removed console
     },
   });
 
@@ -177,7 +177,7 @@ export const useCreateSection = () => {
       }
     },
     onError: (error) => {
-      console.error('Section creation failed:', error);
+      // Removed console
     },
   });
 
@@ -219,7 +219,7 @@ export const useCreateTeamMember = () => {
       }
     },
     onError: (error) => {
-      console.error('Team member creation failed:', error);
+      // Removed console
     },
   });
 
@@ -258,7 +258,7 @@ export const useTeamMember = (memberId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Team member update failed:', error);
+      // Removed console
     },
   });
 
@@ -276,7 +276,7 @@ export const useTeamMember = (memberId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Team member delete failed:', error);
+      // Removed console
     },
   });
 
@@ -293,7 +293,7 @@ export const useTeamMember = (memberId: string) => {
       }
     },
     onError: (error) => {
-      console.error('Team member image upload failed:', error);
+      // Removed console
     },
   });
 

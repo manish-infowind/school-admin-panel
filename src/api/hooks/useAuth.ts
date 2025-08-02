@@ -24,15 +24,12 @@ export const useAuth = () => {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginRequest) => {
-      console.log('🚀 Login mutation triggered with credentials:', credentials);
       return AuthService.login(credentials);
     },
     onSuccess: (response) => {
-      console.log('🎉 Login mutation success:', response);
       if (response.success && response.data) {
         // Check if 2FA is required
         if (response.data.requiresOTP) {
-          console.log('🔐 2FA required, not navigating yet');
           // Don't navigate - 2FA verification is needed
           return;
         }
@@ -41,12 +38,10 @@ export const useAuth = () => {
         queryClient.setQueryData(authKeys.user(), response.data.user);
         
         // Navigate to admin dashboard after successful login
-        console.log('🔄 Navigating to admin dashboard...');
         navigate('/admin', { replace: true });
       }
     },
     onError: (error) => {
-      console.error('💥 Login mutation error:', error);
       // Don't navigate on error - let the component handle it
     },
   });
@@ -54,22 +49,18 @@ export const useAuth = () => {
   // Verify 2FA mutation
   const verify2FAMutation = useMutation({
     mutationFn: (otpData: Verify2FARequest) => {
-      console.log('🔐 2FA verification triggered with data:', otpData);
       return AuthService.verify2FA(otpData);
     },
     onSuccess: (response) => {
-      console.log('🎉 2FA verification success:', response);
       if (response.success && response.data) {
         // Update user in cache
         queryClient.setQueryData(authKeys.user(), response.data.user);
         
         // Navigate to admin dashboard after successful 2FA verification
-        console.log('🔄 Navigating to admin dashboard after 2FA...');
         navigate('/admin', { replace: true });
       }
     },
     onError: (error) => {
-      console.error('💥 2FA verification error:', error);
       // Don't navigate on error - let the component handle it
     },
   });

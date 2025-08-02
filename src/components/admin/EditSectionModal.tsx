@@ -88,7 +88,6 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         try {
           await AboutUsService.uploadSectionImage(section._id, imageFile);
         } catch (uploadError) {
-          console.warn('Image upload failed, but section was updated:', uploadError);
         }
       }
 

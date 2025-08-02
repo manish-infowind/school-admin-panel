@@ -112,7 +112,6 @@ const AboutUs = () => {
           setMainImageFile(null);
           setMainImagePreview(null);
         } catch (uploadError) {
-          console.warn('Main image upload failed, but content was updated:', uploadError);
         }
       }
 
@@ -125,7 +124,6 @@ const AboutUs = () => {
           // Clear the remove flag after successful removal
           setRemoveMainImage(false);
         } catch (removeError) {
-          console.warn('Main image removal failed, but content was updated:', removeError);
         }
       }
 
@@ -230,7 +228,6 @@ const AboutUs = () => {
       setDeleteItemId('');
       setDeleteItemName('');
     } catch (error) {
-      console.error('Delete failed:', error);
       setDeleteError('Failed to delete item. Please try again.');
     } finally {
       setIsDeleting(false);

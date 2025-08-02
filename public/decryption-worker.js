@@ -104,7 +104,6 @@ async function decryptEnquiryRecord(encryptedRecord) {
     };
 
   } catch (error) {
-    console.error('Worker decryption failed:', error);
     throw error;
   }
 }

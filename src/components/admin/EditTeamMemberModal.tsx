@@ -106,7 +106,6 @@ export const EditTeamMemberModal: React.FC<EditTeamMemberModalProps> = ({
         try {
           await AboutUsService.uploadTeamMemberImage(member._id, imageFile);
         } catch (uploadError) {
-          console.warn('Image upload failed, but member was updated:', uploadError);
         }
       }
 

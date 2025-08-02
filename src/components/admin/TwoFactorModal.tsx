@@ -78,7 +78,6 @@ export function TwoFactorModal({
         }
       }
     } catch (error) {
-      console.error('Setup 2FA failed:', error);
     }
   };
 

@@ -46,27 +46,22 @@ class ApiClient {
           const isPasswordRequest = error.config?.url?.includes('/password');
           
           if (!isLoginRequest && !isRefreshRequest && !isPasswordRequest && this.getAuthToken()) {
-            console.log('🔄 401 detected, attempting token refresh...');
-            
             try {
               // Try to refresh the token
               const success = await this.refreshToken();
               
               if (success) {
-                console.log('✅ Token refreshed, retrying original request...');
                 // Retry the original request with new token
                 const originalRequest = error.config;
                 originalRequest.headers['Authorization'] = `Bearer ${this.getAuthToken()}`;
                 return this.axiosInstance.request(originalRequest);
               } else {
-                console.log('❌ Token refresh failed, redirecting to login...');
                 // Refresh failed, clear tokens and redirect to login
                 this.clearAuthTokens();
                 window.location.href = '/login';
                 return Promise.reject(error);
               }
             } catch (refreshError) {
-              console.log('❌ Token refresh error, redirecting to login...');
               // Refresh failed, clear tokens and redirect to login
               this.clearAuthTokens();
               window.location.href = '/login';
@@ -173,8 +168,6 @@ class ApiClient {
     }
   }
 
-
-
   // Main request method
   async request<T = any>(
     endpoint: string,
@@ -200,24 +193,10 @@ class ApiClient {
       config.data = body;
     }
 
-    console.log('🔗 API Client: Making request');
-    console.log('🔗 Method:', method);
-    console.log('🔗 URL:', endpoint);
-    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
-    console.log('🔗 Headers:', config.headers);
-    console.log('📤 Request body:', config.data);
-
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
-      console.log('✅ API Client: Response received');
-      console.log('✅ Status:', response.status);
-      console.log('✅ Response data:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ API Client: Request failed');
-      console.error('❌ Error:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
       const apiError = this.handleError(error);
       throw apiError;
     }
@@ -237,17 +216,10 @@ class ApiClient {
   }
 
   async patch<T = any>(endpoint: string, body?: any, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
-    console.log('🔗 API Client: PATCH request');
-    console.log('🔗 Endpoint:', endpoint);
-    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
-    console.log('📤 Request body:', body);
     return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
   }
 
   async delete<T = any>(endpoint: string, options?: Omit<ApiRequestOptions, 'method'>): Promise<ApiResponse<T>> {
-    console.log('🔗 API Client: DELETE request');
-    console.log('🔗 Endpoint:', endpoint);
-    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
@@ -263,21 +235,10 @@ class ApiClient {
       },
     };
 
-    console.log('🔗 API Client Upload Request:');
-    console.log('🔗 Method:', config.method);
-    console.log('🔗 URL:', config.url);
-    console.log('🔗 Full URL:', `${this.baseURL}${endpoint}`);
-    console.log('🔗 Headers:', config.headers);
-    console.log('📁 FormData:', formData);
-
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
-      console.log('✅ API Client Upload Response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ API Client Upload Error:', error);
-      console.error('❌ Error Response:', error.response?.data);
-      console.error('❌ Error Status:', error.response?.status);
       const apiError = this.handleError(error);
       throw apiError;
     }
@@ -286,18 +247,14 @@ class ApiClient {
   // Refresh token method
   async refreshToken(): Promise<boolean> {
     try {
-      console.log('🔄 API Client: Starting token refresh...');
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
-        console.log('❌ API Client: No refresh token found');
         return false;
       }
 
       const response = await this.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {
         refreshToken,
       });
-
-      console.log('📥 API Client: Refresh response:', response);
 
       if (response.success && response.data) {
         const { accessToken, user } = response.data;
@@ -310,14 +267,11 @@ class ApiClient {
           localStorage.setItem('user', JSON.stringify(user));
         }
         
-        console.log('✅ API Client: Token refresh successful');
         return true;
       }
 
-      console.log('❌ API Client: Token refresh failed - no success response');
       return false;
     } catch (error) {
-      console.error('❌ API Client: Token refresh failed:', error);
       this.clearAuthTokens();
       return false;
     }

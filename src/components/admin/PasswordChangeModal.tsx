@@ -515,7 +515,6 @@ export function PasswordChangeModal({
             <div className="flex justify-center">
               <Button 
                 onClick={() => {
-                  console.log('🔄 Manual logout after password change...');
                   logout();
                 }}
                 className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
