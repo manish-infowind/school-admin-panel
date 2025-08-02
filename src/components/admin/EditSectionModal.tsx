@@ -5,15 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Edit, Loader2, AlertCircle, Award, Upload, X } from "lucide-react";
+import { Edit, Loader2, AlertCircle, Award, Upload, X, Eye } from "lucide-react";
 
 import { toast } from "@/hooks/use-toast";
 import { AboutUsSection } from "@/api/types";
+import { SectionPreview } from "./SectionPreview";
 
 interface EditSectionModalProps {
   section: AboutUsSection | null;
   onClose: () => void;
   onSuccess?: () => void;
+}
+
+// Validation interface
+interface ValidationErrors {
+  title?: string;
+  content?: string;
+  order?: string;
+  image?: string;
 }
 
 export const EditSectionModal: React.FC<EditSectionModalProps> = ({ 
@@ -27,8 +36,113 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
   const [order, setOrder] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [error, setError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Validation function
+  const validateField = (field: keyof ValidationErrors, value: any): string | undefined => {
+    switch (field) {
+      case 'title':
+        if (!value || !value.trim()) {
+          return 'Section title is required';
+        }
+        if (value.trim().length < 3) {
+          return 'Section title must be at least 3 characters long';
+        }
+        if (value.trim().length > 100) {
+          return 'Section title must be less than 100 characters';
+        }
+        break;
+      
+      case 'content':
+        if (!value || !value.trim()) {
+          return 'Section content is required';
+        }
+        if (value.trim().length < 10) {
+          return 'Section content must be at least 10 characters long';
+        }
+        if (value.trim().length > 2000) {
+          return 'Section content must be less than 2000 characters';
+        }
+        break;
+      
+      case 'order':
+        if (!value || value < 1) {
+          return 'Display order must be at least 1';
+        }
+        if (value > 999) {
+          return 'Display order must be less than 1000';
+        }
+        break;
+      
+      case 'image':
+        if (!imagePreview && !imageFile) {
+          return 'Section image is required';
+        }
+        break;
+    }
+    return undefined;
+  };
+
+  // Validate all fields
+  const validateAllFields = (): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    
+    errors.title = validateField('title', title);
+    errors.content = validateField('content', content);
+    errors.order = validateField('order', order);
+    errors.image = validateField('image', imagePreview || imageFile);
+    
+    return errors;
+  };
+
+  // Check if form is valid
+  const isFormValid = (): boolean => {
+    const errors = validateAllFields();
+    return !Object.values(errors).some(error => error !== undefined);
+  };
+
+  // Handle field change with validation
+  const handleFieldChange = (field: keyof ValidationErrors, value: any) => {
+    switch (field) {
+      case 'title':
+        setTitle(value);
+        break;
+      case 'content':
+        setContent(value);
+        break;
+      case 'order':
+        setOrder(value);
+        break;
+    }
+    
+    // Clear validation error for this field
+    setValidationErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  // Handle field blur with validation
+  const handleFieldBlur = (field: keyof ValidationErrors) => {
+    let value: any;
+    switch (field) {
+      case 'title':
+        value = title;
+        break;
+      case 'content':
+        value = content;
+        break;
+      case 'order':
+        value = order;
+        break;
+      case 'image':
+        value = imagePreview || imageFile;
+        break;
+    }
+    
+    const error = validateField(field, value);
+    setValidationErrors(prev => ({ ...prev, [field]: error }));
+  };
 
   // Load section data when modal opens
   useEffect(() => {
@@ -39,6 +153,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
       setImagePreview(section.image || null);
       setImageFile(null);
       setError('');
+      setValidationErrors({});
       setOpen(true);
     } else {
       setOpen(false);
@@ -49,18 +164,17 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     e.preventDefault();
     setError('');
 
-    if (!title.trim()) {
-      setError('Title is required');
-      return;
-    }
+    // Validate all fields
+    const errors = validateAllFields();
+    setValidationErrors(errors);
 
-    if (!content.trim()) {
-      setError('Content is required');
-      return;
-    }
-
-    if (order < 1) {
-      setError('Order must be at least 1');
+    // Check if there are any validation errors
+    if (Object.values(errors).some(error => error !== undefined)) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix all validation errors before updating.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -88,6 +202,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
         try {
           await AboutUsService.uploadSectionImage(section._id, imageFile);
         } catch (uploadError) {
+          console.warn('Image upload failed, but section was updated:', uploadError);
         }
       }
 
@@ -154,10 +269,16 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   type="text"
                   placeholder="Enter section title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  onChange={(e) => handleFieldChange('title', e.target.value)}
+                  onBlur={() => handleFieldBlur('title')}
+                  className={`focus:ring-blue-500 focus:border-blue-500 ${validationErrors.title ? "border-red-500" : ""}`}
                 />
+                {validationErrors.title && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    {validationErrors.title}
+                  </div>
+                )}
               </div>
 
               {/* Order Field */}
@@ -171,13 +292,19 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   min="1"
                   placeholder="Enter display order"
                   value={order}
-                  onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
-                  className="focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  onChange={(e) => handleFieldChange('order', parseInt(e.target.value) || 1)}
+                  onBlur={() => handleFieldBlur('order')}
+                  className={`focus:ring-blue-500 focus:border-blue-500 ${validationErrors.order ? "border-red-500" : ""}`}
                 />
                 <p className="text-xs text-gray-500">
                   Lower numbers appear first. Sections are ordered by this number.
                 </p>
+                {validationErrors.order && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    {validationErrors.order}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -192,16 +319,22 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   id="editSectionContent"
                   placeholder="Enter section content..."
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="min-h-[120px] focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  required
+                  onChange={(e) => handleFieldChange('content', e.target.value)}
+                  onBlur={() => handleFieldBlur('content')}
+                  className={`min-h-[120px] focus:ring-blue-500 focus:border-blue-500 resize-none ${validationErrors.content ? "border-red-500" : ""}`}
                 />
+                {validationErrors.content && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    {validationErrors.content}
+                  </div>
+                )}
               </div>
 
               {/* Image Upload Field */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">
-                  Section Image (Optional)
+                  Section Image *
                 </Label>
                 <div className="space-y-3">
                   {imagePreview ? (
@@ -219,13 +352,15 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         onClick={() => {
                           setImageFile(null);
                           setImagePreview(null);
+                          // Clear image validation error
+                          setValidationErrors(prev => ({ ...prev, image: undefined }));
                         }}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer">
+                    <div className={`w-full h-32 border-2 border-dashed rounded-lg flex items-center justify-center hover:border-gray-400 transition-colors cursor-pointer ${validationErrors.image ? "border-red-500 bg-red-50" : "border-gray-300"}`}>
                       <input
                         type="file"
                         accept="image/*"
@@ -237,6 +372,8 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                             const reader = new FileReader();
                             reader.onload = (e) => setImagePreview(e.target?.result as string);
                             reader.readAsDataURL(file);
+                            // Clear image validation error
+                            setValidationErrors(prev => ({ ...prev, image: undefined }));
                           }
                         }}
                         id="edit-section-image-upload"
@@ -249,8 +386,14 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                     </div>
                   )}
                 </div>
+                {validationErrors.image && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    {validationErrors.image}
+                  </div>
+                )}
                 <p className="text-xs text-gray-500">
-                  Upload a new image to replace the current one.
+                  Section image is required. Upload a new image to replace the current one.
                 </p>
               </div>
             </div>
@@ -267,8 +410,17 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               Cancel
             </Button>
             <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPreviewOpen(true)}
+              disabled={!title.trim() || !content.trim()}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </Button>
+            <Button
               type="submit"
-              disabled={isUpdating}
+              disabled={isUpdating || !isFormValid()}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {isUpdating ? (
@@ -286,6 +438,29 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           </div>
         </form>
       </DialogContent>
+
+      {/* Section Preview Modal */}
+      <SectionPreview
+        section={{
+          id: section?._id || 'preview',
+          name: 'About Us Section',
+          description: 'Section content for about us page',
+          status: 'Active',
+          lastModified: 'Just now',
+          content: {
+            title: title || 'Section Title',
+            subtitle: 'Section Subtitle',
+            description: content || 'Section content will appear here',
+            buttonText: 'Learn More',
+            buttonLink: '/section',
+          },
+          isActive: true,
+          order: order,
+        }}
+        products={[]}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </Dialog>
   );
 }; 

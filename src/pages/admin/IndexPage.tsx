@@ -23,6 +23,8 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductService, Product } from "@/api/services/productService";
 import { IndexPageService, IndexPageSection } from "@/api/services/indexPageService";
+import { IndexPagePreview } from "@/components/admin/IndexPagePreview";
+import { SectionPreview } from "@/components/admin/SectionPreview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,6 +143,8 @@ export default function IndexPage() {
     isOpen: false,
     section: null,
   });
+  const [isPagePreviewOpen, setIsPagePreviewOpen] = useState(false);
+  const [isSectionPreviewOpen, setIsSectionPreviewOpen] = useState(false);
 
   // Load sections and products from API
   useEffect(() => {
@@ -888,7 +892,10 @@ export default function IndexPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => setIsPagePreviewOpen(true)}
+            >
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
@@ -1407,7 +1414,10 @@ export default function IndexPage() {
                         </>
                       )}
                     </Button>
-                    <Button variant="outline">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setIsSectionPreviewOpen(true)}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
@@ -1462,6 +1472,24 @@ export default function IndexPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Page Preview Modal */}
+      <IndexPagePreview
+        sections={sections}
+        products={products}
+        isOpen={isPagePreviewOpen}
+        onClose={() => setIsPagePreviewOpen(false)}
+      />
+
+      {/* Section Preview Modal */}
+      {selectedSection && (
+        <SectionPreview
+          section={selectedSection}
+          products={products}
+          isOpen={isSectionPreviewOpen}
+          onClose={() => setIsSectionPreviewOpen(false)}
+        />
+      )}
     </div>
   );
 }

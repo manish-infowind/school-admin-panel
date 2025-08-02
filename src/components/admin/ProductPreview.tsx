@@ -140,10 +140,12 @@ export function ProductPreview({
               <h3 className="text-lg font-semibold">Description</h3>
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-muted-foreground">
-                    {product.fullDescription ||
-                      "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems."}
-                  </p>
+                  <div className="max-h-64 overflow-y-auto">
+                    <p className="text-muted-foreground whitespace-pre-wrap break-words">
+                      {product.fullDescription ||
+                        "The MedScope Pro X1 represents the latest in diagnostic imaging technology, featuring AI-powered analysis capabilities, high-resolution imaging, and seamless integration with existing hospital systems."}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -153,7 +155,7 @@ export function ProductPreview({
               <h3 className="text-lg font-semibold">Key Features</h3>
               <Card>
                 <CardContent className="pt-6">
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
                     {(
                       product.features || [
                         "AI-powered diagnostic analysis",
@@ -163,8 +165,8 @@ export function ProductPreview({
                       ]
                     ).map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-brand-green" />
-                        <span className="text-sm">{feature}</span>
+                        <Check className="h-4 w-4 text-brand-green flex-shrink-0" />
+                        <span className="text-sm break-words">{feature}</span>
                       </div>
                     ))}
                   </div>
