@@ -73,7 +73,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch products:', error);
       throw error;
     }
   }
@@ -87,7 +86,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch product:', error);
       throw error;
     }
   }
@@ -102,7 +100,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to create product:', error);
       throw error;
     }
   }
@@ -117,7 +114,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to update product:', error);
       throw error;
     }
   }
@@ -131,7 +127,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to delete product:', error);
       throw error;
     }
   }
@@ -154,7 +149,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to upload product image:', error);
       throw error;
     }
   }
@@ -169,7 +163,6 @@ export class ProductService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to update product status:', error);
       throw error;
     }
   }

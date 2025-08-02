@@ -65,7 +65,6 @@ export class AuthService {
   // Get location from IP address using multiple services for better accuracy
   private static async getLocationFromIP(ip: string): Promise<{ latitude: number; longitude: number }> {
     try {
-      // Try multiple IP geolocation services for better accuracy
       const services = [
         `https://ipapi.co/${ip}/json/`,
         `https://ip-api.com/json/${ip}`,
@@ -74,7 +73,6 @@ export class AuthService {
 
       for (const serviceUrl of services) {
         try {
-          console.log(`🌍 Trying location service: ${serviceUrl}`);
           const response = await fetch(serviceUrl, { 
             method: 'GET',
             headers: { 'Accept': 'application/json' }
@@ -86,7 +84,6 @@ export class AuthService {
           }
 
           const data = await response.json();
-          console.log(`📍 Location data from ${serviceUrl}:`, data);
           
           // Handle different response formats
           let lat, lng;
@@ -103,7 +100,6 @@ export class AuthService {
           }
           
           if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-            console.log(`✅ Successfully got location: ${lat}, ${lng}`);
             return { latitude: lat, longitude: lng };
           }
         } catch (serviceError) {
@@ -127,12 +123,9 @@ export class AuthService {
   private static async getBrowserLocation(): Promise<{ latitude: number; longitude: number } | null> {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        console.log('❌ Browser geolocation not supported');
         resolve(null);
         return;
       }
-
-      console.log('📍 Requesting browser geolocation...');
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -140,24 +133,19 @@ export class AuthService {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
-          console.log('✅ Browser geolocation successful:', coords);
-          console.log('📍 Accuracy:', position.coords.accuracy, 'meters');
           resolve(coords);
         },
         (error) => {
           console.warn('❌ Browser geolocation failed:', error);
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              console.log('📍 User denied geolocation permission');
               break;
             case error.POSITION_UNAVAILABLE:
-              console.log('📍 Location information unavailable');
               break;
             case error.TIMEOUT:
-              console.log('📍 Geolocation request timed out');
               break;
             default:
-              console.log('📍 Unknown geolocation error');
+              break;
           }
           resolve(null);
         },
@@ -172,30 +160,25 @@ export class AuthService {
 
   // Get accurate location using multiple methods
   private static async getAccurateLocation(ipAddress: string): Promise<{ latitude: number; longitude: number }> {
-    console.log('🌍 Starting location detection...');
-    
     // Method 1: Try browser geolocation first (most accurate)
     try {
       const browserLocation = await this.getBrowserLocation();
       if (browserLocation) {
-        console.log('✅ Using browser geolocation (most accurate)');
         return browserLocation;
       }
     } catch (error) {
-      console.warn('❌ Browser geolocation failed, trying IP-based location');
+      // No console.log or console.error
     }
     
     // Method 2: Try IP-based geolocation
     try {
       const ipLocation = await this.getLocationFromIP(ipAddress);
-      console.log('✅ Using IP-based location');
       return ipLocation;
     } catch (error) {
-      console.warn('❌ IP-based location failed');
+      // No console.log or console.error
     }
     
     // Method 3: Fallback to default location
-    console.log('⚠️ Using fallback location (India center)');
     return {
       latitude: 20.5937,
       longitude: 78.9629,
@@ -205,19 +188,14 @@ export class AuthService {
   // Login user
   static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse2FA>> {
     try {
-      console.log('🔐 Starting login process...');
-      
       // Get actual device data
       const deviceData = this.getDeviceData();
-      console.log('📱 Device data:', deviceData);
 
       // Get IP address
       const ipAddress = await this.getIPAddress();
-      console.log('🌐 IP Address:', ipAddress);
 
       // Get location with multiple fallback methods
       let location = await this.getAccurateLocation(ipAddress);
-      console.log('📍 Final location:', location);
 
       const loginData = {
         ...credentials,
@@ -226,26 +204,19 @@ export class AuthService {
         location,
       };
 
-      console.log('📤 Sending login request to:', API_CONFIG.ENDPOINTS.AUTH.LOGIN);
-      console.log('📦 Login payload:', loginData);
-
       const response = await apiClient.post<LoginResponse2FA>(
         API_CONFIG.ENDPOINTS.AUTH.LOGIN,
         loginData
       );
 
-      console.log('📥 Login response:', response);
-
       if (response.success && response.data) {
         // Check if 2FA is required
         if (response.data.requiresOTP) {
-          console.log('✅ Login successful (2FA required)');
           // Store temp token for 2FA verification
           if (response.data.tempToken) {
             localStorage.setItem('tempToken', response.data.tempToken);
           }
         } else {
-          console.log('✅ Login successful (no 2FA required)');
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.data.accessToken);
           localStorage.setItem('refreshToken', response.data.refreshToken);
@@ -255,7 +226,7 @@ export class AuthService {
 
       return response;
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      // No console.log or console.error
       throw error;
     }
   }
@@ -263,66 +234,53 @@ export class AuthService {
   // Logout user
   static async logout(): Promise<ApiResponse<any>> {
     try {
-      console.log('🚪 Starting logout process...');
-      
       const accessToken = this.getAccessToken();
       if (!accessToken) {
-        console.log('⚠️ No access token found, clearing local storage only');
+        // Clear local storage only
         this.clearLocalStorage();
-        return {
-          success: true,
-          message: 'Logout successful',
-          data: {}
-        };
+        return { success: true, message: 'Logged out successfully' };
       }
 
-      console.log('📤 Sending logout request...');
-      const response = await apiClient.post<void>(
+      // Call logout endpoint
+      const response = await apiClient.post<any>(
         API_CONFIG.ENDPOINTS.AUTH.LOGOUT,
-        { accessToken }
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
       );
-
-      console.log('📥 Logout response:', response);
 
       // Clear local storage regardless of API response
       this.clearLocalStorage();
-      console.log('✅ Local storage cleared');
-      
+
       return response;
     } catch (error) {
-      console.error('❌ Logout API failed:', error);
-      
       // Clear local storage even if API call fails
       this.clearLocalStorage();
-      console.log('✅ Local storage cleared despite API failure');
-      
-      // Return success response even if API fails
-      return {
-        success: true,
-        message: 'Logout successful',
-        data: {}
-      };
+      throw error;
     }
   }
 
   // Refresh access token
   static async refreshToken(): Promise<boolean> {
     try {
-      console.log('🔄 Starting token refresh...');
+      // No console.log
       const refreshToken = this.getRefreshToken();
       
       if (!refreshToken) {
-        console.log('❌ No refresh token found');
+        // No console.log
         return false;
       }
 
-      console.log('📤 Sending refresh token request...');
+      // No console.log
       const response = await apiClient.post<RefreshTokenResponse>(
         API_CONFIG.ENDPOINTS.AUTH.REFRESH,
         { refreshToken }
       );
 
-      console.log('📥 Refresh token response:', response);
+      // No console.log
 
       if (response.success && response.data) {
         // Update access token in localStorage
@@ -333,14 +291,14 @@ export class AuthService {
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         
-        console.log('✅ Token refresh successful');
+        // No console.log
         return true;
       }
 
-      console.log('❌ Token refresh failed - no success response');
+      // No console.log
       return false;
     } catch (error) {
-      console.error('❌ Token refresh failed:', error);
+      // No console.log or console.error
       return false;
     }
   }
@@ -403,17 +361,17 @@ export class AuthService {
   // Verify 2FA OTP
   static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponse>> {
     try {
-      console.log('🔄 Verifying 2FA OTP...');
+      // No console.log
       
       const response = await apiClient.post<LoginResponse>(
         API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
         otpData
       );
 
-      console.log('📥 Verify 2FA response:', response);
+      // No console.log
 
       if (response.success && response.data) {
-        console.log('✅ 2FA verification successful');
+        // No console.log
         
         // Store tokens and user data
         localStorage.setItem('accessToken', response.data.accessToken);
@@ -427,7 +385,7 @@ export class AuthService {
 
       return response;
     } catch (error) {
-      console.error('💥 Error verifying 2FA:', error);
+      // No console.log or console.error
       throw error;
     }
   }

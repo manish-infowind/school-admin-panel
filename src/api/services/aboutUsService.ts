@@ -18,7 +18,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch About Us:', error);
       throw error;
     }
   }
@@ -33,7 +32,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to update About Us:', error);
       throw error;
     }
   }
@@ -47,7 +45,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch section:', error);
       throw error;
     }
   }
@@ -62,7 +59,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to update section:', error);
       throw error;
     }
   }
@@ -76,7 +72,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to delete section:', error);
       throw error;
     }
   }
@@ -94,7 +89,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to upload section image:', error);
       throw error;
     }
   }
@@ -108,7 +102,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch team member:', error);
       throw error;
     }
   }
@@ -123,7 +116,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to update team member:', error);
       throw error;
     }
   }
@@ -137,7 +129,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to delete team member:', error);
       throw error;
     }
   }
@@ -157,9 +148,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to upload team member image:', error);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
       throw error;
     }
   }
@@ -174,7 +162,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to create section:', error);
       throw error;
     }
   }
@@ -216,7 +203,6 @@ export class AboutUsService {
       
       return sectionResponse;
     } catch (error) {
-      console.error('❌ Failed to create section with image:', error);
       throw error;
     }
   }
@@ -239,7 +225,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to create team member:', error);
       throw error;
     }
   }
@@ -289,7 +274,6 @@ export class AboutUsService {
       
       return memberResponse;
     } catch (error) {
-      console.error('❌ Failed to create team member with image:', error);
       throw error;
     }
   }
@@ -307,7 +291,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to upload main About Us image:', error);
       throw error;
     }
   }
@@ -321,7 +304,6 @@ export class AboutUsService {
 
       return response;
     } catch (error) {
-      console.error('❌ Failed to remove main About Us image:', error);
       throw error;
     }
   }

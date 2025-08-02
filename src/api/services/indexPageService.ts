@@ -140,7 +140,6 @@ export class IndexPageService {
       
       return response;
     } catch (error) {
-      console.error('❌ IndexPageService: Update section error:', error);
       throw error;
     }
   }
@@ -169,7 +168,6 @@ export class IndexPageService {
       
       return response;
     } catch (error) {
-      console.error('❌ IndexPageService: Delete section error:', error);
       throw error;
     }
   }

@@ -20,7 +20,6 @@ export class AdminManagementService {
       const response = await apiClient.get<AdminListResponse>(url);
       return response;
     } catch (error) {
-      console.error('Failed to get admins:', error);
       throw error;
     }
   }
@@ -33,7 +32,6 @@ export class AdminManagementService {
       );
       return response;
     } catch (error) {
-      console.error('Failed to get admin stats:', error);
       throw error;
     }
   }
@@ -45,7 +43,6 @@ export class AdminManagementService {
       const response = await apiClient.get<AdminUser>(url);
       return response;
     } catch (error) {
-      console.error('Failed to get admin details:', error);
       throw error;
     }
   }
@@ -59,7 +56,6 @@ export class AdminManagementService {
       );
       return response;
     } catch (error) {
-      console.error('Failed to create admin:', error);
       throw error;
     }
   }
@@ -71,7 +67,6 @@ export class AdminManagementService {
       const response = await apiClient.put<AdminUser>(url, data);
       return response;
     } catch (error) {
-      console.error('Failed to update admin:', error);
       throw error;
     }
   }
@@ -83,7 +78,6 @@ export class AdminManagementService {
       const response = await apiClient.delete<void>(url);
       return response;
     } catch (error) {
-      console.error('Failed to delete admin:', error);
       throw error;
     }
   }
@@ -95,7 +89,6 @@ export class AdminManagementService {
       const response = await apiClient.put<AdminUser>(url);
       return response;
     } catch (error) {
-      console.error('Failed to toggle admin status:', error);
       throw error;
     }
   }
@@ -107,7 +100,6 @@ export class AdminManagementService {
       const response = await apiClient.put<void>(url, data);
       return response;
     } catch (error) {
-      console.error('Failed to change admin password:', error);
       throw error;
     }
   }

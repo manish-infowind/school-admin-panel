@@ -43,10 +43,6 @@ export function ProductPreview({
 }: ProductPreviewProps) {
   if (!product) return null;
 
-  // Debug logging
-  console.log('🔍 ProductPreview - Product data:', product);
-  console.log('🔍 ProductPreview - Images:', product.images);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

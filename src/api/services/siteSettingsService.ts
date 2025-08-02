@@ -24,7 +24,6 @@ export class SiteSettingsService {
       );
       return response;
     } catch (error) {
-      console.error('Failed to initialize site settings:', error);
       throw error;
     }
   }
@@ -37,7 +36,6 @@ export class SiteSettingsService {
       );
       return response;
     } catch (error) {
-      console.error('Failed to get site settings:', error);
       throw error;
     }
   }
@@ -51,7 +49,6 @@ export class SiteSettingsService {
       );
       return response;
     } catch (error) {
-      console.error('Failed to update site settings:', error);
       throw error;
     }
   }

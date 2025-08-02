@@ -73,17 +73,12 @@ export class DashboardService {
   // Get complete dashboard data
   static async getDashboard(): Promise<ApiResponse<DashboardData>> {
     try {
-      console.log('🔗 DashboardService: Making GET request to get dashboard data');
-      console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.DASHBOARD.MAIN);
-      
       const response = await apiClient.get<DashboardData>(
         API_CONFIG.ENDPOINTS.DASHBOARD.MAIN
       );
       
-      console.log('✅ DashboardService: Dashboard data response:', response);
       return response;
     } catch (error) {
-      console.error('❌ DashboardService: Get dashboard data error:', error);
       throw error;
     }
   }
@@ -91,17 +86,12 @@ export class DashboardService {
   // Get dashboard stats only
   static async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     try {
-      console.log('🔗 DashboardService: Making GET request to get dashboard stats');
-      console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.DASHBOARD.STATS);
-      
       const response = await apiClient.get<DashboardStats>(
         API_CONFIG.ENDPOINTS.DASHBOARD.STATS
       );
       
-      console.log('✅ DashboardService: Dashboard stats response:', response);
       return response;
     } catch (error) {
-      console.error('❌ DashboardService: Get dashboard stats error:', error);
       throw error;
     }
   }
@@ -109,17 +99,12 @@ export class DashboardService {
   // Get recent activity only
   static async getRecentActivity(): Promise<ApiResponse<RecentActivity[]>> {
     try {
-      console.log('🔗 DashboardService: Making GET request to get recent activity');
-      console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVITY);
-      
       const response = await apiClient.get<RecentActivity[]>(
         API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVITY
       );
       
-      console.log('✅ DashboardService: Recent activity response:', response);
       return response;
     } catch (error) {
-      console.error('❌ DashboardService: Get recent activity error:', error);
       throw error;
     }
   }

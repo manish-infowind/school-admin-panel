@@ -130,7 +130,6 @@ const Login = () => {
       setIs2FAFlow(false);
       return true;
     } catch (error) {
-      console.error('2FA verification failed:', error);
       return false;
     }
   };

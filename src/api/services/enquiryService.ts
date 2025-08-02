@@ -56,7 +56,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch enquiries:', error);
       throw error;
     }
   }
@@ -70,7 +69,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch enquiry:', error);
       throw error;
     }
   }
@@ -85,7 +83,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to create enquiry:', error);
       throw error;
     }
   }
@@ -100,7 +97,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to update enquiry:', error);
       throw error;
     }
   }
@@ -130,7 +126,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to send reply:', error);
       throw error;
     }
   }
@@ -144,7 +139,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to delete enquiry:', error);
       throw error;
     }
   }
@@ -158,7 +152,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch enquiry statistics:', error);
       throw error;
     }
   }
@@ -172,7 +165,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to fetch filter options:', error);
       throw error;
     }
   }
@@ -187,7 +179,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to submit contact form:', error);
       throw error;
     }
   }
@@ -232,7 +223,6 @@ export class EnquiryService {
       
       return response;
     } catch (error) {
-      console.error('❌ Failed to export enquiries:', error);
       throw error;
     }
   }
