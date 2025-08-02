@@ -526,13 +526,21 @@ export default function Enquiries() {
         
         if (useWebWorkers && typeof Worker !== 'undefined') {
           console.log('🚀 Using Web Workers for parallel decryption...');
+          setExportProgress(75);
+          setExportStage("Initializing Web Workers...");
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
           csvRows = await decryptWithWebWorkers(encryptedEnquiries);
+          
+          // Ensure progress is at 90% after Web Worker completion
+          setExportProgress(90);
+          setExportStage("Decryption completed...");
+          await new Promise(resolve => setTimeout(resolve, 200));
         } else {
           console.log('🚀 Using main thread parallel decryption...');
           
           // Decrypt the enquiries using main thread parallel processing
           const decryption = new EnquiryDecryption();
-          csvRows = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
           
           console.log('📄 Starting CSV generation...');
           console.log('📄 CSV Header:', csvRows[0]);
@@ -551,8 +559,8 @@ export default function Enquiries() {
             const endIndex = Math.min(startIndex + batchSize, encryptedEnquiries.length);
             const currentBatch = encryptedEnquiries.slice(startIndex, endIndex);
             
-            // Update progress for batch
-            const batchProgress = 75 + (batchIndex / totalBatches) * 15; // 75% to 90%
+            // Update progress for batch (75% to 90%)
+            const batchProgress = 75 + (batchIndex / totalBatches) * 15;
             setExportProgress(Math.floor(batchProgress));
             setExportStage(`Decrypting batch ${batchIndex + 1} of ${totalBatches} (records ${startIndex + 1}-${endIndex})...`);
             
@@ -598,6 +606,11 @@ export default function Enquiries() {
             
             console.log(`✅ Batch ${batchIndex + 1} completed: ${batchResults.filter(r => r.success).length}/${batchResults.length} records successful`);
           }
+          
+          // Ensure progress is at 90% after main thread completion
+          setExportProgress(90);
+          setExportStage("Decryption completed...");
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
         
         console.log('🔓 All records decrypted and processed');
@@ -607,7 +620,7 @@ export default function Enquiries() {
         setExportStage("Finalizing CSV file...");
         
         // Add delay for smooth feel
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 400));
         
         // Combine all rows into final CSV
         const csvData = csvRows.join('\n');
@@ -620,11 +633,11 @@ export default function Enquiries() {
         console.log('📄 CSV Content Length:', csvData.length, 'characters');
         console.log('📄 Number of records:', encryptedEnquiries.length);
         
-        setExportProgress(85);
-        setExportStage("Finalizing export...");
+        setExportProgress(95);
+        setExportStage("Preparing download...");
         
         // Add delay for smooth feel
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // Download file
         const today = new Date();
@@ -843,8 +856,8 @@ export default function Enquiries() {
         const endIndex = Math.min(startIndex + batchSize, encryptedEnquiries.length);
         const currentBatch = encryptedEnquiries.slice(startIndex, endIndex);
         
-        // Update progress
-        const batchProgress = 75 + (completedBatches / totalBatches) * 15;
+        // Update progress (75% to 90%) - Use batchIndex for consistent progress
+        const batchProgress = 75 + (batchIndex / totalBatches) * 15;
         setExportProgress(Math.floor(batchProgress));
         setExportStage(`Decrypting batch ${batchIndex + 1} of ${totalBatches} (records ${startIndex + 1}-${endIndex})...`);
         
