@@ -14,6 +14,7 @@ import {
   Shield,
   HelpCircle,
   Users,
+  Megaphone,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,6 +61,11 @@ const navigation = [
     name: "FAQ",
     href: "/admin/faqs",
     icon: HelpCircle,
+  },
+  {
+    name: "Campaigns",
+    href: "/admin/campaigns",
+    icon: Megaphone,
   },
 ];
 

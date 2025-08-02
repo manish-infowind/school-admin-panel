@@ -102,6 +102,20 @@ export const API_CONFIG = {
       CHANGE_PASSWORD: '/admin-management/:id/password',
       DETAILS: '/admin-management/:id',
     },
+    CAMPAIGNS: {
+      LIST: '/campaigns',
+      STATS: '/campaigns/stats',
+      CREATE: '/campaigns',
+      UPDATE: '/campaigns/:id',
+      DELETE: '/campaigns/:id',
+      DETAILS: '/campaigns/:id',
+      RUN: '/campaigns/:id/run',
+      CANCEL: '/campaigns/:id/cancel',
+      STATUS: '/campaigns/:id/status',
+      SCHEDULER_STATUS: '/campaigns/scheduler/status',
+      SCHEDULER_REFRESH: '/campaigns/scheduler/refresh',
+      SCHEDULER_CHECK: '/campaigns/scheduler/check',
+    },
   },
 } as const;
 

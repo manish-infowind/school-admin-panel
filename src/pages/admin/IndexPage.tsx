@@ -370,18 +370,18 @@ export default function IndexPage() {
           }
         }
       } catch (apiError) {
-        // Fallback: Update local state only if API fails
-        setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
-        if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
-          setSelectedSection(null);
-          setActiveTab("sections");
-        }
-        
-        toast({
-          title: "Success!",
-          description: `${section.name} deleted successfully (local only).`,
-        });
-        setDeleteDialog({ isOpen: false, section: null });
+      // Fallback: Update local state only if API fails
+      setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
+      if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
+        setSelectedSection(null);
+        setActiveTab("sections");
+      }
+      
+      toast({
+        title: "Success!",
+        description: `${section.name} deleted successfully (local only).`,
+      });
+      setDeleteDialog({ isOpen: false, section: null });
       }
     } catch (error) {
       toast({

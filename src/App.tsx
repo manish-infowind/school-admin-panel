@@ -24,6 +24,7 @@ import FAQ from "./pages/admin/FAQ";
 import FAQNew from "./pages/admin/FAQNew";
 import FAQEdit from "./pages/admin/FAQEdit";
 import AdminManagement from "./pages/admin/AdminManagement";
+import Campaigns from "./pages/admin/Campaigns";
 
 const queryClient = new QueryClient();
 
@@ -186,6 +187,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <AdminManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/campaigns"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <Campaigns />
                   </AdminLayout>
                 </ProtectedRoute>
               }

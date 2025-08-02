@@ -441,4 +441,96 @@ export interface EnquiryListResponse {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+// Campaign Management Types
+export interface Campaign {
+  _id: string;
+  name: string;
+  subject: string;
+  content: string;
+  type: 'email' | 'sms' | 'push';
+  status: 'draft' | 'scheduled' | 'running' | 'completed' | 'failed' | 'cancelled';
+  scheduledAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  totalRecipients: number;
+  sentCount: number;
+  failedCount: number;
+  openedCount: number;
+  clickedCount: number;
+  recipientEmails: string[];
+  sentEmails: string[];
+  failedEmails: string[];
+  settings: {
+    sendInterval: number;
+    maxRetries: number;
+    includeUnsubscribed: boolean;
+  };
+  createdByEmail: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCampaignRequest {
+  name: string;
+  subject: string;
+  content: string;
+  type: 'email' | 'sms' | 'push';
+  scheduledAt?: string;
+  settings: {
+    sendInterval: number;
+    maxRetries: number;
+    includeUnsubscribed: boolean;
+  };
+  notes?: string;
+}
+
+export interface UpdateCampaignRequest {
+  name?: string;
+  subject?: string;
+  content?: string;
+  scheduledAt?: string;
+  settings?: {
+    sendInterval?: number;
+    maxRetries?: number;
+    includeUnsubscribed?: boolean;
+  };
+  notes?: string;
+}
+
+export interface RunCampaignRequest {
+  customEmails?: string[];
+}
+
+export interface CampaignListResponse {
+  campaigns: Campaign[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface CampaignStats {
+  total: number;
+  draft: number;
+  scheduled: number;
+  running: number;
+  completed: number;
+  failed: number;
+  cancelled: number;
+  totalEmailsSent: number;
+  totalEmailsFailed: number;
+  averageOpenRate: number;
+  averageClickRate: number;
+}
+
+export interface CampaignQueryParams extends QueryParams {
+  status?: 'draft' | 'scheduled' | 'running' | 'completed' | 'failed' | 'cancelled';
+  type?: 'email' | 'sms' | 'push';
+  startDate?: string;
+  endDate?: string;
 } 

@@ -45,6 +45,7 @@ import { EnquiryService } from "@/api/services/enquiryService";
 import { Enquiry } from "@/api/types";
 import { format } from "date-fns";
 import { API_CONFIG } from "@/api/config";
+import { useNavigate } from "react-router-dom";
 
 // Decryption utility class
 class EnquiryDecryption {
@@ -163,6 +164,7 @@ class EnquiryDecryption {
 
 export default function Enquiries() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -992,7 +994,10 @@ export default function Enquiries() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
+            <Button 
+              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              onClick={() => navigate('/admin/campaigns')}
+            >
               <Mail className="h-4 w-4 mr-2" />
               Compose Email
             </Button>

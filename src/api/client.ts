@@ -26,6 +26,15 @@ class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // Debug: Log the request details
+        console.log('API Client: Request:', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          headers: config.headers,
+          data: config.data
+        });
+        
         return config;
       },
       (error) => {
