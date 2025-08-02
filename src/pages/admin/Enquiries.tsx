@@ -216,6 +216,7 @@ export default function Enquiries() {
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStage, setExportStage] = useState<string>("");
   const [useWebWorkers, setUseWebWorkers] = useState(true); // Enable Web Workers by default
+  const [noDataFound, setNoDataFound] = useState(false);
 
   // Ref for date picker click outside
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -432,6 +433,7 @@ export default function Enquiries() {
     setIsExporting(true);
     setExportProgress(0);
     setExportStage("Initializing export...");
+    setNoDataFound(false);
     
     const startTime = Date.now();
     const minDuration = 5000; // 5 seconds minimum
@@ -513,6 +515,19 @@ export default function Enquiries() {
         
         if (!encryptedEnquiries || !Array.isArray(encryptedEnquiries)) {
           throw new Error('Invalid response format: enquiries array not found');
+        }
+        
+        // Check if no data found
+        if (totalCount === 0 || encryptedEnquiries.length === 0) {
+          setExportProgress(0);
+          setExportStage("No data found");
+          setNoDataFound(true);
+          toast({
+            title: "No Data Found",
+            description: `No enquiries found for the selected date range.`,
+            variant: "destructive",
+          });
+          return;
         }
         
         setExportProgress(70);
@@ -666,6 +681,7 @@ export default function Enquiries() {
           setIsExportModalOpen(false);
           setExportProgress(0);
           setExportStage("");
+          setNoDataFound(false);
         }, 1000);
         
       } else {
@@ -2132,39 +2148,62 @@ export default function Enquiries() {
               </div>
             )}
 
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (!isExporting) {
-                    setIsExportModalOpen(false);
-                  }
-                }}
-                disabled={isExporting}
-                size="sm"
-              >
-                {isExporting ? "Please Wait..." : "Cancel"}
-              </Button>
-              
-              <Button
-                onClick={exportEnquiries}
-                disabled={isExporting || (exportDateRange === "custom" && (!exportCustomStartDate || !exportCustomEndDate))}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
-                size="sm"
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {exportProgress === 100 ? "Downloading..." : "Exporting..."}
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </>
-                )}
-              </Button>
-            </div>
+            {noDataFound && (
+              <div className="space-y-3">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                      <span className="text-yellow-600 text-xs font-bold">!</span>
+                    </div>
+                    <div className="text-sm">
+                      <p className="font-medium text-yellow-900">No Data Found</p>
+                      <p className="text-yellow-700 mt-1">
+                        No enquiries found for the selected date range. Try adjusting your filters or date range.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+                          <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!isExporting) {
+                      setIsExportModalOpen(false);
+                    }
+                  }}
+                  disabled={isExporting}
+                  size="sm"
+                >
+                  {isExporting ? "Please Wait..." : "Cancel"}
+                </Button>
+                
+                <Button
+                  onClick={exportEnquiries}
+                  disabled={isExporting || (exportDateRange === "custom" && (!exportCustomStartDate || !exportCustomEndDate))}
+                  className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                  size="sm"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {exportProgress === 100 ? "Downloading..." : "Exporting..."}
+                    </>
+                  ) : noDataFound ? (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Try Again
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </>
+                  )}
+                </Button>
+              </div>
           </div>
         </DialogContent>
       </Dialog>

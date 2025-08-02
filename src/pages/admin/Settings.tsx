@@ -2,99 +2,81 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Save,
   Globe,
   Mail,
-  Bell,
-  Shield,
-  Database,
-  Palette,
-  Zap,
+  Phone,
   Settings as SettingsIcon,
   Loader2,
-  Download,
-  Upload,
-  Trash2,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { SiteSettingsService, SiteSettings } from "@/api/services/siteSettingsService";
 
-interface SystemSettings {
-  siteName: string;
-  siteDescription: string;
-  siteUrl: string;
-  adminEmail: string;
-  timezone: string;
-  language: string;
-  notifications: {
-    email: boolean;
-    push: boolean;
-    marketing: boolean;
-  };
-  security: {
-    twoFactor: boolean;
-    sessionTimeout: number;
-    loginAttempts: number;
-  };
-  seo: {
-    metaTitle: string;
-    metaDescription: string;
-    keywords: string;
-    googleAnalytics: string;
-  };
-}
-
-const initialSettings: SystemSettings = {
-  siteName: "MedoScopic Pharma",
-  siteDescription: "Advanced Medical Technology & Pharmaceutical Solutions",
-  siteUrl: "https://medoscopic.com",
-  adminEmail: "admin@medoscopic.com",
-  timezone: "America/Los_Angeles",
-  language: "en",
-  notifications: {
-    email: true,
-    push: true,
-    marketing: false,
-  },
-  security: {
-    twoFactor: false,
-    sessionTimeout: 30,
-    loginAttempts: 5,
-  },
-  seo: {
-    metaTitle: "MedoScopic Pharma - Advanced Medical Technology",
-    metaDescription:
-      "Leading provider of medical diagnostic equipment and pharmaceutical solutions for healthcare professionals worldwide.",
-    keywords:
-      "medical technology, diagnostic equipment, pharmaceutical, healthcare, MedoScopic",
-    googleAnalytics: "UA-XXXXXXXXX-X",
+const initialSettings: SiteSettings = {
+  siteName: "",
+  siteUrl: "",
+  businessEmail: "",
+  contactNumber: "",
+  socialMedia: {
+    facebook: "",
+    twitter: "",
+    linkedin: "",
+    instagram: "",
   },
 };
 
 export default function Settings() {
   const { toast } = useToast();
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("general");
+  const [loading, setLoading] = useState(true);
+
+  // Load settings on component mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await SiteSettingsService.getSettings();
+      if (response.success && response.data) {
+        setSettings(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load site settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      toast({
-        title: "Settings Saved!",
-        description: "System settings have been updated successfully.",
-      });
+      const response = await SiteSettingsService.updateSettings(settings);
+      
+      if (response.success) {
+        toast({
+          title: "Settings Saved!",
+          description: "Site settings have been updated successfully.",
+        });
+      } else {
+        throw new Error(response.message || 'Failed to save settings');
+      }
     } catch (error) {
+      console.error('Failed to save settings:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -105,21 +87,30 @@ export default function Settings() {
     }
   };
 
-  const handleExportData = async () => {
+  const handleInitialize = async () => {
     try {
-      // Simulate data export
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      toast({
-        title: "Export Complete!",
-        description: "Your data has been exported successfully.",
-      });
+      setSaving(true);
+      const response = await SiteSettingsService.initialize();
+      
+      if (response.success) {
+        toast({
+          title: "Initialized!",
+          description: "Site settings have been initialized successfully.",
+        });
+        // Reload settings after initialization
+        await loadSettings();
+      } else {
+        throw new Error(response.message || 'Failed to initialize settings');
+      }
     } catch (error) {
+      console.error('Failed to initialize settings:', error);
       toast({
-        title: "Export Failed",
-        description: "Failed to export data. Please try again.",
+        title: "Error",
+        description: "Failed to initialize settings. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -133,436 +124,220 @@ export default function Settings() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              System Settings
+              Site Settings
             </h1>
             <p className="text-muted-foreground mt-2">
-              Configure your admin panel and website settings
+              Configure your website settings and contact information
             </p>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save All Settings
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleInitialize}
+              disabled={saving || loading}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Initializing...
+                </>
+              ) : (
+                <>
+                  <SettingsIcon className="h-4 w-4 mr-2" />
+                  Initialize
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Settings
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </motion.div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="seo">SEO</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  General Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input
-                      id="siteName"
-                      value={settings.siteName}
-                      onChange={(e) =>
-                        setSettings({ ...settings, siteName: e.target.value })
-                      }
-                      placeholder="Enter site name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="siteUrl">Site URL</Label>
-                    <Input
-                      id="siteUrl"
-                      value={settings.siteUrl}
-                      onChange={(e) =>
-                        setSettings({ ...settings, siteUrl: e.target.value })
-                      }
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                </div>
-
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading settings...</span>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                General Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="siteDescription">Site Description</Label>
-                  <Textarea
-                    id="siteDescription"
-                    value={settings.siteDescription}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        siteDescription: e.target.value,
-                      })
-                    }
-                    placeholder="Enter site description"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="adminEmail">Admin Email</Label>
-                    <Input
-                      id="adminEmail"
-                      type="email"
-                      value={settings.adminEmail}
-                      onChange={(e) =>
-                        setSettings({ ...settings, adminEmail: e.target.value })
-                      }
-                      placeholder="admin@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <select
-                      id="timezone"
-                      value={settings.timezone}
-                      onChange={(e) =>
-                        setSettings({ ...settings, timezone: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    >
-                      <option value="America/Los_Angeles">Pacific Time</option>
-                      <option value="America/New_York">Eastern Time</option>
-                      <option value="Europe/London">London Time</option>
-                      <option value="UTC">UTC</option>
-                    </select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="seo" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  SEO Configuration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="metaTitle">Meta Title</Label>
+                  <Label htmlFor="siteName">Site Name</Label>
                   <Input
-                    id="metaTitle"
-                    value={settings.seo.metaTitle}
+                    id="siteName"
+                    value={settings.siteName}
                     onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, metaTitle: e.target.value },
-                      })
+                      setSettings({ ...settings, siteName: e.target.value })
                     }
-                    placeholder="Enter meta title"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {settings.seo.metaTitle.length}/60 characters
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="metaDescription">Meta Description</Label>
-                  <Textarea
-                    id="metaDescription"
-                    value={settings.seo.metaDescription}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: {
-                          ...settings.seo,
-                          metaDescription: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Enter meta description"
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {settings.seo.metaDescription.length}/160 characters
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="keywords">Keywords</Label>
-                  <Textarea
-                    id="keywords"
-                    value={settings.seo.keywords}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, keywords: e.target.value },
-                      })
-                    }
-                    placeholder="Enter keywords separated by commas"
-                    rows={2}
+                    placeholder="Enter site name"
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
+                  <Label htmlFor="siteUrl">Site URL</Label>
                   <Input
-                    id="googleAnalytics"
-                    value={settings.seo.googleAnalytics}
+                    id="siteUrl"
+                    value={settings.siteUrl}
+                    onChange={(e) =>
+                      setSettings({ ...settings, siteUrl: e.target.value })
+                    }
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="businessEmail">Business Email</Label>
+                  <Input
+                    id="businessEmail"
+                    type="email"
+                    value={settings.businessEmail}
+                    onChange={(e) =>
+                      setSettings({ ...settings, businessEmail: e.target.value })
+                    }
+                    placeholder="info@yourcompany.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactNumber">Contact Number</Label>
+                  <Input
+                    id="contactNumber"
+                    value={settings.contactNumber}
+                    onChange={(e) =>
+                      setSettings({ ...settings, contactNumber: e.target.value })
+                    }
+                    placeholder="+1234567890"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Social Media Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="facebook" className="flex items-center gap-2">
+                    <Facebook className="h-4 w-4" />
+                    Facebook URL
+                  </Label>
+                  <Input
+                    id="facebook"
+                    value={settings.socialMedia?.facebook || ""}
                     onChange={(e) =>
                       setSettings({
                         ...settings,
-                        seo: {
-                          ...settings.seo,
-                          googleAnalytics: e.target.value,
+                        socialMedia: {
+                          ...settings.socialMedia,
+                          facebook: e.target.value,
                         },
                       })
                     }
-                    placeholder="UA-XXXXXXXXX-X"
+                    placeholder="https://facebook.com/yourcompany"
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notification Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive email notifications for important updates
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifications.email}
-                    onCheckedChange={(checked) =>
+                <div className="space-y-2">
+                  <Label htmlFor="twitter" className="flex items-center gap-2">
+                    <Twitter className="h-4 w-4" />
+                    Twitter URL
+                  </Label>
+                  <Input
+                    id="twitter"
+                    value={settings.socialMedia?.twitter || ""}
+                    onChange={(e) =>
                       setSettings({
                         ...settings,
-                        notifications: {
-                          ...settings.notifications,
-                          email: checked,
+                        socialMedia: {
+                          ...settings.socialMedia,
+                          twitter: e.target.value,
                         },
                       })
                     }
+                    placeholder="https://twitter.com/yourcompany"
                   />
                 </div>
+              </div>
 
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive push notifications in the browser
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifications.push}
-                    onCheckedChange={(checked) =>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin" className="flex items-center gap-2">
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn URL
+                  </Label>
+                  <Input
+                    id="linkedin"
+                    value={settings.socialMedia?.linkedin || ""}
+                    onChange={(e) =>
                       setSettings({
                         ...settings,
-                        notifications: {
-                          ...settings.notifications,
-                          push: checked,
+                        socialMedia: {
+                          ...settings.socialMedia,
+                          linkedin: e.target.value,
                         },
                       })
                     }
+                    placeholder="https://linkedin.com/company/yourcompany"
                   />
                 </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">
-                      Marketing Communications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive marketing updates and product announcements
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifications.marketing}
-                    onCheckedChange={(checked) =>
+                <div className="space-y-2">
+                  <Label htmlFor="instagram" className="flex items-center gap-2">
+                    <Instagram className="h-4 w-4" />
+                    Instagram URL
+                  </Label>
+                  <Input
+                    id="instagram"
+                    value={settings.socialMedia?.instagram || ""}
+                    onChange={(e) =>
                       setSettings({
                         ...settings,
-                        notifications: {
-                          ...settings.notifications,
-                          marketing: checked,
+                        socialMedia: {
+                          ...settings.socialMedia,
+                          instagram: e.target.value,
                         },
                       })
                     }
+                    placeholder="https://instagram.com/yourcompany"
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Security Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">
-                      Two-Factor Authentication
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Require 2FA for all admin accounts
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.security.twoFactor}
-                    onCheckedChange={(checked) =>
-                      setSettings({
-                        ...settings,
-                        security: { ...settings.security, twoFactor: checked },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="sessionTimeout">
-                      Session Timeout (minutes)
-                    </Label>
-                    <Input
-                      id="sessionTimeout"
-                      type="number"
-                      value={settings.security.sessionTimeout}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          security: {
-                            ...settings.security,
-                            sessionTimeout: parseInt(e.target.value) || 30,
-                          },
-                        })
-                      }
-                      min="5"
-                      max="120"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="loginAttempts">Max Login Attempts</Label>
-                    <Input
-                      id="loginAttempts"
-                      type="number"
-                      value={settings.security.loginAttempts}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          security: {
-                            ...settings.security,
-                            loginAttempts: parseInt(e.target.value) || 5,
-                          },
-                        })
-                      }
-                      min="3"
-                      max="10"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Advanced Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Data Management</h4>
-                  <div className="flex gap-4">
-                    <Button variant="outline" onClick={handleExportData}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Data
-                    </Button>
-                    <Button variant="outline">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import Data
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium text-destructive">Danger Zone</h4>
-                  <p className="text-sm text-muted-foreground">
-                    These actions cannot be undone. Please be careful.
-                  </p>
-                  <Button variant="destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Reset All Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -13,10 +13,12 @@ import {
   Mail,
   Shield,
   HelpCircle,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
+import { useAuth } from "@/lib/authContext";
 
 interface SideNavigationProps {
   isOpen: boolean;
@@ -63,6 +65,18 @@ const navigation = [
 
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
+
+  // Add Admin Management for Super Admins
+  const allNavigation = [
+    ...navigation,
+    ...(isSuperAdmin ? [{
+      name: "Admin Management",
+      href: "/admin/management",
+      icon: Users,
+    }] : []),
+  ];
 
   const sidebarContent = (
     <motion.div
@@ -80,7 +94,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       <ScrollArea className="flex-1">
         <div className="px-6 space-y-1 py-2">
           <div className="space-y-0.5">
-            {navigation.map((item) => {
+            {allNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <motion.div

@@ -80,17 +80,90 @@ export interface RefreshTokenResponse {
 }
 
 export interface User {
-  _id: string;
+  id: string;
   username: string;
   email: string;
-  role: string;
+  role: 'admin' | 'super_admin';
   profilePic: string;
   deviceData?: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
-  address: string;
+  location: string;
+  isActive: boolean;
+  lastLogin?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// Admin Management Types
+export interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'super_admin';
+  phone: string;
+  location: string;
+  bio?: string;
+  profilePic?: string;
+  isActive: boolean;
+  twoFactorEnabled: boolean;
+  permissions: string[];
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAdminRequest {
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'super_admin';
+  phone: string;
+  location: string;
+  bio?: string;
+  permissions?: string[];
+  isActive?: boolean;
+}
+
+export interface UpdateAdminRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  permissions?: string[];
+  isActive?: boolean;
+}
+
+export interface ChangePasswordRequest {
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface AdminListResponse {
+  data: AdminUser[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface AdminStats {
+  total: number;
+  superAdmins: number;
+  admins: number;
+  active: number;
+  inactive: number;
+  online: number;
 }
 
 // Product Types

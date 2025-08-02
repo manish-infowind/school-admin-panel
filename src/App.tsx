@@ -23,6 +23,7 @@ import PrivacyPolicy from "./pages/admin/PrivacyPolicy";
 import FAQ from "./pages/admin/FAQ";
 import FAQNew from "./pages/admin/FAQNew";
 import FAQEdit from "./pages/admin/FAQEdit";
+import AdminManagement from "./pages/admin/AdminManagement";
 
 const queryClient = new QueryClient();
 
@@ -178,7 +179,17 @@ const App = () => (
                   </AdminLayout>
                 </ProtectedRoute>
             }
-          />
+                      />
+            <Route
+              path="/admin/management"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <AdminManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
