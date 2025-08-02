@@ -195,7 +195,6 @@ export class AboutUsService {
             }
           };
         } catch (uploadError) {
-          console.warn('⚠️ Image upload failed, but section was created:', uploadError);
           // Return the section response even if image upload failed
           return sectionResponse;
         }
@@ -266,7 +265,6 @@ export class AboutUsService {
             }
           };
         } catch (uploadError) {
-          console.warn('⚠️ Image upload failed, but team member was created:', uploadError);
           // Return the member response even if image upload failed
           return memberResponse;
         }

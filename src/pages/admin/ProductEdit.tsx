@@ -193,7 +193,6 @@ export default function ProductEdit() {
         navigate("/admin/products");
       },
       onError: (error) => {
-        console.error('❌ Product update failed:', error);
         setIsSaving(false);
       }
     });

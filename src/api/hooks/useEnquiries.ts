@@ -281,7 +281,6 @@ export function useEnquiries(options: UseEnquiriesOptions = {}): UseEnquiriesRet
             }
           }
         } catch (refreshError) {
-          console.warn('Failed to refresh enquiry after reply:', refreshError);
           // Fallback: just update status if refresh fails
           setEnquiries(prev => prev.map(enquiry => 
             enquiry.id === id 

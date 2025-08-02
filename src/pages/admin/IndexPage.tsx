@@ -192,7 +192,6 @@ export default function IndexPage() {
           ]);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
         // Use fallback data
         setSections(initialSections);
         setProducts([
@@ -315,7 +314,6 @@ export default function IndexPage() {
         });
       }
     } catch (error) {
-      console.error('❌ Error in save section process:', error);
       toast({
         title: "Error",
         description: "Failed to save section.",
@@ -368,23 +366,20 @@ export default function IndexPage() {
           }
         }
       } catch (apiError) {
-        console.error('❌ API delete failed with error:', apiError);
+        // Fallback: Update local state only if API fails
+        setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
+        if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
+          setSelectedSection(null);
+          setActiveTab("sections");
+        }
+        
+        toast({
+          title: "Success!",
+          description: `${section.name} deleted successfully (local only).`,
+        });
+        setDeleteDialog({ isOpen: false, section: null });
       }
-
-      // Fallback: Update local state only if API fails
-      setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
-      if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
-        setSelectedSection(null);
-        setActiveTab("sections");
-      }
-      
-      toast({
-        title: "Success!",
-        description: `${section.name} deleted successfully (local only).`,
-      });
-      setDeleteDialog({ isOpen: false, section: null });
     } catch (error) {
-      console.error('❌ Error in delete section process:', error);
       toast({
         title: "Error",
         description: "Failed to delete section. Please try again.",
@@ -605,7 +600,6 @@ export default function IndexPage() {
     
     // Double-check: Ensure we never send more than 4 items
     if (newFeaturedProducts.length > 4) {
-      console.error('❌ Error: Attempting to send more than 4 featured products');
       toast({
         title: "Error",
         description: "Cannot add more than 4 featured products.",
@@ -664,7 +658,6 @@ export default function IndexPage() {
       } catch (apiError) {
         // Check if it's a validation error
         if (apiError.status === 400) {
-          console.error('❌ API validation error:', apiError.message);
           toast({
             title: "Validation Error",
             description: apiError.message || "Invalid data sent to server.",
@@ -695,7 +688,6 @@ export default function IndexPage() {
         description: "Product added to featured products (local only).",
       });
     } catch (error) {
-      console.error('Error adding featured product:', error);
       toast({
         title: "Error",
         description: "Failed to add product to featured products.",
@@ -751,7 +743,6 @@ export default function IndexPage() {
       } catch (apiError) {
         // Check if it's a validation error
         if (apiError.status === 400) {
-          console.error('❌ API validation error:', apiError.message);
           toast({
             title: "Validation Error",
             description: apiError.message || "Invalid data sent to server.",
@@ -829,7 +820,6 @@ export default function IndexPage() {
       } catch (apiError) {
         // Check if it's a validation error
         if (apiError.status === 400) {
-          console.error('❌ API validation error:', apiError.message);
           toast({
             title: "Validation Error",
             description: apiError.message || "Invalid data sent to server.",
@@ -862,7 +852,6 @@ export default function IndexPage() {
         description: `${section.name} ${newStatus ? 'activated' : 'deactivated'} (local only).`,
       });
     } catch (error) {
-      console.error('Error toggling section status:', error);
       toast({
         title: "Error",
         description: "Failed to update section status.",

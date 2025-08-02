@@ -153,7 +153,6 @@ export default function ProductNew() {
         navigate("/admin/products");
       },
       onError: (error) => {
-        console.error('❌ Product creation failed:', error);
         setIsSaving(false);
       }
     });

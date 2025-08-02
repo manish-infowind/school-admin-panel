@@ -124,10 +124,8 @@ class ProfileService {
           return userId;
         }
       }
-      console.warn('No user ID found in localStorage');
       return null;
     } catch (error) {
-      console.error('Error getting user ID from localStorage:', error);
       return null;
     }
   }
@@ -171,7 +169,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error fetching profile:', error);
       throw this.handleError(error);
     }
   }
@@ -215,7 +212,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error updating profile:', error);
       throw this.handleError(error);
     }
   }
@@ -269,7 +265,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error uploading avatar:', error);
       throw this.handleError(error);
     }
   }
@@ -313,7 +308,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error changing password:', error);
       // Let the ApiClient's error handling work - don't override it
       throw error;
     }
@@ -358,7 +352,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error verifying OTP:', error);
       // Let the ApiClient's error handling work - don't override it
       throw error;
     }
@@ -400,7 +393,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error requesting password reset:', error);
       throw this.handleError(error);
     }
   }
@@ -441,7 +433,6 @@ class ProfileService {
         message: 'Invalid response format'
       };
     } catch (error) {
-      console.error('Error resetting password:', error);
       throw this.handleError(error);
     }
   }
@@ -459,7 +450,6 @@ class ProfileService {
       const response = await apiClient.post<void>(url);
       return response;
     } catch (error) {
-      console.error('❌ Error setting up 2FA:', error);
       throw this.handleError(error);
     }
   }
@@ -477,7 +467,6 @@ class ProfileService {
       const response = await apiClient.post<void>(url, otpData);
       return response;
     } catch (error) {
-      console.error('❌ Error enabling 2FA:', error);
       throw this.handleError(error);
     }
   }
@@ -495,7 +484,6 @@ class ProfileService {
       const response = await apiClient.post<void>(url, otpData);
       return response;
     } catch (error) {
-      console.error('❌ Error disabling 2FA:', error);
       throw this.handleError(error);
     }
   }
@@ -513,7 +501,6 @@ class ProfileService {
       const response = await apiClient.get(url);
       return response;
     } catch (error) {
-      console.error('❌ Error getting user activity:', error);
       throw this.handleError(error);
     }
   }
@@ -531,7 +518,6 @@ class ProfileService {
       const response = await apiClient.put(url, preferences);
       return response;
     } catch (error) {
-      console.error('❌ Error updating preferences:', error);
       throw this.handleError(error);
     }
   }

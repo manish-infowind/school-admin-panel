@@ -57,7 +57,6 @@ export class AuthService {
       const data = await response.json();
       return data.ip;
     } catch (error) {
-      console.warn('Could not fetch IP address:', error);
       return 'Unknown';
     }
   }
@@ -79,7 +78,6 @@ export class AuthService {
           });
           
           if (!response.ok) {
-            console.warn(`Service ${serviceUrl} returned ${response.status}`);
             continue;
           }
 
@@ -103,15 +101,12 @@ export class AuthService {
             return { latitude: lat, longitude: lng };
           }
         } catch (serviceError) {
-          console.warn(`❌ Service ${serviceUrl} failed:`, serviceError);
           continue;
         }
       }
       
       throw new Error('All location services failed');
     } catch (error) {
-      console.warn('❌ Could not fetch location from any service:', error);
-      // Return a more reasonable fallback location (you can customize this)
       return {
         latitude: 20.5937, // India center coordinates as fallback
         longitude: 78.9629,
@@ -136,7 +131,6 @@ export class AuthService {
           resolve(coords);
         },
         (error) => {
-          console.warn('❌ Browser geolocation failed:', error);
           switch (error.code) {
             case error.PERMISSION_DENIED:
               break;
@@ -266,21 +260,16 @@ export class AuthService {
   // Refresh access token
   static async refreshToken(): Promise<boolean> {
     try {
-      // No console.log
       const refreshToken = this.getRefreshToken();
       
       if (!refreshToken) {
-        // No console.log
         return false;
       }
 
-      // No console.log
       const response = await apiClient.post<RefreshTokenResponse>(
         API_CONFIG.ENDPOINTS.AUTH.REFRESH,
         { refreshToken }
       );
-
-      // No console.log
 
       if (response.success && response.data) {
         // Update access token in localStorage
@@ -291,14 +280,11 @@ export class AuthService {
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         
-        // No console.log
         return true;
       }
 
-      // No console.log
       return false;
     } catch (error) {
-      // No console.log or console.error
       return false;
     }
   }
@@ -361,17 +347,13 @@ export class AuthService {
   // Verify 2FA OTP
   static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponse>> {
     try {
-      // No console.log
       
       const response = await apiClient.post<LoginResponse>(
         API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
         otpData
       );
 
-      // No console.log
-
       if (response.success && response.data) {
-        // No console.log
         
         // Store tokens and user data
         localStorage.setItem('accessToken', response.data.accessToken);
@@ -385,7 +367,6 @@ export class AuthService {
 
       return response;
     } catch (error) {
-      // No console.log or console.error
       throw error;
     }
   }

@@ -51,7 +51,6 @@ export default function Settings() {
         setSettings(response.data);
       }
     } catch (error) {
-      console.error('Failed to load settings:', error);
       toast({
         title: "Error",
         description: "Failed to load site settings. Please try again.",
@@ -76,7 +75,6 @@ export default function Settings() {
         throw new Error(response.message || 'Failed to save settings');
       }
     } catch (error) {
-      console.error('Failed to save settings:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -103,7 +101,6 @@ export default function Settings() {
         throw new Error(response.message || 'Failed to initialize settings');
       }
     } catch (error) {
-      console.error('Failed to initialize settings:', error);
       toast({
         title: "Error",
         description: "Failed to initialize settings. Please try again.",

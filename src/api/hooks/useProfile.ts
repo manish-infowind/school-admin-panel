@@ -69,19 +69,14 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Loading profile...');
       const response = await profileService.getProfile();
-      console.log('📥 Profile response:', response);
       
       if (response.success && response.data) {
-        console.log('✅ Setting profile data:', response.data);
         setProfile(response.data);
       } else {
-        console.log('❌ Profile response not successful:', response);
         setError(response.message || 'Failed to load profile');
       }
     } catch (err) {
-      console.error('💥 Error loading profile:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
       setError(errorMessage);
       toast({
@@ -99,19 +94,15 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Updating profile with data:', data);
       const response = await profileService.updateProfile(data);
-      console.log('📥 Update profile response:', response);
       
       if (response.success && response.data) {
-        console.log('✅ Profile updated successfully:', response.data);
         setProfile(response.data);
         toast({
           title: "Success",
           description: response.message || "Profile updated successfully",
         });
       } else {
-        console.log('❌ Profile update failed:', response);
         setError(response.message || 'Failed to update profile');
         toast({
           title: "Error",
@@ -120,7 +111,6 @@ export function useProfile(): UseProfileReturn {
         });
       }
     } catch (err) {
-      console.error('💥 Error updating profile:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
       setError(errorMessage);
       toast({
@@ -138,8 +128,6 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Uploading avatar...');
-      
       // Simulate upload progress if no progress callback provided
       if (!onProgress) {
         let progress = 0;
@@ -159,11 +147,8 @@ export function useProfile(): UseProfileReturn {
       }
       
       const response = await profileService.uploadAvatar(file);
-      console.log('📥 Avatar upload response:', response);
       
       if (response.success && response.data) {
-        console.log('✅ Avatar uploaded successfully:', response.data);
-        
         // Update the profile with new avatar immediately
         setProfile(prev => prev ? {
           ...prev,
@@ -178,7 +163,6 @@ export function useProfile(): UseProfileReturn {
           description: response.message || "Avatar uploaded successfully",
         });
       } else {
-        console.log('❌ Avatar upload failed:', response);
         setError(response.message || 'Failed to upload avatar');
         toast({
           title: "Error",
@@ -187,7 +171,6 @@ export function useProfile(): UseProfileReturn {
         });
       }
     } catch (err) {
-      console.error('💥 Error uploading avatar:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload avatar';
       setError(errorMessage);
       toast({
@@ -205,25 +188,20 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Changing password with data:', data);
       const response = await profileService.changePassword(data);
-      console.log('📥 Change password response:', response);
       
       if (response.success) {
-        console.log('✅ Password change initiated successfully');
         toast({
           title: "OTP Sent",
           description: response.message || "OTP sent to your email for password change verification",
         });
         return true;
       } else {
-        console.log('❌ Password change failed:', response);
         setError(response.message || 'Failed to send OTP');
         // Don't show toast error - let the modal handle it
         return false;
       }
     } catch (err) {
-      console.error('💥 Error changing password:', err);
       // Handle ApiError objects from ApiClient
       let errorMessage = 'Failed to send OTP';
       if (err && typeof err === 'object') {
@@ -246,12 +224,9 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Verifying OTP with data:', data);
       const response = await profileService.verifyOtp(data);
-      console.log('📥 Verify OTP response:', response);
       
       if (response.success) {
-        console.log('✅ OTP verified successfully');
         toast({
           title: "Success",
           description: response.message || "Password changed successfully",
@@ -262,13 +237,11 @@ export function useProfile(): UseProfileReturn {
         
         return true;
       } else {
-        console.log('❌ OTP verification failed:', response);
         setError(response.message || 'Failed to verify OTP');
         // Don't show toast error - let the modal handle it
         return false;
       }
     } catch (err) {
-      console.error('💥 Error verifying OTP:', err);
       // Handle ApiError objects from ApiClient
       let errorMessage = 'Failed to verify OTP';
       if (err && typeof err === 'object') {
@@ -357,19 +330,15 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Setting up 2FA...');
       const response = await profileService.setup2FA();
-      console.log('📥 Setup 2FA response:', response);
       
       if (response.success) {
-        console.log('✅ 2FA setup initiated successfully');
         toast({
           title: "OTP Sent",
           description: response.message || "OTP sent to your email for 2FA setup",
         });
         return true;
       } else {
-        console.log('❌ 2FA setup failed:', response);
         setError(response.message || 'Failed to setup 2FA');
         toast({
           title: "Error",
@@ -379,7 +348,6 @@ export function useProfile(): UseProfileReturn {
         return false;
       }
     } catch (err) {
-      console.error('💥 Error setting up 2FA:', err);
       let errorMessage = 'Failed to setup 2FA';
       if (err && typeof err === 'object') {
         if ('message' in err) {
@@ -405,12 +373,9 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Enabling 2FA with data:', data);
       const response = await profileService.enable2FA(data);
-      console.log('📥 Enable 2FA response:', response);
       
       if (response.success) {
-        console.log('✅ 2FA enabled successfully');
         toast({
           title: "Success",
           description: response.message || "Two-factor authentication enabled successfully",
@@ -421,7 +386,6 @@ export function useProfile(): UseProfileReturn {
         
         return true;
       } else {
-        console.log('❌ 2FA enable failed:', response);
         setError(response.message || 'Failed to enable 2FA');
         toast({
           title: "Error",
@@ -431,7 +395,6 @@ export function useProfile(): UseProfileReturn {
         return false;
       }
     } catch (err) {
-      console.error('💥 Error enabling 2FA:', err);
       let errorMessage = 'Failed to enable 2FA';
       if (err && typeof err === 'object') {
         if ('message' in err) {
@@ -457,12 +420,9 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Disabling 2FA with data:', data);
       const response = await profileService.disable2FA(data);
-      console.log('📥 Disable 2FA response:', response);
       
       if (response.success) {
-        console.log('✅ 2FA disabled successfully');
         toast({
           title: "Success",
           description: response.message || "Two-factor authentication disabled successfully",
@@ -473,7 +433,6 @@ export function useProfile(): UseProfileReturn {
         
         return true;
       } else {
-        console.log('❌ 2FA disable failed:', response);
         setError(response.message || 'Failed to disable 2FA');
         toast({
           title: "Error",
@@ -483,7 +442,6 @@ export function useProfile(): UseProfileReturn {
         return false;
       }
     } catch (err) {
-      console.error('💥 Error disabling 2FA:', err);
       let errorMessage = 'Failed to disable 2FA';
       if (err && typeof err === 'object') {
         if ('message' in err) {
@@ -509,19 +467,15 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Updating preferences with data:', data);
       const response = await profileService.updatePreferences(data);
-      console.log('📥 Update preferences response:', response);
       
       if (response.success && response.data) {
-        console.log('✅ Preferences updated successfully:', response.data);
         setProfile(response.data);
         toast({
           title: "Success",
           description: response.message || "Preferences updated successfully",
         });
       } else {
-        console.log('❌ Preferences update failed:', response);
         setError(response.message || 'Failed to update preferences');
         toast({
           title: "Error",
@@ -530,7 +484,6 @@ export function useProfile(): UseProfileReturn {
         });
       }
     } catch (err) {
-      console.error('💥 Error updating preferences:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update preferences';
       setError(errorMessage);
       toast({
@@ -548,15 +501,11 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      console.log('🔄 Getting user activity...');
       const response = await profileService.getUserActivity(page, limit);
-      console.log('📥 User activity response:', response);
       
       if (response.success && response.data) {
-        console.log('✅ User activity retrieved successfully:', response.data);
         return response.data;
       } else {
-        console.log('❌ User activity retrieval failed:', response);
         setError(response.message || 'Failed to get user activity');
         toast({
           title: "Error",
@@ -566,7 +515,6 @@ export function useProfile(): UseProfileReturn {
         return [];
       }
     } catch (err) {
-      console.error('💥 Error getting user activity:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to get user activity';
       setError(errorMessage);
       toast({

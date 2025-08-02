@@ -181,7 +181,6 @@ export default function Profile() {
         }, 500);
         
       } catch (error) {
-        console.error('Avatar upload failed:', error);
         setImageLoading(false);
         setUploadProgress(0);
       }

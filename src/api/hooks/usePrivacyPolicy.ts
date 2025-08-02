@@ -32,7 +32,6 @@ export const usePrivacyPolicy = () => {
       }
     },
     onError: (error) => {
-      console.error('Privacy policy update failed:', error);
     },
   });
 

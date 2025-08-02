@@ -51,7 +51,6 @@ export const useCreateProduct = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Create product error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create product",
@@ -81,7 +80,6 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Update product error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to update product",
@@ -112,7 +110,6 @@ export const useDeleteProduct = () => {
       queryClient.removeQueries({ queryKey: productKeys.detail(productId) });
     },
     onError: (error: any) => {
-      console.error('Delete product error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to delete product",
@@ -142,7 +139,6 @@ export const useUploadProductImage = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Upload product image error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to upload product image",
@@ -172,7 +168,6 @@ export const useUpdateProductStatus = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
     onError: (error: any) => {
-      console.error('Update product status error:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to update product status",
