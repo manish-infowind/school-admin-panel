@@ -99,7 +99,6 @@ export default function Profile() {
 
   // Update local state when profile data loads
   useEffect(() => {
-    console.log('Profile data received:', profile);
     if (profile) {
       setLocalProfile({
         firstName: profile.firstName || "",

@@ -76,11 +76,9 @@ export default function ProductNew() {
   const handleSave = async () => {
     // Prevent multiple simultaneous saves
     if (isSaving || createProductMutation.isPending) {
-      console.log('🚫 Save operation already in progress, skipping...');
       return;
     }
 
-    console.log('🚀 Starting save operation...');
     setIsSaving(true);
 
     // Validate required fields
@@ -120,8 +118,6 @@ export default function ProductNew() {
       cleanFeatures.push(""); // Keep at least one empty feature
     }
 
-    console.log('📁 Files to upload:', product.imageFiles.length);
-
     // Create product via API
     createProductMutation.mutate({
       ...product,
@@ -130,13 +126,11 @@ export default function ProductNew() {
     }, {
       onSuccess: (response) => {
         const newProductId = response.data._id;
-        console.log('✅ Product created with ID:', newProductId);
         
         // Upload images if any
         if (product.imageFiles.length > 0) {
           // Store the files to upload
           const filesToUpload = [...product.imageFiles];
-          console.log('📤 Uploading', filesToUpload.length, 'images...');
           
           // Clear the imageFiles array to prevent duplicate uploads
           setProduct(prev => ({ ...prev, imageFiles: [] }));
@@ -144,7 +138,6 @@ export default function ProductNew() {
           // Upload each image
           filesToUpload.forEach((file, index) => {
             setTimeout(() => {
-              console.log(`📤 Uploading image ${index + 1}/${filesToUpload.length}:`, file.name);
               uploadImageMutation.mutate({
                 productId: newProductId,
                 imageFile: file

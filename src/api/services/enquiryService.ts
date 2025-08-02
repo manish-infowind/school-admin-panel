@@ -16,8 +16,6 @@ export class EnquiryService {
   // Get all enquiries with pagination, search, and filters
   static async getEnquiries(params?: QueryParams): Promise<ApiResponse<EnquiryListResponse>> {
     try {
-      console.log('📋 Fetching enquiries...', params);
-      
       const queryParams = new URLSearchParams();
       
       // Pagination
@@ -34,11 +32,9 @@ export class EnquiryService {
       
       // Date range filters
       if (params?.startDate) {
-        console.log('📅 Adding startDate to query:', params.startDate);
         queryParams.append('startDate', params.startDate);
       }
       if (params?.endDate) {
-        console.log('📅 Adding endDate to query:', params.endDate);
         queryParams.append('endDate', params.endDate);
       }
       
@@ -48,21 +44,16 @@ export class EnquiryService {
       
       // Sorting
       if (params?.sortBy) {
-        console.log('🎯 Adding sortBy to query:', params.sortBy);
         queryParams.append('sortBy', params.sortBy);
       }
       if (params?.sortOrder) {
-        console.log('🎯 Adding sortOrder to query:', params.sortOrder);
         queryParams.append('sortOrder', params.sortOrder);
       }
 
       const url = `${API_CONFIG.ENDPOINTS.ENQUIRIES.LIST}?${queryParams.toString()}`;
       
-      console.log('🌐 Final API URL:', url);
-      console.log('🌐 Query params string:', queryParams.toString());
       const response = await apiClient.get<EnquiryListResponse>(url);
       
-      console.log('📥 Enquiries response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch enquiries:', error);
@@ -73,13 +64,10 @@ export class EnquiryService {
   // Get single enquiry by ID
   static async getEnquiry(enquiryId: string): Promise<ApiResponse<Enquiry>> {
     try {
-      console.log('📋 Fetching enquiry:', enquiryId);
-      
       const response = await apiClient.get<Enquiry>(
         `${API_CONFIG.ENDPOINTS.ENQUIRIES.UPDATE.replace(':id', enquiryId)}`
       );
       
-      console.log('📥 Enquiry response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch enquiry:', error);
@@ -90,14 +78,11 @@ export class EnquiryService {
   // Create new enquiry
   static async createEnquiry(data: CreateEnquiryRequest): Promise<ApiResponse<Enquiry>> {
     try {
-      console.log('📝 Creating enquiry...', data);
-      
       const response = await apiClient.post<Enquiry>(
         API_CONFIG.ENDPOINTS.ENQUIRIES.CREATE,
         data
       );
       
-      console.log('✅ Enquiry created:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to create enquiry:', error);
@@ -108,14 +93,11 @@ export class EnquiryService {
   // Update enquiry
   static async updateEnquiry(enquiryId: string, data: UpdateEnquiryRequest): Promise<ApiResponse<{ message: string }>> {
     try {
-      console.log('📝 Updating enquiry:', enquiryId, data);
-      
       const response = await apiClient.put<{ message: string }>(
         `${API_CONFIG.ENDPOINTS.ENQUIRIES.UPDATE.replace(':id', enquiryId)}`,
         data
       );
       
-      console.log('✅ Enquiry updated:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to update enquiry:', error);
@@ -141,14 +123,11 @@ export class EnquiryService {
   // Reply to enquiry
   static async replyToEnquiry(enquiryId: string, data: ReplyToEnquiryRequest): Promise<ApiResponse<{ message: string }>> {
     try {
-      console.log('📧 Replying to enquiry:', enquiryId, data);
-      
       const response = await apiClient.post<{ message: string }>(
         `${API_CONFIG.ENDPOINTS.ENQUIRIES.REPLY.replace(':id', enquiryId)}`,
         data
       );
       
-      console.log('✅ Reply sent:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to send reply:', error);
@@ -159,13 +138,10 @@ export class EnquiryService {
   // Delete enquiry
   static async deleteEnquiry(enquiryId: string): Promise<ApiResponse<{ message: string }>> {
     try {
-      console.log('🗑️ Deleting enquiry:', enquiryId);
-      
       const response = await apiClient.delete<{ message: string }>(
         `${API_CONFIG.ENDPOINTS.ENQUIRIES.DELETE.replace(':id', enquiryId)}`
       );
       
-      console.log('✅ Enquiry deleted:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to delete enquiry:', error);
@@ -176,13 +152,10 @@ export class EnquiryService {
   // Get enquiry statistics
   static async getEnquiryStats(): Promise<ApiResponse<EnquiryStats>> {
     try {
-      console.log('📊 Fetching enquiry statistics...');
-      
       const response = await apiClient.get<EnquiryStats>(
         API_CONFIG.ENDPOINTS.ENQUIRIES.STATS
       );
       
-      console.log('📥 Statistics response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch enquiry statistics:', error);
@@ -193,13 +166,10 @@ export class EnquiryService {
   // Get filter options
   static async getFilterOptions(): Promise<ApiResponse<FilterOptions>> {
     try {
-      console.log('🔍 Fetching filter options...');
-      
       const response = await apiClient.get<FilterOptions>(
         API_CONFIG.ENDPOINTS.ENQUIRIES.FILTER_OPTIONS
       );
       
-      console.log('📥 Filter options response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch filter options:', error);
@@ -210,14 +180,11 @@ export class EnquiryService {
   // Submit contact form (public endpoint)
   static async submitContactForm(data: CreateEnquiryRequest): Promise<ApiResponse<{ message: string }>> {
     try {
-      console.log('📝 Submitting contact form...', data);
-      
       const response = await apiClient.post<{ message: string }>(
         API_CONFIG.ENDPOINTS.CONTACT.SUBMIT,
         data
       );
       
-      console.log('✅ Contact form submitted:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to submit contact form:', error);
@@ -245,8 +212,6 @@ export class EnquiryService {
     };
   }>> {
     try {
-      console.log('📊 Exporting enquiries...', data);
-      
       const response = await apiClient.post<{
         enquiries: Array<{
           fullName: string;
@@ -265,7 +230,6 @@ export class EnquiryService {
         data
       );
       
-      console.log('✅ Enquiries exported:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to export enquiries:', error);

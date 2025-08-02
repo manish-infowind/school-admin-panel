@@ -121,7 +121,6 @@ class ProfileService {
         const userData = JSON.parse(user);
         const userId = userData.id || userData.userId;
         if (userId) {
-          console.log('User ID retrieved from localStorage:', userId);
           return userId;
         }
       }
@@ -143,22 +142,15 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}`;
       
-      console.log('Fetching profile from:', url);
       const response = await apiClient.get(url);
-      console.log('Profile response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      console.log('Response.data:', response.data);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
           // Wrapped format: { success: true, data: {...} }
-          console.log('Detected wrapped format');
           return response as ApiResponse<UserProfile>;
         } else if ('data' in response && response.data) {
           // Direct format: { data: {...} }
-          console.log('Detected direct format with data wrapper');
           return {
             success: true,
             data: response.data as UserProfile,
@@ -166,7 +158,6 @@ class ProfileService {
           };
         } else {
           // Direct format: { id: "...", firstName: "...", ... }
-          console.log('Detected direct format');
           return {
             success: true,
             data: response as unknown as UserProfile,
@@ -175,7 +166,6 @@ class ProfileService {
         }
       }
       
-      console.log('Invalid response format');
       return {
         success: false,
         message: 'Invalid response format'
@@ -196,24 +186,15 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}`;
       
-      console.log('Updating profile at:', url);
-      console.log('Profile data:', profileData);
-      
       const response = await apiClient.put(url, profileData);
-      console.log('Update profile response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      console.log('Response.data:', response.data);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
           // Wrapped format: { success: true, data: {...} }
-          console.log('Detected wrapped format');
           return response as ApiResponse<UserProfile>;
         } else if ('data' in response && response.data) {
           // Direct format: { data: {...} }
-          console.log('Detected direct format with data wrapper');
           return {
             success: true,
             data: response.data as UserProfile,
@@ -221,7 +202,6 @@ class ProfileService {
           };
         } else {
           // Direct format: { id: "...", firstName: "...", ... }
-          console.log('Detected direct format');
           return {
             success: true,
             data: response as unknown as UserProfile,
@@ -230,7 +210,6 @@ class ProfileService {
         }
       }
       
-      console.log('Invalid response format');
       return {
         success: false,
         message: 'Invalid response format'
@@ -257,29 +236,19 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/avatar?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/avatar`;
 
-      console.log('Uploading avatar to:', url);
-      console.log('FormData:', formData);
-
       const response = await apiClient.post(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       
-      console.log('Avatar upload response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      console.log('Response.data:', response.data);
-      
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
           // Wrapped format: { success: true, data: {...} }
-          console.log('Detected wrapped format for avatar upload');
           return response as ApiResponse<{ avatar: string; avatarUrl: string }>;
         } else if ('data' in response && response.data) {
           // Direct format: { data: {...} }
-          console.log('Detected direct format with data wrapper for avatar upload');
           return {
             success: true,
             data: response.data as { avatar: string; avatarUrl: string },
@@ -287,7 +256,6 @@ class ProfileService {
           };
         } else {
           // Direct format: { avatar: "...", avatarUrl: "..." }
-          console.log('Detected direct format for avatar upload');
           return {
             success: true,
             data: response as unknown as { avatar: string; avatarUrl: string },
@@ -296,7 +264,6 @@ class ProfileService {
         }
       }
       
-      console.log('Invalid response format for avatar upload');
       return {
         success: false,
         message: 'Invalid response format'
@@ -317,24 +284,15 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password`;
       
-      console.log('Changing password at:', url);
-      console.log('Password data:', passwordData);
-      
       const response = await apiClient.put(url, passwordData);
-      console.log('Change password response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      console.log('Response.data:', response.data);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
           // Wrapped format: { success: true, data: {...} }
-          console.log('Detected wrapped format for password change');
           return response as ApiResponse<void>;
         } else if ('data' in response && response.data) {
           // Direct format: { data: {...} }
-          console.log('Detected direct format with data wrapper for password change');
           return {
             success: true,
             data: response.data,
@@ -342,7 +300,6 @@ class ProfileService {
           };
         } else {
           // Direct format: { success: true, message: "..." }
-          console.log('Detected direct format for password change');
           return {
             success: true,
             data: undefined,
@@ -351,7 +308,6 @@ class ProfileService {
         }
       }
       
-      console.log('Invalid response format for password change');
       return {
         success: false,
         message: 'Invalid response format'
@@ -373,24 +329,15 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/verify-otp?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/verify-otp`;
       
-      console.log('Verifying OTP at:', url);
-      console.log('OTP data:', otpData);
-      
       const response = await apiClient.post(url, otpData);
-      console.log('Verify OTP response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      console.log('Response.data:', response.data);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
           // Wrapped format: { success: true, data: {...} }
-          console.log('Detected wrapped format for OTP verification');
           return response as ApiResponse<void>;
         } else if ('data' in response && response.data) {
           // Direct format: { data: {...} }
-          console.log('Detected direct format with data wrapper for OTP verification');
           return {
             success: true,
             data: response.data,
@@ -398,7 +345,6 @@ class ProfileService {
           };
         } else {
           // Direct format: { success: true, message: "..." }
-          console.log('Detected direct format for OTP verification');
           return {
             success: true,
             data: undefined,
@@ -407,7 +353,6 @@ class ProfileService {
         }
       }
       
-      console.log('Invalid response format for OTP verification');
       return {
         success: false,
         message: 'Invalid response format'
@@ -429,11 +374,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset-request?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset-request`;
       
-      console.log('Requesting password reset at:', url);
-      console.log('Reset data:', resetData);
-      
       const response = await apiClient.post(url, resetData);
-      console.log('Password reset request response:', response);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
@@ -474,11 +415,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset`;
       
-      console.log('Resetting password at:', url);
-      console.log('Reset data:', resetData);
-      
       const response = await apiClient.post(url, resetData);
-      console.log('Password reset response:', response);
       
       // Handle both wrapped and direct response formats
       if (response && typeof response === 'object') {
@@ -519,9 +456,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}`;
       
-      console.log('🔄 Setting up 2FA...');
       const response = await apiClient.post<void>(url);
-      console.log('📥 Setup 2FA response:', response);
       return response;
     } catch (error) {
       console.error('❌ Error setting up 2FA:', error);
@@ -539,9 +474,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}`;
       
-      console.log('🔄 Enabling 2FA with OTP:', otpData);
       const response = await apiClient.post<void>(url, otpData);
-      console.log('📥 Enable 2FA response:', response);
       return response;
     } catch (error) {
       console.error('❌ Error enabling 2FA:', error);
@@ -559,9 +492,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}`;
       
-      console.log('🔄 Disabling 2FA with OTP:', otpData);
       const response = await apiClient.post<void>(url, otpData);
-      console.log('📥 Disable 2FA response:', response);
       return response;
     } catch (error) {
       console.error('❌ Error disabling 2FA:', error);
@@ -579,9 +510,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?userId=${userId}&page=${page}&limit=${limit}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?page=${page}&limit=${limit}`;
       
-      console.log('🔄 Getting user activity from:', url);
       const response = await apiClient.get(url);
-      console.log('📥 User activity response:', response);
       return response;
     } catch (error) {
       console.error('❌ Error getting user activity:', error);
@@ -599,9 +528,7 @@ class ProfileService {
         ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}?userId=${userId}`
         : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}`;
       
-      console.log('🔄 Updating preferences with data:', preferences);
       const response = await apiClient.put(url, preferences);
-      console.log('📥 Update preferences response:', response);
       return response;
     } catch (error) {
       console.error('❌ Error updating preferences:', error);

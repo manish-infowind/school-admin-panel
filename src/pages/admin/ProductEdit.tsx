@@ -119,11 +119,9 @@ export default function ProductEdit() {
 
     // Prevent multiple simultaneous saves
     if (isSaving || updateProductMutation.isPending) {
-      console.log('🚫 Save operation already in progress, skipping...');
       return;
     }
 
-    console.log('🚀 Starting save operation...');
     setIsSaving(true);
 
     // Validate required fields
@@ -163,8 +161,6 @@ export default function ProductEdit() {
       cleanFeatures.push(""); // Keep at least one empty feature
     }
 
-    console.log('📁 Files to upload:', imageFiles.length);
-
     // Update product via API
     updateProductMutation.mutate({
       productId: id,
@@ -178,7 +174,6 @@ export default function ProductEdit() {
         if (imageFiles.length > 0) {
           // Store the files to upload
           const filesToUpload = [...imageFiles];
-          console.log('📤 Uploading', filesToUpload.length, 'images...');
           
           // Clear the imageFiles array to prevent duplicate uploads
           setImageFiles([]);
@@ -186,7 +181,6 @@ export default function ProductEdit() {
           // Upload each image
           filesToUpload.forEach((file, index) => {
             setTimeout(() => {
-              console.log(`📤 Uploading image ${index + 1}/${filesToUpload.length}:`, file.name);
               uploadImageMutation.mutate({
                 productId: id,
                 imageFile: file

@@ -138,7 +138,6 @@ const Login = () => {
   // Handle login response and 2FA
   React.useEffect(() => {
     if (loginError) {
-      console.log('🔍 Login error received:', loginError);
       // Extract error message from different possible structures
       let errorMessage = 'An error occurred during login';
       
@@ -160,7 +159,6 @@ const Login = () => {
   React.useEffect(() => {
     const tempToken = localStorage.getItem('tempToken');
     if (tempToken && !isLoggingIn && !isVerifying2FA) {
-      console.log('🔐 2FA required, showing modal');
       setShow2FAModal(true);
       setIs2FAFlow(true);
     }

@@ -133,16 +133,11 @@ export class IndexPageService {
   // Update section
   static async updateSection(sectionId: string, data: UpdateSectionRequest): Promise<ApiResponse<IndexPageSection>> {
     try {
-      console.log('🔗 IndexPageService: Making PATCH request to update section');
-      console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.INDEX_PAGE.SECTION.replace(':id', sectionId));
-      console.log('📤 Request data:', data);
-      
       const response = await apiClient.patch<IndexPageSection>(
         API_CONFIG.ENDPOINTS.INDEX_PAGE.SECTION.replace(':id', sectionId),
         data
       );
       
-      console.log('✅ IndexPageService: Update section response:', response);
       return response;
     } catch (error) {
       console.error('❌ IndexPageService: Update section error:', error);
@@ -168,14 +163,10 @@ export class IndexPageService {
   // Delete section
   static async deleteSection(sectionId: string): Promise<ApiResponse<{ id: string; deletedAt: string }>> {
     try {
-      console.log('🔗 IndexPageService: Making DELETE request to delete section');
-      console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.INDEX_PAGE.SECTION.replace(':id', sectionId));
-      
       const response = await apiClient.delete<{ id: string; deletedAt: string }>(
         API_CONFIG.ENDPOINTS.INDEX_PAGE.SECTION.replace(':id', sectionId)
       );
       
-      console.log('✅ IndexPageService: Delete section response:', response);
       return response;
     } catch (error) {
       console.error('❌ IndexPageService: Delete section error:', error);

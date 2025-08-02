@@ -62,8 +62,6 @@ export class ProductService {
     search?: string;
   }): Promise<ApiResponse<ProductListResponse>> {
     try {
-      console.log('📋 Fetching products...', params);
-      
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -73,9 +71,6 @@ export class ProductService {
       
       const response = await apiClient.get<ProductListResponse>(url);
       
-      console.log('📥 Products response:', response);
-      console.log('📥 Products response.data:', response.data);
-      console.log('📥 Products response.data.products:', response.data?.products);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch products:', error);
@@ -86,14 +81,10 @@ export class ProductService {
   // Get single product by ID
   static async getProduct(productId: string): Promise<ApiResponse<Product>> {
     try {
-      console.log('📋 Fetching product:', productId);
-      
       const response = await apiClient.get<Product>(
         `${API_CONFIG.ENDPOINTS.PRODUCTS.DETAILS.replace(':id', productId)}`
       );
       
-      console.log('📥 Product response:', response);
-      console.log('📥 Product response.data:', response.data);
       return response;
     } catch (error) {
       console.error('❌ Failed to fetch product:', error);
@@ -104,14 +95,11 @@ export class ProductService {
   // Create new product
   static async createProduct(data: CreateProductRequest): Promise<ApiResponse<Product>> {
     try {
-      console.log('📝 Creating product...', data);
-      
       const response = await apiClient.post<Product>(
         API_CONFIG.ENDPOINTS.PRODUCTS.CREATE,
         data
       );
       
-      console.log('📥 Create product response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to create product:', error);
@@ -122,14 +110,11 @@ export class ProductService {
   // Update existing product
   static async updateProduct(productId: string, data: UpdateProductRequest): Promise<ApiResponse<Product>> {
     try {
-      console.log('📝 Updating product:', productId, data);
-      
       const response = await apiClient.put<Product>(
         `${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', productId)}`,
         data
       );
       
-      console.log('📥 Update product response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to update product:', error);
@@ -140,13 +125,10 @@ export class ProductService {
   // Delete product
   static async deleteProduct(productId: string): Promise<ApiResponse<{ id: string; deletedAt: string }>> {
     try {
-      console.log('🗑️ Deleting product:', productId);
-      
       const response = await apiClient.delete<{ id: string; deletedAt: string }>(
         `${API_CONFIG.ENDPOINTS.PRODUCTS.DELETE.replace(':id', productId)}`
       );
       
-      console.log('📥 Delete product response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to delete product:', error);
@@ -157,8 +139,6 @@ export class ProductService {
   // Upload product image
   static async uploadProductImage(productId: string, imageFile: File): Promise<ApiResponse<{ imageUrl: string }>> {
     try {
-      console.log('📤 Uploading product image:', productId);
-      
       const formData = new FormData();
       formData.append('image', imageFile);
       
@@ -172,7 +152,6 @@ export class ProductService {
         }
       );
       
-      console.log('📥 Upload image response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to upload product image:', error);
@@ -183,14 +162,11 @@ export class ProductService {
   // Update product status
   static async updateProductStatus(productId: string, data: UpdateProductStatusRequest): Promise<ApiResponse<Product>> {
     try {
-      console.log('📝 Updating product status:', productId, data);
-      
       const response = await apiClient.patch<Product>(
         `${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE.replace(':id', productId)}/status`,
         data
       );
       
-      console.log('📥 Update status response:', response);
       return response;
     } catch (error) {
       console.error('❌ Failed to update product status:', error);

@@ -82,14 +82,6 @@ class EnquiryDecryption {
   // Decrypt a single enquiry record
   async decryptEnquiryRecord(encryptedRecord: any) {
     try {
-      console.log('🔓 Decrypting record:', {
-        fullName: encryptedRecord.fullName?.substring(0, 50) + '...',
-        email: encryptedRecord.email?.substring(0, 50) + '...',
-        phone: encryptedRecord.phone?.substring(0, 50) + '...',
-        message: encryptedRecord.message?.substring(0, 50) + '...',
-        contactDate: encryptedRecord.contactDate
-      });
-
       // Extract encryption parameters from the record
       const encryptedData = encryptedRecord.fullName; // hex format
       const encryptionKey = encryptedRecord.email;    // base64 format
@@ -102,26 +94,11 @@ class EnquiryDecryption {
         throw new Error('Missing required encryption fields');
       }
 
-      console.log('🔑 Encryption parameters:', {
-        encryptedDataLength: encryptedData.length,
-        encryptionKeyLength: encryptionKey.length,
-        ivLength: iv.length,
-        tagLength: tag.length,
-        contactDate: contactDate
-      });
-
       // Convert to ArrayBuffers
       const keyBuffer = this.base64ToArrayBuffer(encryptionKey);
       const ivBuffer = this.base64ToArrayBuffer(iv);
       const tagBuffer = this.base64ToArrayBuffer(tag);
       const dataBuffer = this.hexToArrayBuffer(encryptedData);
-
-      console.log('🔑 Buffer sizes:', {
-        keyBufferSize: keyBuffer.byteLength,
-        ivBufferSize: ivBuffer.byteLength,
-        tagBufferSize: tagBuffer.byteLength,
-        dataBufferSize: dataBuffer.byteLength
-      });
 
       // Import the key
       const key = await crypto.subtle.importKey(
@@ -153,8 +130,6 @@ class EnquiryDecryption {
       const decryptedText = new TextDecoder().decode(decryptedBuffer);
       const decryptedData = JSON.parse(decryptedText);
 
-      console.log('✅ Decryption successful:', decryptedData);
-
       // Return the decrypted record with original contact date
       return {
         fullName: decryptedData.fullName || '',
@@ -165,8 +140,6 @@ class EnquiryDecryption {
       };
 
     } catch (error) {
-      console.error('❌ Decryption failed for record:', error);
-      console.error('❌ Record data:', encryptedRecord);
       throw new Error(`Failed to decrypt enquiry record: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -180,7 +153,6 @@ class EnquiryDecryption {
         const decryptedRecord = await this.decryptEnquiryRecord(encryptedEnquiries[i]);
         decryptedEnquiries.push(decryptedRecord);
       } catch (error) {
-        console.error(`Failed to decrypt record ${i}:`, error);
         // Continue with other records
       }
     }
@@ -287,26 +259,6 @@ export default function Enquiries() {
         startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
         endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
       };
-      
-      console.log('📅 Raw dates:', { startDate, endDate });
-      console.log('📅 Formatted dates:', { 
-        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined
-      });
-      
-      console.log('🔍 Fetching enquiries with params:', params);
-      console.log('📅 Date filters:', { startDate, endDate });
-      console.log('🎯 Active filters count:', Object.values(params).filter(v => v !== undefined).length);
-      console.log('🎯 Sort params:', { sortBy, sortOrder });
-      console.log('🎯 Date params:', { 
-        startDate: params.startDate, 
-        endDate: params.endDate,
-        startDateType: typeof params.startDate,
-        endDateType: typeof params.endDate
-      });
-      
-
-      
       fetchEnquiries(params);
     }, 500);
 
@@ -357,11 +309,6 @@ export default function Enquiries() {
 
   // Handle date range changes
   const handleDateRangeChange = (from: Date | undefined, to: Date | undefined) => {
-    console.log('📅 Date range changed:', { from, to });
-    console.log('📅 Formatted dates:', { 
-      from: from ? format(from, 'yyyy-MM-dd') : undefined,
-      to: to ? format(to, 'yyyy-MM-dd') : undefined
-    });
     setStartDate(from);
     setEndDate(to);
     setIsDatePickerOpen(false);
@@ -380,13 +327,11 @@ export default function Enquiries() {
       endDate: to ? format(to, 'yyyy-MM-dd') : undefined,
     };
     
-    console.log('📅 Immediate API call with params:', params);
     fetchEnquiries(params);
   };
 
   // Clear date filters
   const clearDateFilters = () => {
-    console.log('🗑️ Clearing date filters');
     setStartDate(undefined);
     setEndDate(undefined);
     
@@ -402,13 +347,11 @@ export default function Enquiries() {
       sortOrder: sortOrder,
     };
     
-    console.log('🗑️ Immediate API call after clearing dates:', params);
     fetchEnquiries(params);
   };
 
   // Clear all filters
   const clearAllFilters = () => {
-    console.log('🗑️ Clearing all filters');
     setSearchTerm("");
     setStatusFilter("all");
     setCategoryFilter("all");
@@ -420,7 +363,6 @@ export default function Enquiries() {
     setEndDate(undefined);
     
     // Immediately trigger API call with cleared filters
-    console.log('🗑️ Immediate API call after clearing all filters');
     fetchEnquiries({
       page: 1,
       sortBy: "createdAt",
@@ -485,15 +427,11 @@ export default function Enquiries() {
       setExportProgress(20);
       setExportStage("Preparing export request...");
       
-      console.log('📤 Sending export request:', requestBody);
-      
       // Add delay for smooth feel
       await new Promise(resolve => setTimeout(resolve, 400));
 
       // Call the export API endpoint
       const response = await EnquiryService.exportEnquiries(requestBody);
-      
-      console.log('📥 API Response received:', response);
 
       setExportProgress(50);
       setExportStage("Processing server response...");
@@ -503,15 +441,6 @@ export default function Enquiries() {
 
       if (response.success && response.data) {
         const { enquiries: encryptedEnquiries, totalCount } = response.data;
-        
-        console.log('📊 Encrypted export response received:', {
-          encryptedEnquiriesCount: encryptedEnquiries.length,
-          totalCount,
-          sampleEncryptedRecord: encryptedEnquiries[0],
-          hasEnquiries: !!encryptedEnquiries,
-          enquiriesType: typeof encryptedEnquiries,
-          isArray: Array.isArray(encryptedEnquiries)
-        });
         
         if (!encryptedEnquiries || !Array.isArray(encryptedEnquiries)) {
           throw new Error('Invalid response format: enquiries array not found');
@@ -540,7 +469,6 @@ export default function Enquiries() {
         let csvRows: string[] = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
         
         if (useWebWorkers && typeof Worker !== 'undefined') {
-          console.log('🚀 Using Web Workers for parallel decryption...');
           setExportProgress(75);
           setExportStage("Initializing Web Workers...");
           await new Promise(resolve => setTimeout(resolve, 200));
@@ -552,13 +480,8 @@ export default function Enquiries() {
           setExportStage("Decryption completed...");
           await new Promise(resolve => setTimeout(resolve, 200));
         } else {
-          console.log('🚀 Using main thread parallel decryption...');
-          
           // Decrypt the enquiries using main thread parallel processing
           const decryption = new EnquiryDecryption();
-          
-          console.log('📄 Starting CSV generation...');
-          console.log('📄 CSV Header:', csvRows[0]);
           
           setExportProgress(75);
           setExportStage("Decrypting records...");
@@ -566,8 +489,6 @@ export default function Enquiries() {
           // Process records in parallel batches for faster decryption
           const batchSize = 10; // Process 10 records at a time
           const totalBatches = Math.ceil(encryptedEnquiries.length / batchSize);
-          
-          console.log(`🚀 Starting parallel decryption: ${encryptedEnquiries.length} records in ${totalBatches} batches of ${batchSize}`);
           
           for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
             const startIndex = batchIndex * batchSize;
@@ -597,14 +518,8 @@ export default function Enquiries() {
                   `"${decryptedRecord.contactDate || ''}"`
                 ].join(',');
                 
-                console.log(`📄 Record ${actualIndex + 1} processed in batch ${batchIndex + 1}:`, {
-                  fullName: decryptedRecord.fullName,
-                  email: decryptedRecord.email
-                });
-                
                 return { index: actualIndex, csvRow, success: true };
               } catch (error) {
-                console.error(`❌ Failed to decrypt record ${startIndex + index + 1} in batch ${batchIndex + 1}:`, error);
                 return { index: startIndex + index, csvRow: '"","","","",""', success: false };
               }
             });
@@ -618,8 +533,6 @@ export default function Enquiries() {
               .forEach(result => {
                 csvRows[result.index + 1] = result.csvRow; // +1 for header row
               });
-            
-            console.log(`✅ Batch ${batchIndex + 1} completed: ${batchResults.filter(r => r.success).length}/${batchResults.length} records successful`);
           }
           
           // Ensure progress is at 90% after main thread completion
@@ -627,9 +540,6 @@ export default function Enquiries() {
           setExportStage("Decryption completed...");
           await new Promise(resolve => setTimeout(resolve, 200));
         }
-        
-        console.log('🔓 All records decrypted and processed');
-        console.log('📄 Total CSV rows:', csvRows.length);
         
         setExportProgress(90);
         setExportStage("Finalizing CSV file...");
@@ -639,14 +549,6 @@ export default function Enquiries() {
         
         // Combine all rows into final CSV
         const csvData = csvRows.join('\n');
-        
-        // Log the CSV content for debugging
-        console.log('📄 Generated CSV Content:');
-        console.log('='.repeat(80));
-        console.log(csvData);
-        console.log('='.repeat(80));
-        console.log('📄 CSV Content Length:', csvData.length, 'characters');
-        console.log('📄 Number of records:', encryptedEnquiries.length);
         
         setExportProgress(95);
         setExportStage("Preparing download...");
@@ -658,8 +560,6 @@ export default function Enquiries() {
         const today = new Date();
         const filename = `enquiries_${exportDateRange}_${format(today, 'yyyy-MM-dd')}.csv`;
         downloadCSV(csvData, filename);
-        
-        console.log('📥 File downloaded as:', filename);
         
         setExportProgress(100);
         setExportStage("Export completed!");
@@ -688,7 +588,6 @@ export default function Enquiries() {
         throw new Error("Failed to export enquiries");
       }
     } catch (error) {
-      console.error('❌ Export failed:', error);
       setExportProgress(0);
       setExportStage("Export failed");
       toast({
@@ -722,12 +621,6 @@ export default function Enquiries() {
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n');
     
-    console.log('📊 CSV file generated:', {
-      dataLength: enquiries.length,
-      csvLength: csvContent.length,
-      sampleData: enquiries[0]
-    });
-    
     return csvContent;
   };
 
@@ -750,43 +643,25 @@ export default function Enquiries() {
       }
     ];
     
-    console.log('🧪 Testing CSV generation with sample data:', sampleData);
     const testCSV = convertToCSV(sampleData);
-    
-    // Show CSV preview
-    console.log('📄 Test CSV Preview:');
-    console.log('='.repeat(80));
-    console.log(testCSV);
-    console.log('='.repeat(80));
-    
     downloadCSV(testCSV, 'test_export.csv');
   };
 
   // Test base64 decoding
   const testBase64Decoding = () => {
     try {
-      console.log('🧪 Testing base64 decoding...');
       const decryption = new EnquiryDecryption();
-      
       // Test with a simple base64 string
       const testBase64 = btoa('Hello World');
       const decoded = decryption.base64ToArrayBuffer(testBase64);
-      console.log('🧪 Base64 test successful:', {
-        original: 'Hello World',
-        base64: testBase64,
-        decodedLength: decoded.byteLength
-      });
     } catch (error) {
-      console.error('🧪 Base64 test failed:', error);
     }
   };
 
   // Test with the exact data provided by user
   const testWithProvidedData = async () => {
     try {
-      console.log('🧪 Testing with provided encrypted data...');
       const decryption = new EnquiryDecryption();
-      
       const testRecord = {
         "fullName": "dfe3e51164451a97216e3345c29324601e609fd785524f99ccec751aca13716f0ae931d0fac06a2b24652f3ff015c468b388ab7628a56fa4fa4626230e04e2cc940c7ce9ac138de31c7ab1d350ebd1029296c43c4edccc63c104f96dd9fc0267c1c51f57c5937dcf2ba8f72bf9f5f715b3a37953cd8df438605ca38521c557b8418a705d766d75776a72d5997c6df66b447bbcc4f6d4e83571780d44860a5041c6375e726b5830e5cdc3cf4cd0211389a4bbd07760e796dcf2e2ff88a32c957cdd43543a97a80250056450d6764588bc774f51d1d91276ffa27a23ff47afa05d84463d17d991ef7bcfc3af49ed3ca0f4d4a76fadd3abb8e76d4ea6157d",
         "email": "DxcUUBZI2hpm8Z7RYdBUz2dO+ml6XBaFPhfcsfrnnNw=",
@@ -794,13 +669,7 @@ export default function Enquiries() {
         "message": "2ujonAGAv99mosSXqkgLuA==",
         "contactDate": "2025-08-02"
       };
-      
-      console.log('🧪 Test record:', testRecord);
-      
       const decrypted = await decryption.decryptEnquiryRecord(testRecord);
-      console.log('🧪 Decryption successful:', decrypted);
-      
-      // Test CSV generation with decrypted data
       const csvRow = [
         `"${decrypted.fullName || ''}"`,
         `"${decrypted.email || ''}"`,
@@ -808,38 +677,24 @@ export default function Enquiries() {
         `"${(decrypted.message || '').replace(/"/g, '""')}"`,
         `"${decrypted.contactDate || ''}"`
       ].join(',');
-      
-      console.log('🧪 Generated CSV row:', csvRow);
-      
     } catch (error) {
-      console.error('🧪 Test with provided data failed:', error);
     }
   };
 
   // Test API call
   const testAPICall = async () => {
     try {
-      console.log('🧪 Testing API call...');
       const response = await EnquiryService.exportEnquiries({ dateFilter: 'today' });
-      console.log('🧪 API Test Response:', response);
-      
       if (response.success && response.data && response.data.enquiries) {
-        console.log('🧪 Sample encrypted record:', response.data.enquiries[0]);
-        console.log('🧪 Total records:', response.data.enquiries.length);
-        
-        // Test decryption of first record
         if (response.data.enquiries.length > 0) {
           const decryption = new EnquiryDecryption();
           try {
             const decrypted = await decryption.decryptEnquiryRecord(response.data.enquiries[0]);
-            console.log('🧪 Decryption test successful:', decrypted);
           } catch (decryptError) {
-            console.error('🧪 Decryption test failed:', decryptError);
           }
         }
       }
     } catch (error) {
-      console.error('🧪 API Test Failed:', error);
     }
   };
 
@@ -848,8 +703,6 @@ export default function Enquiries() {
     const batchSize = 20; // Larger batches for Web Workers
     const totalBatches = Math.ceil(encryptedEnquiries.length / batchSize);
     const csvRows = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
-    
-    console.log(`🚀 Starting Web Worker decryption: ${encryptedEnquiries.length} records in ${totalBatches} batches of ${batchSize}`);
     
     // Create multiple workers for parallel processing
     const workerCount = Math.min(4, totalBatches); // Use up to 4 workers
@@ -905,12 +758,10 @@ export default function Enquiries() {
               });
             
             completedBatches++;
-            console.log(`✅ Batch ${batchIndex + 1} completed via Web Worker`);
             
             // Process next batch
             processBatch(batchIndex + 1);
           } else if (type === 'batch-error') {
-            console.error(`❌ Web Worker batch ${batchIndex + 1} failed:`, data.error);
             // Add empty rows for failed batch
             for (let i = 0; i < currentBatch.length; i++) {
               csvRows[startIndex + i + 1] = '"","","","",""';
@@ -921,7 +772,6 @@ export default function Enquiries() {
         };
         
         worker.onerror = (error) => {
-          console.error(`❌ Web Worker error in batch ${batchIndex + 1}:`, error);
           // Add empty rows for failed batch
           for (let i = 0; i < currentBatch.length; i++) {
             csvRows[startIndex + i + 1] = '"","","","",""';
@@ -950,18 +800,9 @@ export default function Enquiries() {
   // Download CSV file
   const downloadCSV = (csvContent: string, filename: string) => {
     try {
-      console.log('📥 Downloading CSV file:', filename);
-      console.log('📥 CSV content length:', csvContent.length, 'characters');
-      
       const blob = new Blob([csvContent], { 
         type: 'text/csv;charset=utf-8;' 
       });
-      
-      console.log('📥 Blob created:', {
-        size: blob.size,
-        type: blob.type
-      });
-      
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
@@ -970,15 +811,11 @@ export default function Enquiries() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
       // Clean up the URL object
       setTimeout(() => {
         URL.revokeObjectURL(url);
       }, 1000);
-      
-      console.log('✅ CSV file download initiated:', filename);
     } catch (error) {
-      console.error('❌ Error downloading CSV file:', error);
       throw error;
     }
   };
@@ -1073,7 +910,6 @@ export default function Enquiries() {
     try {
       await getEnquiry(enquiryId);
     } catch (error) {
-      console.error('Failed to fetch enquiry details:', error);
       toast({
         title: "Error",
         description: "Failed to load enquiry details. Please try again.",
@@ -1367,7 +1203,6 @@ export default function Enquiries() {
                           type="date"
                           value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
                           onChange={(e) => {
-                            console.log('📅 Start date input changed:', e.target.value);
                             const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined;
                             handleDateRangeChange(date, endDate);
                           }}
@@ -1382,7 +1217,6 @@ export default function Enquiries() {
                           type="date"
                           value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
                           onChange={(e) => {
-                            console.log('📅 End date input changed:', e.target.value);
                             const date = e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined;
                             handleDateRangeChange(startDate, date);
                           }}
@@ -1401,7 +1235,6 @@ export default function Enquiries() {
                             const today = new Date();
                             const yesterday = new Date(today);
                             yesterday.setDate(yesterday.getDate() - 1);
-                            console.log('📅 Last 2 Days preset clicked:', { yesterday, today });
                             handleDateRangeChange(yesterday, today);
                           }}
                           className="h-7 text-xs justify-start"

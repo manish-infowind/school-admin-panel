@@ -67,14 +67,11 @@ export default function Dashboard() {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        console.log('🚀 Loading dashboard data...');
         const response = await DashboardService.getDashboard();
         
         if (response.success && response.data) {
-          console.log('✅ Dashboard data loaded:', response.data);
           setDashboardData(response.data);
         } else {
-          console.log('❌ Dashboard API response not successful:', response);
           // Use fallback data
           setDashboardData({
             stats: {

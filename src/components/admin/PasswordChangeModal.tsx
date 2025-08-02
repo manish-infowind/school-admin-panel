@@ -141,13 +141,11 @@ export function PasswordChangeModal({
         // Show error in current password field instead of toast
         setCurrentPasswordError("Current password is incorrect");
         // Stay on password step
-        console.log('Password change failed, staying on password step');
       }
     } catch (error) {
       // Show error in current password field instead of toast
       setCurrentPasswordError("Current password is incorrect");
       // Don't proceed to OTP step, stay on password step
-      console.log('Password change failed, staying on password step');
     }
   };
 
@@ -170,24 +168,20 @@ export function PasswordChangeModal({
       
       // Only proceed to success step if successful
       if (success) {
-        console.log('✅ Password change successful, setting success state...');
         setPasswordChanged(true);
         // Store flag in localStorage for hard reload scenarios
         localStorage.setItem('passwordChanged', 'true');
         setStep('success');
-        console.log('✅ Starting countdown...');
         startCountdown();
       } else {
         // Show error in OTP field
         setOtpError("Invalid OTP. Please try again.");
         // Don't proceed to success step, stay on OTP step
-        console.log('OTP verification failed, staying on OTP step');
       }
     } catch (error) {
       // Show error in OTP field
       setOtpError("Invalid OTP. Please try again.");
       // Don't proceed to success step, stay on OTP step
-      console.log('OTP verification failed, staying on OTP step');
     }
   };
 
@@ -203,7 +197,6 @@ export function PasswordChangeModal({
           }
           
           // Logout after countdown
-          console.log('🔄 Logging out after password change countdown...');
           logout();
           return 0;
         }
@@ -225,7 +218,6 @@ export function PasswordChangeModal({
   useEffect(() => {
     const passwordChangedFlag = localStorage.getItem('passwordChanged');
     if (passwordChangedFlag === 'true') {
-      console.log('🔄 Detected password change from previous session, logging out...');
       // Clear the flag
       localStorage.removeItem('passwordChanged');
       // Logout immediately
@@ -244,13 +236,12 @@ export function PasswordChangeModal({
   };
 
   const handleSuccessClose = () => {
-    // Clear any pending countdown
+    // Clear countdown if still running
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
     }
     
     // Logout when manually closing success modal
-    console.log('🔄 Manual logout after password change...');
     logout();
   };
 
@@ -287,8 +278,6 @@ export function PasswordChangeModal({
     onClose();
   };
 
-  console.log('🔍 Modal render - step:', step, 'passwordChanged:', passwordChanged);
-  
   return (
     <Dialog 
       open={isOpen} 

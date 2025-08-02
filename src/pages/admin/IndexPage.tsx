@@ -149,23 +149,19 @@ export default function IndexPage() {
       try {
         // Load sections
         const sectionsResponse = await IndexPageService.getSections();
-        console.log('Sections response:', sectionsResponse);
         if (sectionsResponse.success && sectionsResponse.data) {
           setSections(sectionsResponse.data);
         } else {
           // Fallback to initial sections if API fails
-          console.log('Using fallback sections');
           setSections(initialSections);
         }
 
         // Load products
         const productsResponse = await ProductService.getProducts({ limit: 100 });
-        console.log('Products response:', productsResponse);
         if (productsResponse.success && productsResponse.data) {
           setProducts(productsResponse.data.products);
         } else {
           // Fallback to mock products if API fails
-          console.log('Using fallback products');
           setProducts([
             {
               _id: "1",
@@ -269,15 +265,10 @@ export default function IndexPage() {
     // Get the correct ID (either id or _id)
     const sectionId = section.id || section._id;
     
-    console.log('🚀 Starting save section process...');
-    console.log('📋 Section to save:', section);
-    console.log('🆔 Section ID:', sectionId);
-    
     // Validate required fields
     if (!section.content.title.trim() || !section.content.subtitle.trim() || 
         !section.content.description.trim() || !section.content.buttonText.trim() || 
         !section.content.buttonLink.trim()) {
-      console.log('❌ Validation failed - missing required fields');
       toast({
         title: "Error",
         description: "All fields are required. Please fill in all fields.",
@@ -286,20 +277,9 @@ export default function IndexPage() {
       return;
     }
 
-    console.log('✅ Validation passed, starting save...');
     setSaving(true);
     try {
       if (sectionId) {
-        console.log('📡 Making API call to update section...');
-        console.log('🔗 Endpoint:', `/index-page/sections/${sectionId}`);
-        console.log('📤 Request data:', {
-          name: section.name,
-          description: section.description,
-          content: section.content,
-          isActive: section.isActive,
-          order: section.order,
-        });
-        
         // Update existing section via API
         const response = await IndexPageService.updateSection(sectionId, {
           name: section.name,
@@ -309,10 +289,7 @@ export default function IndexPage() {
           order: section.order,
         });
 
-        console.log('✅ Update API response:', response);
-
         if (response.success) {
-          console.log('✅ API update successful, updating local state...');
           // Update local state
           const updatedSections = sections.map((s) =>
             (s.id || s._id) === sectionId ? { ...section, lastModified: "Just now" } : s,
@@ -324,7 +301,6 @@ export default function IndexPage() {
             description: `${section.name} updated successfully.`,
           });
         } else {
-          console.log('❌ API update failed - response not successful:', response);
           toast({
             title: "Error",
             description: "Failed to save section - API response not successful.",
@@ -332,7 +308,6 @@ export default function IndexPage() {
           });
         }
       } else {
-        console.log('❌ No section ID available for update');
         toast({
           title: "Error",
           description: "No section ID available for update.",
@@ -341,11 +316,6 @@ export default function IndexPage() {
       }
     } catch (error) {
       console.error('❌ Error in save section process:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.status,
-        type: error.type
-      });
       toast({
         title: "Error",
         description: "Failed to save section.",
@@ -376,22 +346,12 @@ export default function IndexPage() {
     const sectionIdForComparison = section.id || section._id;
 
     try {
-      console.log('🚀 Starting delete section process...');
-      console.log('📋 Section to delete:', section);
-      console.log('🆔 Section ID:', sectionId);
-      console.log('📝 Section name:', section.name);
-      
       // Try API call first
       try {
         if (sectionId) {
-          console.log('📡 Making API call to delete section...');
-          console.log('🔗 Endpoint:', `/index-page/sections/${sectionId}`);
-          
           const response = await IndexPageService.deleteSection(sectionId);
-          console.log('✅ Delete API response:', response);
           
           if (response.success) {
-            console.log('✅ API delete successful, updating local state...');
             // Update local state
             setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
             if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
@@ -405,23 +365,13 @@ export default function IndexPage() {
             });
             setDeleteDialog({ isOpen: false, section: null });
             return;
-          } else {
-            console.log('❌ API delete failed - response not successful:', response);
           }
-        } else {
-          console.log('❌ No section ID available for deletion');
         }
       } catch (apiError) {
         console.error('❌ API delete failed with error:', apiError);
-        console.error('❌ Error details:', {
-          message: apiError.message,
-          status: apiError.status,
-          type: apiError.type
-        });
       }
 
       // Fallback: Update local state only if API fails
-      console.log('🔄 Using fallback - updating local state only...');
       setSections(sections.filter((s) => (s.id || s._id) !== sectionIdForComparison));
       if ((selectedSection?.id || selectedSection?._id) === sectionIdForComparison) {
         setSelectedSection(null);
@@ -600,21 +550,14 @@ export default function IndexPage() {
   };
 
   const handleAddFeaturedProduct = async (productId: string) => {
-    console.log('Adding featured product:', productId);
-    console.log('Selected section:', selectedSection);
-    
     // Get the correct ID (either id or _id)
     const sectionId = selectedSection?.id || selectedSection?._id;
     
     if (!selectedSection || selectedSection.name !== "Featured Products" || !sectionId) {
-      console.log('Invalid section for adding featured product');
-      console.log('Selected section name:', selectedSection?.name);
-      console.log('Section ID:', sectionId);
       return;
     }
     
     const currentProducts = selectedSection.content.featuredProducts || [];
-    console.log('Current featured products:', currentProducts);
     
     // Check if product is already featured
     if (currentProducts.includes(productId)) {
@@ -639,7 +582,6 @@ export default function IndexPage() {
     // Safety check: If current products array is corrupted (more than 4 items), reset it
     let newFeaturedProducts: string[];
     if (currentProducts.length > 4) {
-      console.warn('⚠️ Warning: Current featured products array has more than 4 items, resetting to empty');
       const updatedSection = {
         ...selectedSection,
         content: {
@@ -657,10 +599,8 @@ export default function IndexPage() {
       
       // Try again with empty array
       newFeaturedProducts = [productId];
-      console.log('Reset featured products array to:', newFeaturedProducts);
     } else {
       newFeaturedProducts = [...currentProducts, productId];
-      console.log('New featured products array:', newFeaturedProducts);
     }
     
     // Double-check: Ensure we never send more than 4 items
@@ -676,11 +616,9 @@ export default function IndexPage() {
 
     try {
       const newFeaturedProducts = [...currentProducts, productId];
-      console.log('New featured products array:', newFeaturedProducts);
       
       // Double-check: Ensure we never send more than 4 items
       if (newFeaturedProducts.length > 4) {
-        console.error('❌ Error: Attempting to send more than 4 featured products');
         toast({
           title: "Error",
           description: "Cannot add more than 4 featured products.",
@@ -698,13 +636,7 @@ export default function IndexPage() {
           },
         };
         
-        console.log('📤 Sending API request with data:', requestData);
-        console.log('📊 Featured products array length:', newFeaturedProducts.length);
-        console.log('📋 Featured products array:', newFeaturedProducts);
-        
         const response = await IndexPageService.updateSection(sectionId, requestData);
-
-        console.log('API response:', response);
 
         if (response.success && response.data) {
           // Update local state
@@ -730,8 +662,6 @@ export default function IndexPage() {
           return;
         }
       } catch (apiError) {
-        console.log('API call failed, updating local state only:', apiError);
-        
         // Check if it's a validation error
         if (apiError.status === 400) {
           console.error('❌ API validation error:', apiError.message);
@@ -793,8 +723,6 @@ export default function IndexPage() {
           },
         };
         
-        console.log('📤 Sending API request to remove featured product:', requestData);
-        
         const response = await IndexPageService.updateSection(sectionId, requestData);
 
         if (response.success && response.data) {
@@ -821,8 +749,6 @@ export default function IndexPage() {
           return;
         }
       } catch (apiError) {
-        console.log('API call failed, updating local state only:', apiError);
-        
         // Check if it's a validation error
         if (apiError.status === 400) {
           console.error('❌ API validation error:', apiError.message);
@@ -868,17 +794,12 @@ export default function IndexPage() {
     const sectionId = section.id || section._id;
     if (!sectionId) return;
 
-    console.log('🚀 Toggling section status:', section.name, 'to:', newStatus);
-    console.log('🆔 Section ID:', sectionId);
-
     try {
       // Try API call first
       try {
         const response = await IndexPageService.updateSectionStatus(sectionId, {
           isActive: newStatus,
         });
-
-        console.log('✅ Status update API response:', response);
 
         if (response.success && response.data) {
           // Update local state
@@ -906,8 +827,6 @@ export default function IndexPage() {
           return;
         }
       } catch (apiError) {
-        console.log('API call failed, updating local state only:', apiError);
-        
         // Check if it's a validation error
         if (apiError.status === 400) {
           console.error('❌ API validation error:', apiError.message);
@@ -1467,7 +1386,6 @@ export default function IndexPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => {
-                                      console.log('Clicking add button for product:', product._id, product.name);
                                       handleAddFeaturedProduct(product._id);
                                     }}
                                     disabled={selectedSection.content.featuredProducts?.length >= 4}
