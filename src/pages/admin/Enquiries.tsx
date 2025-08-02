@@ -46,6 +46,149 @@ import { Enquiry } from "@/api/types";
 import { format } from "date-fns";
 import { API_CONFIG } from "@/api/config";
 
+// Decryption utility class
+class EnquiryDecryption {
+  private algorithm: string;
+  private keyLength: number;
+  private ivLength: number;
+  private aad: Uint8Array;
+
+  constructor() {
+    this.algorithm = 'AES-GCM';
+    this.keyLength = 256;
+    this.ivLength = 128;
+    this.aad = new TextEncoder().encode('enquiry-export');
+  }
+
+  // Convert base64 to ArrayBuffer
+  base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  // Convert hex string to ArrayBuffer
+  hexToArrayBuffer(hex: string): ArrayBuffer {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes.buffer;
+  }
+
+  // Decrypt a single enquiry record
+  async decryptEnquiryRecord(encryptedRecord: any) {
+    try {
+      console.log('🔓 Decrypting record:', {
+        fullName: encryptedRecord.fullName?.substring(0, 50) + '...',
+        email: encryptedRecord.email?.substring(0, 50) + '...',
+        phone: encryptedRecord.phone?.substring(0, 50) + '...',
+        message: encryptedRecord.message?.substring(0, 50) + '...',
+        contactDate: encryptedRecord.contactDate
+      });
+
+      // Extract encryption parameters from the record
+      const encryptedData = encryptedRecord.fullName; // hex format
+      const encryptionKey = encryptedRecord.email;    // base64 format
+      const iv = encryptedRecord.phone;               // base64 format
+      const tag = encryptedRecord.message;            // base64 format
+      const contactDate = encryptedRecord.contactDate; // unencrypted
+
+      // Validate that we have all required fields
+      if (!encryptedData || !encryptionKey || !iv || !tag) {
+        throw new Error('Missing required encryption fields');
+      }
+
+      console.log('🔑 Encryption parameters:', {
+        encryptedDataLength: encryptedData.length,
+        encryptionKeyLength: encryptionKey.length,
+        ivLength: iv.length,
+        tagLength: tag.length,
+        contactDate: contactDate
+      });
+
+      // Convert to ArrayBuffers
+      const keyBuffer = this.base64ToArrayBuffer(encryptionKey);
+      const ivBuffer = this.base64ToArrayBuffer(iv);
+      const tagBuffer = this.base64ToArrayBuffer(tag);
+      const dataBuffer = this.hexToArrayBuffer(encryptedData);
+
+      console.log('🔑 Buffer sizes:', {
+        keyBufferSize: keyBuffer.byteLength,
+        ivBufferSize: ivBuffer.byteLength,
+        tagBufferSize: tagBuffer.byteLength,
+        dataBufferSize: dataBuffer.byteLength
+      });
+
+      // Import the key
+      const key = await crypto.subtle.importKey(
+        'raw',
+        keyBuffer,
+        { name: this.algorithm },
+        false,
+        ['decrypt']
+      );
+
+      // Combine encrypted data with auth tag
+      const encryptedBuffer = new Uint8Array(dataBuffer.byteLength + tagBuffer.byteLength);
+      encryptedBuffer.set(new Uint8Array(dataBuffer), 0);
+      encryptedBuffer.set(new Uint8Array(tagBuffer), dataBuffer.byteLength);
+
+      // Decrypt using AES-GCM with additional authenticated data
+      const decryptedBuffer = await crypto.subtle.decrypt(
+        {
+          name: this.algorithm,
+          iv: new Uint8Array(ivBuffer),
+          additionalData: this.aad,
+          tagLength: this.ivLength
+        },
+        key,
+        encryptedBuffer
+      );
+
+      // Convert to string and parse JSON
+      const decryptedText = new TextDecoder().decode(decryptedBuffer);
+      const decryptedData = JSON.parse(decryptedText);
+
+      console.log('✅ Decryption successful:', decryptedData);
+
+      // Return the decrypted record with original contact date
+      return {
+        fullName: decryptedData.fullName || '',
+        email: decryptedData.email || '',
+        phone: decryptedData.phone || '',
+        message: decryptedData.message || '',
+        contactDate: contactDate || ''
+      };
+
+    } catch (error) {
+      console.error('❌ Decryption failed for record:', error);
+      console.error('❌ Record data:', encryptedRecord);
+      throw new Error(`Failed to decrypt enquiry record: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Decrypt all enquiry records
+  async decryptEnquiries(encryptedEnquiries: any[]) {
+    const decryptedEnquiries = [];
+    
+    for (let i = 0; i < encryptedEnquiries.length; i++) {
+      try {
+        const decryptedRecord = await this.decryptEnquiryRecord(encryptedEnquiries[i]);
+        decryptedEnquiries.push(decryptedRecord);
+      } catch (error) {
+        console.error(`Failed to decrypt record ${i}:`, error);
+        // Continue with other records
+      }
+    }
+    
+    return decryptedEnquiries;
+  }
+}
+
 export default function Enquiries() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,6 +215,7 @@ export default function Enquiries() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStage, setExportStage] = useState<string>("");
+  const [useWebWorkers, setUseWebWorkers] = useState(true); // Enable Web Workers by default
 
   // Ref for date picker click outside
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -339,11 +483,15 @@ export default function Enquiries() {
       setExportProgress(20);
       setExportStage("Preparing export request...");
       
+      console.log('📤 Sending export request:', requestBody);
+      
       // Add delay for smooth feel
       await new Promise(resolve => setTimeout(resolve, 400));
 
       // Call the export API endpoint
       const response = await EnquiryService.exportEnquiries(requestBody);
+      
+      console.log('📥 API Response received:', response);
 
       setExportProgress(50);
       setExportStage("Processing server response...");
@@ -352,23 +500,125 @@ export default function Enquiries() {
       await new Promise(resolve => setTimeout(resolve, 600));
 
       if (response.success && response.data) {
-        const { enquiries, totalCount } = response.data;
+        const { enquiries: encryptedEnquiries, totalCount } = response.data;
         
-        console.log('📊 Export response data:', {
-          enquiriesCount: enquiries.length,
+        console.log('📊 Encrypted export response received:', {
+          encryptedEnquiriesCount: encryptedEnquiries.length,
           totalCount,
-          sampleEnquiry: enquiries[0],
-          allEnquiries: enquiries
+          sampleEncryptedRecord: encryptedEnquiries[0],
+          hasEnquiries: !!encryptedEnquiries,
+          enquiriesType: typeof encryptedEnquiries,
+          isArray: Array.isArray(encryptedEnquiries)
         });
         
+        if (!encryptedEnquiries || !Array.isArray(encryptedEnquiries)) {
+          throw new Error('Invalid response format: enquiries array not found');
+        }
+        
         setExportProgress(70);
-        setExportStage("Preparing CSV file...");
+        setExportStage("Preparing decryption...");
+        
+        // Add delay for smooth feel
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Choose decryption method based on settings and browser support
+        let csvRows: string[] = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
+        
+        if (useWebWorkers && typeof Worker !== 'undefined') {
+          console.log('🚀 Using Web Workers for parallel decryption...');
+          csvRows = await decryptWithWebWorkers(encryptedEnquiries);
+        } else {
+          console.log('🚀 Using main thread parallel decryption...');
+          
+          // Decrypt the enquiries using main thread parallel processing
+          const decryption = new EnquiryDecryption();
+          csvRows = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
+          
+          console.log('📄 Starting CSV generation...');
+          console.log('📄 CSV Header:', csvRows[0]);
+          
+          setExportProgress(75);
+          setExportStage("Decrypting records...");
+          
+          // Process records in parallel batches for faster decryption
+          const batchSize = 10; // Process 10 records at a time
+          const totalBatches = Math.ceil(encryptedEnquiries.length / batchSize);
+          
+          console.log(`🚀 Starting parallel decryption: ${encryptedEnquiries.length} records in ${totalBatches} batches of ${batchSize}`);
+          
+          for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            const startIndex = batchIndex * batchSize;
+            const endIndex = Math.min(startIndex + batchSize, encryptedEnquiries.length);
+            const currentBatch = encryptedEnquiries.slice(startIndex, endIndex);
+            
+            // Update progress for batch
+            const batchProgress = 75 + (batchIndex / totalBatches) * 15; // 75% to 90%
+            setExportProgress(Math.floor(batchProgress));
+            setExportStage(`Decrypting batch ${batchIndex + 1} of ${totalBatches} (records ${startIndex + 1}-${endIndex})...`);
+            
+            // Add small delay for smooth feel
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Process current batch in parallel
+            const batchPromises = currentBatch.map(async (encryptedRecord, index) => {
+              try {
+                const actualIndex = startIndex + index;
+                const decryptedRecord = await decryption.decryptEnquiryRecord(encryptedRecord);
+                
+                // Convert record to CSV row
+                const csvRow = [
+                  `"${decryptedRecord.fullName || ''}"`,
+                  `"${decryptedRecord.email || ''}"`,
+                  `"${decryptedRecord.phone || ''}"`,
+                  `"${(decryptedRecord.message || '').replace(/"/g, '""')}"`,
+                  `"${decryptedRecord.contactDate || ''}"`
+                ].join(',');
+                
+                console.log(`📄 Record ${actualIndex + 1} processed in batch ${batchIndex + 1}:`, {
+                  fullName: decryptedRecord.fullName,
+                  email: decryptedRecord.email
+                });
+                
+                return { index: actualIndex, csvRow, success: true };
+              } catch (error) {
+                console.error(`❌ Failed to decrypt record ${startIndex + index + 1} in batch ${batchIndex + 1}:`, error);
+                return { index: startIndex + index, csvRow: '"","","","",""', success: false };
+              }
+            });
+            
+            // Wait for all records in current batch to complete
+            const batchResults = await Promise.all(batchPromises);
+            
+            // Sort results by original index and add to CSV rows
+            batchResults
+              .sort((a, b) => a.index - b.index)
+              .forEach(result => {
+                csvRows[result.index + 1] = result.csvRow; // +1 for header row
+              });
+            
+            console.log(`✅ Batch ${batchIndex + 1} completed: ${batchResults.filter(r => r.success).length}/${batchResults.length} records successful`);
+          }
+        }
+        
+        console.log('🔓 All records decrypted and processed');
+        console.log('📄 Total CSV rows:', csvRows.length);
+        
+        setExportProgress(90);
+        setExportStage("Finalizing CSV file...");
         
         // Add delay for smooth feel
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Convert to CSV
-        const csvData = convertToCSV(enquiries);
+        // Combine all rows into final CSV
+        const csvData = csvRows.join('\n');
+        
+        // Log the CSV content for debugging
+        console.log('📄 Generated CSV Content:');
+        console.log('='.repeat(80));
+        console.log(csvData);
+        console.log('='.repeat(80));
+        console.log('📄 CSV Content Length:', csvData.length, 'characters');
+        console.log('📄 Number of records:', encryptedEnquiries.length);
         
         setExportProgress(85);
         setExportStage("Finalizing export...");
@@ -378,7 +628,10 @@ export default function Enquiries() {
         
         // Download file
         const today = new Date();
-        downloadCSV(csvData, `enquiries_${exportDateRange}_${format(today, 'yyyy-MM-dd')}.csv`);
+        const filename = `enquiries_${exportDateRange}_${format(today, 'yyyy-MM-dd')}.csv`;
+        downloadCSV(csvData, filename);
+        
+        console.log('📥 File downloaded as:', filename);
         
         setExportProgress(100);
         setExportStage("Export completed!");
@@ -458,12 +711,211 @@ export default function Enquiries() {
         phone: "+1234567890",
         message: "This is a test message",
         contactDate: "2024-01-15"
+      },
+      {
+        fullName: "Jane Smith",
+        email: "jane.smith@example.com",
+        phone: "+0987654321",
+        message: "Another test message with quotes \"inside\"",
+        contactDate: "2024-01-16"
       }
     ];
     
     console.log('🧪 Testing CSV generation with sample data:', sampleData);
     const testCSV = convertToCSV(sampleData);
+    
+    // Show CSV preview
+    console.log('📄 Test CSV Preview:');
+    console.log('='.repeat(80));
+    console.log(testCSV);
+    console.log('='.repeat(80));
+    
     downloadCSV(testCSV, 'test_export.csv');
+  };
+
+  // Test base64 decoding
+  const testBase64Decoding = () => {
+    try {
+      console.log('🧪 Testing base64 decoding...');
+      const decryption = new EnquiryDecryption();
+      
+      // Test with a simple base64 string
+      const testBase64 = btoa('Hello World');
+      const decoded = decryption.base64ToArrayBuffer(testBase64);
+      console.log('🧪 Base64 test successful:', {
+        original: 'Hello World',
+        base64: testBase64,
+        decodedLength: decoded.byteLength
+      });
+    } catch (error) {
+      console.error('🧪 Base64 test failed:', error);
+    }
+  };
+
+  // Test with the exact data provided by user
+  const testWithProvidedData = async () => {
+    try {
+      console.log('🧪 Testing with provided encrypted data...');
+      const decryption = new EnquiryDecryption();
+      
+      const testRecord = {
+        "fullName": "dfe3e51164451a97216e3345c29324601e609fd785524f99ccec751aca13716f0ae931d0fac06a2b24652f3ff015c468b388ab7628a56fa4fa4626230e04e2cc940c7ce9ac138de31c7ab1d350ebd1029296c43c4edccc63c104f96dd9fc0267c1c51f57c5937dcf2ba8f72bf9f5f715b3a37953cd8df438605ca38521c557b8418a705d766d75776a72d5997c6df66b447bbcc4f6d4e83571780d44860a5041c6375e726b5830e5cdc3cf4cd0211389a4bbd07760e796dcf2e2ff88a32c957cdd43543a97a80250056450d6764588bc774f51d1d91276ffa27a23ff47afa05d84463d17d991ef7bcfc3af49ed3ca0f4d4a76fadd3abb8e76d4ea6157d",
+        "email": "DxcUUBZI2hpm8Z7RYdBUz2dO+ml6XBaFPhfcsfrnnNw=",
+        "phone": "qGpWY9BMiv+13w35rzNkYw==",
+        "message": "2ujonAGAv99mosSXqkgLuA==",
+        "contactDate": "2025-08-02"
+      };
+      
+      console.log('🧪 Test record:', testRecord);
+      
+      const decrypted = await decryption.decryptEnquiryRecord(testRecord);
+      console.log('🧪 Decryption successful:', decrypted);
+      
+      // Test CSV generation with decrypted data
+      const csvRow = [
+        `"${decrypted.fullName || ''}"`,
+        `"${decrypted.email || ''}"`,
+        `"${decrypted.phone || ''}"`,
+        `"${(decrypted.message || '').replace(/"/g, '""')}"`,
+        `"${decrypted.contactDate || ''}"`
+      ].join(',');
+      
+      console.log('🧪 Generated CSV row:', csvRow);
+      
+    } catch (error) {
+      console.error('🧪 Test with provided data failed:', error);
+    }
+  };
+
+  // Test API call
+  const testAPICall = async () => {
+    try {
+      console.log('🧪 Testing API call...');
+      const response = await EnquiryService.exportEnquiries({ dateFilter: 'today' });
+      console.log('🧪 API Test Response:', response);
+      
+      if (response.success && response.data && response.data.enquiries) {
+        console.log('🧪 Sample encrypted record:', response.data.enquiries[0]);
+        console.log('🧪 Total records:', response.data.enquiries.length);
+        
+        // Test decryption of first record
+        if (response.data.enquiries.length > 0) {
+          const decryption = new EnquiryDecryption();
+          try {
+            const decrypted = await decryption.decryptEnquiryRecord(response.data.enquiries[0]);
+            console.log('🧪 Decryption test successful:', decrypted);
+          } catch (decryptError) {
+            console.error('🧪 Decryption test failed:', decryptError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('🧪 API Test Failed:', error);
+    }
+  };
+
+  // Web Worker-based parallel decryption
+  const decryptWithWebWorkers = async (encryptedEnquiries: any[]): Promise<string[]> => {
+    const batchSize = 20; // Larger batches for Web Workers
+    const totalBatches = Math.ceil(encryptedEnquiries.length / batchSize);
+    const csvRows = ['"Customer Name","Email","Phone","Message","Date of Contact"'];
+    
+    console.log(`🚀 Starting Web Worker decryption: ${encryptedEnquiries.length} records in ${totalBatches} batches of ${batchSize}`);
+    
+    // Create multiple workers for parallel processing
+    const workerCount = Math.min(4, totalBatches); // Use up to 4 workers
+    const workers = Array.from({ length: workerCount }, () => 
+      new Worker('/decryption-worker.js')
+    );
+    
+    let completedBatches = 0;
+    
+    return new Promise<string[]>((resolve, reject) => {
+      const processBatch = async (batchIndex: number) => {
+        if (batchIndex >= totalBatches) {
+          // All batches processed
+          workers.forEach(worker => worker.terminate());
+          resolve(csvRows);
+          return;
+        }
+        
+        const startIndex = batchIndex * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, encryptedEnquiries.length);
+        const currentBatch = encryptedEnquiries.slice(startIndex, endIndex);
+        
+        // Update progress
+        const batchProgress = 75 + (completedBatches / totalBatches) * 15;
+        setExportProgress(Math.floor(batchProgress));
+        setExportStage(`Decrypting batch ${batchIndex + 1} of ${totalBatches} (records ${startIndex + 1}-${endIndex})...`);
+        
+        const worker = workers[batchIndex % workerCount];
+        
+        worker.onmessage = (e) => {
+          const { type, data } = e.data;
+          
+          if (type === 'batch-complete') {
+            const { results } = data;
+            
+            // Sort results by index and add to CSV rows
+            results
+              .sort((a: any, b: any) => a.index - b.index)
+              .forEach((result: any) => {
+                if (result.success) {
+                  const decryptedRecord = result.data;
+                  const csvRow = [
+                    `"${decryptedRecord.fullName || ''}"`,
+                    `"${decryptedRecord.email || ''}"`,
+                    `"${decryptedRecord.phone || ''}"`,
+                    `"${(decryptedRecord.message || '').replace(/"/g, '""')}"`,
+                    `"${decryptedRecord.contactDate || ''}"`
+                  ].join(',');
+                  csvRows[startIndex + result.index + 1] = csvRow;
+                } else {
+                  csvRows[startIndex + result.index + 1] = '"","","","",""';
+                }
+              });
+            
+            completedBatches++;
+            console.log(`✅ Batch ${batchIndex + 1} completed via Web Worker`);
+            
+            // Process next batch
+            processBatch(batchIndex + 1);
+          } else if (type === 'batch-error') {
+            console.error(`❌ Web Worker batch ${batchIndex + 1} failed:`, data.error);
+            // Add empty rows for failed batch
+            for (let i = 0; i < currentBatch.length; i++) {
+              csvRows[startIndex + i + 1] = '"","","","",""';
+            }
+            completedBatches++;
+            processBatch(batchIndex + 1);
+          }
+        };
+        
+        worker.onerror = (error) => {
+          console.error(`❌ Web Worker error in batch ${batchIndex + 1}:`, error);
+          // Add empty rows for failed batch
+          for (let i = 0; i < currentBatch.length; i++) {
+            csvRows[startIndex + i + 1] = '"","","","",""';
+          }
+          completedBatches++;
+          processBatch(batchIndex + 1);
+        };
+        
+        // Send batch to worker
+        worker.postMessage({
+          type: 'decrypt-batch',
+          data: {
+            encryptedRecords: currentBatch,
+            batchIndex
+          }
+        });
+      };
+      
+      // Start processing batches
+      for (let i = 0; i < Math.min(workerCount, totalBatches); i++) {
+        processBatch(i);
+      }
+    });
   };
 
   // Download CSV file
@@ -537,10 +989,10 @@ export default function Enquiries() {
   const handleStatusChange = async (enquiryId: string, newStatus: Enquiry["status"]) => {
     const success = await updateStatus(enquiryId, newStatus);
     if (success) {
-      toast({
-        title: "Status Updated",
-        description: `Enquiry status changed to ${newStatus}.`,
-      });
+    toast({
+      title: "Status Updated",
+      description: `Enquiry status changed to ${newStatus}.`,
+    });
     }
   };
 
@@ -607,12 +1059,12 @@ export default function Enquiries() {
         replyMessage: replyMessage.trim()
       });
       if (success) {
-        setReplyMessage("");
-        setIsReplyDialogOpen(false);
-        toast({
-          title: "Reply Sent",
-          description: `Your reply has been sent to ${selectedEnquiry.fullName}.`,
-        });
+      setReplyMessage("");
+      setIsReplyDialogOpen(false);
+      toast({
+        title: "Reply Sent",
+        description: `Your reply has been sent to ${selectedEnquiry.fullName}.`,
+      });
       }
     }
   };
@@ -875,7 +1327,7 @@ export default function Enquiries() {
                       >
                         Clear
                       </Button>
-                    </div>
+            </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -892,7 +1344,7 @@ export default function Enquiries() {
                           }}
                           className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
                         />
-                      </div>
+          </div>
                       <div>
                         <label className="text-xs font-medium text-muted-foreground mb-1 block">
                           End Date
@@ -1044,136 +1496,136 @@ export default function Enquiries() {
                     <>
                       <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                                                 {enquiries.map((enquiry, index) => (
-                          <motion.div
-                            key={enquiry.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                              selectedEnquiry?.id === enquiry.id
-                                ? "bg-sidebar-accent border-brand-green"
-                                : "hover:bg-sidebar-accent"
-                            }`}
+                    <motion.div
+                      key={enquiry.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedEnquiry?.id === enquiry.id
+                          ? "bg-sidebar-accent border-brand-green"
+                          : "hover:bg-sidebar-accent"
+                      }`}
                             onClick={() => handleEnquirySelect(enquiry.id)}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-medium truncate">
-                                    {enquiry.fullName}
-                                  </h3>
-                                  {enquiry.isStarred && (
-                                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                  )}
-                                  {getStatusBadge(enquiry.status)}
-                                </div>
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {enquiry.email}
-                                </p>
-                                <p className="text-sm font-medium truncate mt-1">
-                                  {enquiry.subject}
-                                </p>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {formatDate(enquiry.createdAt)}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Badge variant="outline" className="text-xs">
-                                      {enquiry.inquiryCategory}
-                                    </Badge>
-                                  </div>
-                                </div>
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium truncate">
+                              {enquiry.fullName}
+                            </h3>
+                            {enquiry.isStarred && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            )}
+                            {getStatusBadge(enquiry.status)}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {enquiry.email}
+                          </p>
+                          <p className="text-sm font-medium truncate mt-1">
+                            {enquiry.subject}
+                          </p>
+                                                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(enquiry.createdAt)}
                               </div>
+                              <div className="flex items-center gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {enquiry.inquiryCategory}
+                                </Badge>
+                              </div>
+                            </div>
+                        </div>
 
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStarToggle(enquiry.id);
-                                    }}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStarToggle(enquiry.id);
+                              }}
                                     disabled={isUpdating}
-                                  >
+                            >
                                     {isUpdating ? (
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
-                                      <Star className="h-4 w-4 mr-2" />
+                              <Star className="h-4 w-4 mr-2" />
                                     )}
-                                    {enquiry.isStarred ? "Unstar" : "Star"}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStatusChange(enquiry.id, "replied");
-                                    }}
+                              {enquiry.isStarred ? "Unstar" : "Star"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(enquiry.id, "replied");
+                              }}
                                     disabled={isUpdating}
-                                  >
+                            >
                                     {isUpdating ? (
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
-                                      <CheckCircle className="h-4 w-4 mr-2" />
+                              <CheckCircle className="h-4 w-4 mr-2" />
                                     )}
-                                    Mark as Replied
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStatusChange(enquiry.id, "closed");
-                                    }}
+                              Mark as Replied
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(enquiry.id, "closed");
+                              }}
                                     disabled={isUpdating}
-                                  >
+                            >
                                     {isUpdating ? (
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
-                                      <XCircle className="h-4 w-4 mr-2" />
+                              <XCircle className="h-4 w-4 mr-2" />
                                     )}
-                                    Close Enquiry
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
+                              Close Enquiry
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
                                       handleDeleteClick(enquiry.id);
-                                    }}
+                              }}
                                     disabled={isDeleting}
-                                    className="text-destructive"
-                                  >
+                              className="text-destructive"
+                            >
                                     {isDeleting ? (
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
-                                      <Trash2 className="h-4 w-4 mr-2" />
+                              <Trash2 className="h-4 w-4 mr-2" />
                                     )}
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </motion.div>
-                        ))}
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </motion.div>
+                  ))}
 
                         {enquiries.length === 0 && !isLoading && (
-                          <div className="text-center py-8">
-                            <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">
-                              No Enquiries Found
-                            </h3>
-                            <p className="text-muted-foreground">
-                              {searchTerm ||
+                    <div className="text-center py-8">
+                      <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No Enquiries Found
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {searchTerm ||
                               statusFilter !== "all" ||
                               categoryFilter !== "all"
-                                ? "Try adjusting your search or filters."
-                                : "No enquiries have been submitted yet."}
-                            </p>
-                          </div>
+                          ? "Try adjusting your search or filters."
+                          : "No enquiries have been submitted yet."}
+                      </p>
+                    </div>
                         )}
                       </div>
 
@@ -1376,7 +1828,7 @@ export default function Enquiries() {
                           {isUpdating ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
-                            <Reply className="h-4 w-4 mr-2" />
+                          <Reply className="h-4 w-4 mr-2" />
                           )}
                           Reply
                         </Button>
@@ -1414,7 +1866,7 @@ export default function Enquiries() {
                               {isUpdating ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
-                                <Reply className="h-4 w-4 mr-2" />
+                              <Reply className="h-4 w-4 mr-2" />
                               )}
                               {isUpdating ? "Sending..." : "Send Reply"}
                             </Button>
@@ -1524,9 +1976,9 @@ export default function Enquiries() {
         </DialogContent>
       </Dialog>
 
-      {/* Export Modal */}
+            {/* Export Modal */}
       <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="h-5 w-5" />
@@ -1627,20 +2079,47 @@ export default function Enquiries() {
               </div>
             </div>
 
+            {/* Performance Options */}
+            <div className="bg-green-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-xs font-bold">⚡</span>
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-green-900">Performance Options</p>
+                    <p className="text-green-700 text-xs">
+                      {useWebWorkers ? 'Web Workers enabled for faster decryption' : 'Main thread decryption'}
+                    </p>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={useWebWorkers}
+                    onChange={(e) => setUseWebWorkers(e.target.checked)}
+                    disabled={isExporting}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-green-700">Use Web Workers</span>
+                </label>
+              </div>
+            </div>
+
             {isExporting && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{exportStage}</span>
-                  <span className="font-medium">{exportProgress}%</span>
+                  <span className="text-muted-foreground truncate mr-2">{exportStage}</span>
+                  <span className="font-medium flex-shrink-0">{exportProgress}%</span>
                 </div>
                 <Progress value={exportProgress} className="w-full" />
                 <div className="text-xs text-muted-foreground text-center">
-                  {exportProgress === 100 ? "CSV file will download automatically..." : "Please wait while we prepare your CSV export..."}
+                  {exportProgress === 100 ? "CSV file will download automatically..." : "Please wait while we securely process your data..."}
                 </div>
               </div>
             )}
 
-                        <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -1649,36 +2128,28 @@ export default function Enquiries() {
                   }
                 }}
                 disabled={isExporting}
+                size="sm"
               >
                 {isExporting ? "Please Wait..." : "Cancel"}
-              </Button>
-              
-              {/* Test button for debugging */}
-              <Button
-                variant="outline"
-                onClick={testCSVGeneration}
-                disabled={isExporting}
-                className="text-xs"
-              >
-                Test CSV
               </Button>
               
               <Button
                 onClick={exportEnquiries}
                 disabled={isExporting || (exportDateRange === "custom" && (!exportCustomStartDate || !exportCustomEndDate))}
                 className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                size="sm"
               >
-                                  {isExporting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {exportProgress === 100 ? "Downloading..." : "Exporting..."}
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export CSV
-                    </>
-                  )}
+                {isExporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {exportProgress === 100 ? "Downloading..." : "Exporting..."}
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </>
+                )}
               </Button>
             </div>
           </div>
