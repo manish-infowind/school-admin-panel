@@ -6,27 +6,47 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      # 1. Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js v24.x
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      # 3. Install dependencies & build
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      # 4. Upload build to EC2
+      - name: Upload dist to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dist/*"
+          target: "/tmp/frontend-build"
+
+      # 5. Deploy on EC2
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/frontend-app
-            git reset --hard
-            git pull origin main
-
-            # Ensure permissions on dist folder
-            sudo chown -R ubuntu:ubuntu dist
-
-            # Build using system-installed Node.js 24
-            node -v
-            npm ci
-            npm run build
-
-            sudo systemctl restart nginx
+            sudo rm -rf /var/www/html
+            sudo mkdir -p /var/www/html
+            sudo cp -r /tmp/frontend-build/* /var/www/html/
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R u=rwX,go=rX /var/www/html
+            sudo systemctl reload nginx
