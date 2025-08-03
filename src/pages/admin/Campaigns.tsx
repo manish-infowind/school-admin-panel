@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,194 @@ import { CampaignPreviewModal } from "@/components/admin/CampaignPreviewModal";
 import { DeleteConfirmationModal } from "@/components/admin/DeleteConfirmationModal";
 import { RunCampaignModal } from "@/components/admin/RunCampaignModal";
 
+// Debounce hook for search input
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Memoized status badge component
+const StatusBadge = ({ status }: { status: Campaign['status'] }) => {
+  const statusConfig = useMemo(() => ({
+    draft: { variant: "secondary" as const, icon: Clock },
+    scheduled: { variant: "default" as const, icon: Calendar },
+    running: { variant: "default" as const, icon: Loader2 },
+    completed: { variant: "default" as const, icon: CheckCircle },
+    failed: { variant: "destructive" as const, icon: XCircle },
+    cancelled: { variant: "secondary" as const, icon: StopCircle },
+  }), []);
+
+  const config = statusConfig[status];
+  const Icon = config.icon;
+
+  return (
+    <Badge variant={config.variant} className="flex items-center gap-1">
+      <Icon className="h-3 w-3" />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
+};
+
+// Memoized type badge component
+const TypeBadge = ({ type }: { type: Campaign['type'] }) => {
+  const typeConfig = useMemo(() => ({
+    email: { variant: "default" as const, icon: Mail },
+    sms: { variant: "secondary" as const, icon: MessageSquare },
+    push: { variant: "outline" as const, icon: Bell },
+  }), []);
+
+  const config = typeConfig[type];
+  const Icon = config.icon;
+
+  return (
+    <Badge variant={config.variant} className="flex items-center gap-1">
+      <Icon className="h-3 w-3" />
+      {type.toUpperCase()}
+    </Badge>
+  );
+};
+
+// Memoized campaign card component
+const CampaignCard = React.memo(({ 
+  campaign, 
+  onEdit, 
+  onPreview, 
+  onDelete, 
+  onRun, 
+  onCancel 
+}: {
+  campaign: Campaign;
+  onEdit: (campaign: Campaign) => void;
+  onPreview: (campaign: Campaign) => void;
+  onDelete: (campaign: Campaign) => void;
+  onRun: (campaign: Campaign) => void;
+  onCancel: (id: string) => void;
+}) => {
+  const handleRun = useCallback(() => onRun(campaign), [campaign, onRun]);
+  const handleCancel = useCallback(() => onCancel(campaign._id), [campaign._id, onCancel]);
+  const handleEdit = useCallback(() => onEdit(campaign), [campaign, onEdit]);
+  const handlePreview = useCallback(() => onPreview(campaign), [campaign, onPreview]);
+  const handleDelete = useCallback(() => onDelete(campaign), [campaign, onDelete]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="hover:shadow-md transition-shadow">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">{campaign.name}</h3>
+                <StatusBadge status={campaign.status} />
+                <TypeBadge type={campaign.type} />
+              </div>
+              <p className="text-sm text-muted-foreground">{campaign.subject}</p>
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {campaign.totalRecipients} recipients
+                </div>
+                <div className="flex items-center gap-1">
+                  <Send className="h-4 w-4" />
+                  {campaign.sentCount} sent
+                </div>
+                {campaign.openedCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-4 w-4" />
+                    {campaign.openedCount} opened
+                  </div>
+                )}
+                {campaign.scheduledAt && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(campaign.scheduledAt), "MMM dd, yyyy 'at' HH:mm")}
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2">
+                {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
+                  <Button
+                    onClick={handleRun}
+                    size="sm"
+                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Run Campaign
+                  </Button>
+                )}
+                {campaign.status === 'running' && (
+                  <Button
+                    onClick={handleCancel}
+                    size="sm"
+                    variant="destructive"
+                  >
+                    <Pause className="h-4 w-4 mr-2" />
+                    Cancel Campaign
+                  </Button>
+                )}
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handlePreview}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
+                  <DropdownMenuItem onClick={handleRun}>
+                    <Play className="h-4 w-4 mr-2" />
+                    Run Now
+                  </DropdownMenuItem>
+                )}
+                {campaign.status === 'running' && (
+                  <DropdownMenuItem onClick={handleCancel}>
+                    <Pause className="h-4 w-4 mr-2" />
+                    Cancel
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem 
+                  onClick={handleDelete}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+});
+
+CampaignCard.displayName = 'CampaignCard';
+
 export default function Campaigns() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Campaign['status'] | "all">("all");
@@ -77,13 +265,16 @@ export default function Campaigns() {
 
   const { toast } = useToast();
   
+  // Debounce search term to prevent excessive API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  
   const campaignParams = useMemo(() => ({
     page: currentPage,
     limit: 10,
-    search: searchTerm || undefined,
+    search: debouncedSearchTerm || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     type: typeFilter !== "all" ? typeFilter : undefined,
-  }), [currentPage, searchTerm, statusFilter, typeFilter]);
+  }), [currentPage, debouncedSearchTerm, statusFilter, typeFilter]);
   
   const { campaigns, loading, error, pagination, refetch } = useCampaigns(campaignParams);
   const { stats, loading: statsLoading } = useCampaignStats();
@@ -99,7 +290,8 @@ export default function Campaigns() {
     checkScheduledCampaigns
   } = useCampaignMutations();
 
-  const handleCreateCampaign = async (data: CreateCampaignRequest) => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleCreateCampaign = useCallback(async (data: CreateCampaignRequest) => {
     try {
       await createCampaign(data);
       setShowCreateModal(false);
@@ -107,9 +299,9 @@ export default function Campaigns() {
     } catch (error) {
       // Error is handled by the hook
     }
-  };
+  }, [createCampaign, refetch]);
 
-  const handleEditCampaign = async (id: string, data: Partial<CreateCampaignRequest>) => {
+  const handleEditCampaign = useCallback(async (id: string, data: Partial<CreateCampaignRequest>) => {
     try {
       await updateCampaign(id, data);
       setShowEditModal(false);
@@ -118,9 +310,9 @@ export default function Campaigns() {
     } catch (error) {
       // Error is handled by the hook
     }
-  };
+  }, [updateCampaign, refetch]);
 
-  const handleDeleteCampaign = async (id: string) => {
+  const handleDeleteCampaign = useCallback(async (id: string) => {
     try {
       await deleteCampaign(id);
       setShowDeleteModal(false);
@@ -129,84 +321,71 @@ export default function Campaigns() {
     } catch (error) {
       // Error is handled by the hook
     }
-  };
+  }, [deleteCampaign, refetch]);
 
-  const handleRunCampaign = async (id: string, data?: RunCampaignRequest) => {
+  const handleRunCampaign = useCallback(async (id: string, data?: RunCampaignRequest) => {
     try {
       await runCampaign(id, data);
       refetch();
     } catch (error) {
       // Error is handled by the hook
     }
-  };
+  }, [runCampaign, refetch]);
 
-  const handleCancelCampaign = async (id: string) => {
+  const handleCancelCampaign = useCallback(async (id: string) => {
     try {
       await cancelCampaign(id);
       refetch();
     } catch (error) {
       // Error is handled by the hook
     }
-  };
+  }, [cancelCampaign, refetch]);
 
-  const getStatusBadge = (status: Campaign['status']) => {
-    const statusConfig = {
-      draft: { variant: "secondary" as const, icon: Clock },
-      scheduled: { variant: "default" as const, icon: Calendar },
-      running: { variant: "default" as const, icon: Loader2 },
-      completed: { variant: "default" as const, icon: CheckCircle },
-      failed: { variant: "destructive" as const, icon: XCircle },
-      cancelled: { variant: "secondary" as const, icon: StopCircle },
-    };
-
-    const config = statusConfig[status];
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const getTypeBadge = (type: Campaign['type']) => {
-    const typeConfig = {
-      email: { variant: "default" as const, icon: Mail },
-      sms: { variant: "secondary" as const, icon: MessageSquare },
-      push: { variant: "outline" as const, icon: Bell },
-    };
-
-    const config = typeConfig[type];
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {type.toUpperCase()}
-      </Badge>
-    );
-  };
-
-  const openEditModal = (campaign: Campaign) => {
+  // Memoized modal handlers
+  const openEditModal = useCallback((campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setShowEditModal(true);
-  };
+  }, []);
 
-  const openPreviewModal = (campaign: Campaign) => {
+  const openPreviewModal = useCallback((campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setShowPreviewModal(true);
-  };
+  }, []);
 
-  const openDeleteModal = (campaign: Campaign) => {
+  const openDeleteModal = useCallback((campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setShowDeleteModal(true);
-  };
+  }, []);
 
-  const openRunModal = (campaign: Campaign) => {
+  const openRunModal = useCallback((campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setShowRunModal(true);
-  };
+  }, []);
+
+  // Memoized pagination handlers
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1));
+  }, [pagination.totalPages]);
+
+  // Memoized filter handlers
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value as Campaign['status'] | "all");
+    setCurrentPage(1); // Reset to first page when filtering
+  }, []);
+
+  const handleTypeFilterChange = useCallback((value: string) => {
+    setTypeFilter(value as Campaign['type'] | "all");
+    setCurrentPage(1); // Reset to first page when filtering
+  }, []);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
 
   if (error) {
     return (
@@ -228,42 +407,42 @@ export default function Campaigns() {
   return (
     <div className="space-y-6">
       {/* Header */}
-              <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
-            <p className="text-muted-foreground">
-              Manage your email campaigns and track their performance
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4" />
-                  Scheduler
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={getSchedulerStatus}>
-                  <Info className="h-4 w-4 mr-2" />
-                  Check Status
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={refreshSchedulerCache}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Cache
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={checkScheduledCampaigns}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Check Scheduled
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Campaign
-            </Button>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
+          <p className="text-muted-foreground">
+            Manage your email campaigns and track their performance
+          </p>
         </div>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4" />
+                Scheduler
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={getSchedulerStatus}>
+                <Info className="h-4 w-4 mr-2" />
+                Check Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={refreshSchedulerCache}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Cache
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={checkScheduledCampaigns}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Check Scheduled
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Campaign
+          </Button>
+        </div>
+      </div>
 
       {/* Statistics Cards */}
       {!statsLoading && stats && (
@@ -329,11 +508,11 @@ export default function Campaigns() {
                 <Input
                   placeholder="Search campaigns..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as Campaign['status'] | "all")}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -347,7 +526,7 @@ export default function Campaigns() {
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as Campaign['type'] | "all")}>
+              <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -392,109 +571,15 @@ export default function Campaigns() {
           ) : (
             <div className="space-y-4">
               {campaigns.map((campaign) => (
-                <motion.div
+                <CampaignCard
                   key={campaign._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-semibold">{campaign.name}</h3>
-                            {getStatusBadge(campaign.status)}
-                            {getTypeBadge(campaign.type)}
-                          </div>
-                          <p className="text-sm text-muted-foreground">{campaign.subject}</p>
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              {campaign.totalRecipients} recipients
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Send className="h-4 w-4" />
-                              {campaign.sentCount} sent
-                            </div>
-                            {campaign.openedCount > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-4 w-4" />
-                                {campaign.openedCount} opened
-                              </div>
-                            )}
-                            {campaign.scheduledAt && (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {format(new Date(campaign.scheduledAt), "MMM dd, yyyy 'at' HH:mm")}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 pt-2">
-                            {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
-                              <Button
-                                onClick={() => openRunModal(campaign)}
-                                size="sm"
-                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                              >
-                                <Play className="h-4 w-4 mr-2" />
-                                Run Campaign
-                              </Button>
-                            )}
-                            {campaign.status === 'running' && (
-                              <Button
-                                onClick={() => handleCancelCampaign(campaign._id)}
-                                size="sm"
-                                variant="destructive"
-                              >
-                                <Pause className="h-4 w-4 mr-2" />
-                                Cancel Campaign
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openPreviewModal(campaign)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Preview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditModal(campaign)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
-                              <DropdownMenuItem onClick={() => openRunModal(campaign)}>
-                                <Play className="h-4 w-4 mr-2" />
-                                Run Now
-                              </DropdownMenuItem>
-                            )}
-                            {campaign.status === 'running' && (
-                              <DropdownMenuItem onClick={() => handleCancelCampaign(campaign._id)}>
-                                <Pause className="h-4 w-4 mr-2" />
-                                Cancel
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              onClick={() => openDeleteModal(campaign)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                  campaign={campaign}
+                  onEdit={openEditModal}
+                  onPreview={openPreviewModal}
+                  onDelete={openDeleteModal}
+                  onRun={openRunModal}
+                  onCancel={handleCancelCampaign}
+                />
               ))}
             </div>
           )}
@@ -511,7 +596,7 @@ export default function Campaigns() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(pagination.page - 1)}
+                  onClick={handlePreviousPage}
                   disabled={!pagination.hasPrevPage}
                 >
                   Previous
@@ -519,7 +604,7 @@ export default function Campaigns() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(pagination.page + 1)}
+                  onClick={handleNextPage}
                   disabled={!pagination.hasNextPage}
                 >
                   Next

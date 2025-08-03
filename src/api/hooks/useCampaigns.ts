@@ -26,9 +26,18 @@ export const useCampaigns = (params?: CampaignQueryParams) => {
   });
   const { toast } = useToast();
   const isLoadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchCampaigns = useCallback(async () => {
     if (isLoadingRef.current) return; // Prevent multiple simultaneous calls
+    
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
     
     try {
       isLoadingRef.current = true;
@@ -47,13 +56,15 @@ export const useCampaigns = (params?: CampaignQueryParams) => {
           hasNextPage: response.data.hasNextPage,
           hasPrevPage: response.data.hasPrevPage,
         });
-        
-        // Log success for debugging
-        console.log('Campaigns fetched successfully:', response.data);
       } else {
         setError(response.message || 'Failed to fetch campaigns');
       }
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch campaigns';
       setError(errorMessage);
       toast({
@@ -65,10 +76,17 @@ export const useCampaigns = (params?: CampaignQueryParams) => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [params?.page, params?.limit, params?.search, params?.status, params?.type]);
+  }, [params?.page, params?.limit, params?.search, params?.status, params?.type, toast]);
 
   useEffect(() => {
     fetchCampaigns();
+    
+    // Cleanup function to abort request when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchCampaigns]);
 
   return {
@@ -86,8 +104,17 @@ export const useCampaignStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchStats = useCallback(async () => {
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
       setError(null);
@@ -100,6 +127,11 @@ export const useCampaignStats = () => {
         setError(response.message || 'Failed to fetch campaign statistics');
       }
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch campaign statistics';
       setError(errorMessage);
       toast({
@@ -110,10 +142,17 @@ export const useCampaignStats = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchStats();
+    
+    // Cleanup function to abort request when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchStats]);
 
   return {
@@ -130,9 +169,18 @@ export const useCampaign = (id: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchCampaign = useCallback(async () => {
     if (!id) return;
+    
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
     
     try {
       setLoading(true);
@@ -146,6 +194,11 @@ export const useCampaign = (id: string) => {
         setError(response.message || 'Failed to fetch campaign');
       }
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch campaign';
       setError(errorMessage);
       toast({
@@ -156,10 +209,17 @@ export const useCampaign = (id: string) => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, toast]);
 
   useEffect(() => {
     fetchCampaign();
+    
+    // Cleanup function to abort request when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchCampaign]);
 
   return {
