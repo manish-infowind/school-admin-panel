@@ -168,7 +168,7 @@ export default function Enquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [starredFilter, setStarredFilter] = useState<string>("all");
+
   const [repliesFilter, setRepliesFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -239,7 +239,6 @@ export default function Enquiries() {
     searchTerm || 
     statusFilter !== "all" || 
     categoryFilter !== "all" || 
-    starredFilter !== "all" || 
     repliesFilter !== "all" || 
     startDate || 
     endDate;
@@ -254,7 +253,6 @@ export default function Enquiries() {
         search: searchTerm || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
         category: categoryFilter !== "all" ? categoryFilter : undefined,
-        starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
         hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
         sortBy: sortBy,
         sortOrder: sortOrder,
@@ -265,7 +263,7 @@ export default function Enquiries() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, statusFilter, categoryFilter, starredFilter, repliesFilter, sortBy, sortOrder, startDate, endDate, fetchEnquiries]);
+      }, [searchTerm, statusFilter, categoryFilter, repliesFilter, sortBy, sortOrder, startDate, endDate, fetchEnquiries]);
 
   // Handle click outside date picker and window resize
   useEffect(() => {
@@ -300,7 +298,6 @@ export default function Enquiries() {
       search: searchTerm || undefined,
       status: statusFilter !== "all" ? statusFilter : undefined,
       category: categoryFilter !== "all" ? categoryFilter : undefined,
-      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
       hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
@@ -321,7 +318,6 @@ export default function Enquiries() {
       search: searchTerm || undefined,
       status: statusFilter !== "all" ? statusFilter : undefined,
       category: categoryFilter !== "all" ? categoryFilter : undefined,
-      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
       hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
@@ -343,7 +339,6 @@ export default function Enquiries() {
       search: searchTerm || undefined,
       status: statusFilter !== "all" ? statusFilter : undefined,
       category: categoryFilter !== "all" ? categoryFilter : undefined,
-      starred: starredFilter !== "all" ? starredFilter === "true" : undefined,
       hasReplies: repliesFilter !== "all" ? repliesFilter === "true" : undefined,
       sortBy: sortBy,
       sortOrder: sortOrder,
@@ -357,7 +352,6 @@ export default function Enquiries() {
     setSearchTerm("");
     setStatusFilter("all");
     setCategoryFilter("all");
-    setStarredFilter("all");
     setRepliesFilter("all");
     setSortBy("createdAt");
     setSortOrder("desc");
@@ -1040,11 +1034,7 @@ export default function Enquiries() {
                     Category: {categoryFilter}
                   </Badge>
                 )}
-                {starredFilter !== "all" && (
-                  <Badge variant="outline" className="text-xs">
-                    Starred: {starredFilter === "true" ? "Yes" : "No"}
-                  </Badge>
-                )}
+
                 {repliesFilter !== "all" && (
                   <Badge variant="outline" className="text-xs">
                     Replies: {repliesFilter === "true" ? "Has" : "None"}
@@ -1114,15 +1104,7 @@ export default function Enquiries() {
                 <option value="Other">Other</option>
               </select>
 
-              <select
-                value={starredFilter}
-                onChange={(e) => setStarredFilter(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background text-sm"
-              >
-                <option value="all">All Starred</option>
-                <option value="true">Starred</option>
-                <option value="false">Not Starred</option>
-              </select>
+
 
               <select
                 value={repliesFilter}
