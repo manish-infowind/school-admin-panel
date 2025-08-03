@@ -10,23 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Use Node.js 24.x
       - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
           node-version: 24.x
 
-      # 3. Install dependencies & build
-      - name: Install dependencies and build
+      - name: Install dependencies & build
         run: |
           npm ci
           npm run build
 
-      # 4. Upload dist folder to EC2 /tmp/frontend-build
       - name: Upload dist to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -36,7 +32,6 @@ jobs:
           source: "dist/*"
           target: "/tmp/frontend-build"
 
-      # 5. Deploy from temp folder to Nginx root & fix permissions
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
