@@ -8,7 +8,10 @@ import {
   UpdateCampaignRequest, 
   RunCampaignRequest,
   CampaignStats,
-  CampaignQueryParams
+  CampaignQueryParams,
+  FailedEmail,
+  EmailRetryStats,
+  DetailedCampaignStats
 } from '../types';
 
 // Hook for managing campaigns list
@@ -227,6 +230,194 @@ export const useCampaign = (id: string) => {
     loading,
     error,
     refetch: fetchCampaign,
+  };
+};
+
+// Hook for failed emails
+export const useFailedEmails = (campaignId: string) => {
+  const [failedEmails, setFailedEmails] = useState<FailedEmail[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchFailedEmails = useCallback(async () => {
+    if (!campaignId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await CampaignService.getFailedEmails(campaignId);
+      
+      if (response.success && response.data) {
+        setFailedEmails(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch failed emails');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch failed emails';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId, toast]);
+
+  const retryFailedEmails = useCallback(async () => {
+    if (!campaignId) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await CampaignService.retryFailedEmails(campaignId);
+      
+      if (response.success && response.data) {
+        toast({
+          title: "Success",
+          description: `${response.data.retriedCount} failed emails have been queued for retry`,
+        });
+        // Refresh the failed emails list
+        await fetchFailedEmails();
+        return response.data.retriedCount;
+      } else {
+        throw new Error(response.message || 'Failed to retry emails');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to retry emails';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId, toast, fetchFailedEmails]);
+
+  return {
+    failedEmails,
+    loading,
+    error,
+    fetchFailedEmails,
+    retryFailedEmails,
+  };
+};
+
+// Hook for detailed campaign statistics
+export const useDetailedCampaignStats = (campaignId: string) => {
+  const [stats, setStats] = useState<DetailedCampaignStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchDetailedStats = useCallback(async () => {
+    if (!campaignId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await CampaignService.getDetailedCampaignStats(campaignId);
+      
+      if (response.success && response.data) {
+        setStats(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch detailed stats');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch detailed stats';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId, toast]);
+
+  return {
+    stats,
+    loading,
+    error,
+    fetchDetailedStats,
+  };
+};
+
+// Hook for email retry system
+export const useEmailRetrySystem = () => {
+  const [retryStats, setRetryStats] = useState<EmailRetryStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchRetryStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await CampaignService.getEmailRetryStats();
+      
+      if (response.success && response.data) {
+        setRetryStats(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch retry stats');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch retry stats';
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const triggerRetry = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const response = await CampaignService.triggerEmailRetry();
+      
+      if (response.success && response.data) {
+        toast({
+          title: "Success",
+          description: `Retry process triggered. ${response.data.processedCount} emails processed.`,
+        });
+        // Refresh retry stats
+        await fetchRetryStats();
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to trigger retry');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger retry';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast, fetchRetryStats]);
+
+  return {
+    retryStats,
+    loading,
+    error,
+    fetchRetryStats,
+    triggerRetry,
   };
 };
 

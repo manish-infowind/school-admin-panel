@@ -115,6 +115,12 @@ export const API_CONFIG = {
       SCHEDULER_STATUS: '/campaigns/scheduler/status',
       SCHEDULER_REFRESH: '/campaigns/scheduler/refresh',
       SCHEDULER_CHECK: '/campaigns/scheduler/check',
+      // Email tracking endpoints
+      FAILED_EMAILS: '/campaigns/:id/failed-emails',
+      RETRY_FAILED: '/campaigns/:id/retry-failed',
+      DETAILED_STATS: '/campaigns/:id/detailed-stats',
+      RETRY_TRIGGER: '/campaigns/retry/trigger',
+      RETRY_STATS: '/campaigns/retry/stats',
     },
   },
 } as const;

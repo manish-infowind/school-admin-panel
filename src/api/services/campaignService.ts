@@ -8,7 +8,10 @@ import {
   UpdateCampaignRequest, 
   RunCampaignRequest,
   CampaignStats,
-  CampaignQueryParams
+  CampaignQueryParams,
+  FailedEmail,
+  EmailRetryStats,
+  DetailedCampaignStats
 } from '../types';
 
 export class CampaignService {
@@ -172,6 +175,64 @@ export class CampaignService {
   static async checkScheduledCampaigns(): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.post(API_CONFIG.ENDPOINTS.CAMPAIGNS.SCHEDULER_CHECK);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Email Tracking Methods
+
+  // Get failed emails for a campaign
+  static async getFailedEmails(campaignId: string): Promise<ApiResponse<FailedEmail[]>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.CAMPAIGNS.FAILED_EMAILS.replace(':id', campaignId);
+      const response = await apiClient.get<FailedEmail[]>(url);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Retry failed emails for a campaign
+  static async retryFailedEmails(campaignId: string): Promise<ApiResponse<{ retriedCount: number }>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.CAMPAIGNS.RETRY_FAILED.replace(':id', campaignId);
+      const response = await apiClient.post<{ retriedCount: number }>(url, {});
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get detailed campaign statistics including email tracking
+  static async getDetailedCampaignStats(campaignId: string): Promise<ApiResponse<DetailedCampaignStats>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.CAMPAIGNS.DETAILED_STATS.replace(':id', campaignId);
+      const response = await apiClient.get<DetailedCampaignStats>(url);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Manually trigger email retry processing
+  static async triggerEmailRetry(): Promise<ApiResponse<{ message: string; processedCount: number }>> {
+    try {
+      const response = await apiClient.post<{ message: string; processedCount: number }>(
+        API_CONFIG.ENDPOINTS.CAMPAIGNS.RETRY_TRIGGER,
+        {}
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get email retry statistics
+  static async getEmailRetryStats(): Promise<ApiResponse<EmailRetryStats>> {
+    try {
+      const response = await apiClient.get<EmailRetryStats>(API_CONFIG.ENDPOINTS.CAMPAIGNS.RETRY_STATS);
       return response;
     } catch (error) {
       throw error;

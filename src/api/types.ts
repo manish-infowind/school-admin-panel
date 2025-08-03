@@ -515,17 +515,22 @@ export interface CampaignListResponse {
 }
 
 export interface CampaignStats {
-  total: number;
-  draft: number;
-  scheduled: number;
-  running: number;
-  completed: number;
-  failed: number;
-  cancelled: number;
+  totalCampaigns: number;
+  draftCampaigns: number;
+  scheduledCampaigns: number;
+  runningCampaigns: number;
+  completedCampaigns: number;
+  failedCampaigns: number;
   totalEmailsSent: number;
   totalEmailsFailed: number;
   averageOpenRate: number;
   averageClickRate: number;
+  // New email tracking fields
+  totalEmailsTracked: number;
+  pendingEmails: number;
+  retryingEmails: number;
+  permanentlyFailedEmails: number;
+  emailFailureRate: number;
 }
 
 export interface CampaignQueryParams extends QueryParams {
@@ -533,4 +538,68 @@ export interface CampaignQueryParams extends QueryParams {
   type?: 'email' | 'sms' | 'push';
   startDate?: string;
   endDate?: string;
+} 
+
+// Email Tracking Types
+export interface EmailTracking {
+  _id: string;
+  campaignId: string;
+  recipientEmail: string;
+  status: 'PENDING' | 'SENT' | 'FAILED' | 'RETRYING' | 'PERMANENTLY_FAILED';
+  failureReason?: 'invalid_email' | 'user_not_found' | 'domain_not_found' | 'mailbox_full' | 'rate_limit' | 'authentication_error' | 'network_error' | 'smtp_error' | 'unknown';
+  smtpResponseCode?: number;
+  smtpResponseMessage?: string;
+  retryCount: number;
+  maxRetries: number;
+  nextRetryAt?: string;
+  sentAt?: string;
+  failedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FailedEmail {
+  _id: string;
+  campaignId: string;
+  recipientEmail: string;
+  failureReason: string;
+  smtpResponseCode?: number;
+  smtpResponseMessage?: string;
+  retryCount: number;
+  maxRetries: number;
+  failedAt: string;
+  nextRetryAt?: string;
+}
+
+export interface EmailRetryStats {
+  totalFailedEmails: number;
+  emailsInRetryQueue: number;
+  emailsRetriedToday: number;
+  emailsRetriedThisWeek: number;
+  averageRetrySuccessRate: number;
+  lastRetryProcessRun?: string;
+  nextRetryProcessRun?: string;
+}
+
+export interface DetailedCampaignStats extends CampaignStats {
+  emailTracking: {
+    totalTracked: number;
+    pending: number;
+    sent: number;
+    failed: number;
+    retrying: number;
+    permanentlyFailed: number;
+    failureRate: number;
+  };
+  failureBreakdown: {
+    invalid_email: number;
+    user_not_found: number;
+    domain_not_found: number;
+    mailbox_full: number;
+    rate_limit: number;
+    authentication_error: number;
+    network_error: number;
+    smtp_error: number;
+    unknown: number;
+  };
 } 

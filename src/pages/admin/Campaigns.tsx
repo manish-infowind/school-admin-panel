@@ -62,6 +62,9 @@ import { EditCampaignModal } from "@/components/admin/EditCampaignModal";
 import { CampaignPreviewModal } from "@/components/admin/CampaignPreviewModal";
 import { DeleteConfirmationModal } from "@/components/admin/DeleteConfirmationModal";
 import { RunCampaignModal } from "@/components/admin/RunCampaignModal";
+import { FailedEmailsModal } from "@/components/admin/FailedEmailsModal";
+import { CampaignStatsModal } from "@/components/admin/CampaignStatsModal";
+import { EmailRetrySystemModal } from "@/components/admin/EmailRetrySystemModal";
 
 // Debounce hook for search input
 const useDebounce = (value: string, delay: number) => {
@@ -221,6 +224,26 @@ const CampaignCard = React.memo(({
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
+                <CampaignStatsModal
+                  campaignId={campaign._id}
+                  campaignName={campaign.name}
+                  trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Detailed Stats
+                    </DropdownMenuItem>
+                  }
+                />
+                <FailedEmailsModal
+                  campaignId={campaign._id}
+                  campaignName={campaign.name}
+                  trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Failed Emails
+                    </DropdownMenuItem>
+                  }
+                />
                 {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
                   <DropdownMenuItem onClick={handleRun}>
                     <Play className="h-4 w-4 mr-2" />
@@ -453,9 +476,9 @@ export default function Campaigns() {
               <Megaphone className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl font-bold">{stats.totalCampaigns || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.completed} completed, {stats.running} running
+                {stats.completedCampaigns || 0} completed, {stats.runningCampaigns || 0} running
               </p>
             </CardContent>
           </Card>
@@ -465,9 +488,9 @@ export default function Campaigns() {
               <Send className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalEmailsSent}</div>
+              <div className="text-2xl font-bold">{stats.totalEmailsSent || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.totalEmailsFailed} failed
+                {stats.totalEmailsFailed || 0} failed
               </p>
             </CardContent>
           </Card>
@@ -477,7 +500,7 @@ export default function Campaigns() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.averageOpenRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">{(stats.averageOpenRate || 0).toFixed(1)}%</div>
               <p className="text-xs text-muted-foreground">
                 Average across all campaigns
               </p>
@@ -489,9 +512,33 @@ export default function Campaigns() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.averageClickRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">{(stats.averageClickRate || 0).toFixed(1)}%</div>
               <p className="text-xs text-muted-foreground">
                 Average across all campaigns
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Emails Tracked</CardTitle>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalEmailsTracked || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.pendingEmails || 0} pending, {stats.retryingEmails || 0} retrying
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Failure Rate</CardTitle>
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(stats.emailFailureRate || 0).toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.permanentlyFailedEmails || 0} permanently failed
               </p>
             </CardContent>
           </Card>
@@ -537,6 +584,27 @@ export default function Campaigns() {
                   <SelectItem value="push">Push</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Tracking Actions */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium">Email Tracking</h3>
+            </div>
+            <div className="flex gap-2">
+              <EmailRetrySystemModal
+                trigger={
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Retry System
+                  </Button>
+                }
+              />
             </div>
           </div>
         </CardContent>
