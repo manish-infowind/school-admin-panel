@@ -10,38 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Node.js 24.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.x
-
-      - name: Install dependencies & build
-        run: |
-          npm ci
-          npm run build
-
-      - name: Upload dist to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "dist/*"
-          target: "/tmp/frontend-build"
-
-      - name: Deploy on EC2
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            cd ~/client-01-admin-panel
+            git reset --hard
+            git pull origin main
+
+            # Use Node 24.x if not already installed
+            node -v || curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash - && sudo apt install -y nodejs
+
+            # Install deps & build
+            npm ci
+            npm run build
+
+            # Deploy build to Nginx directory
             sudo rm -rf /var/www/html
             sudo mkdir -p /var/www/html
-            sudo cp -r /tmp/frontend-build/* /var/www/html/
+            sudo cp -r dist/* /var/www/html/
+
+            # Set permissions for Nginx
             sudo chown -R www-data:www-data /var/www/html
             sudo chmod -R u=rwX,go=rX /var/www/html
+
+            # Restart Nginx
             sudo systemctl reload nginx
