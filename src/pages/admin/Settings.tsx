@@ -13,73 +13,67 @@ import {
   Twitter,
   Linkedin,
   Instagram,
+  MapPin,
+  Building,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { SiteSettingsService, SiteSettings } from "@/api/services/siteSettingsService";
+import { SiteSettings, BusinessAddress } from "@/api/types";
+import { useSiteSettings } from "@/api/hooks/useSiteSettings";
 
 const initialSettings: SiteSettings = {
   siteName: "",
   siteUrl: "",
+  siteDescription: "",
   businessEmail: "",
+  adminEmail: "",
+  timezone: "UTC",
   contactNumber: "",
+  businessAddress: {
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    country: "",
+    pinCode: "",
+  },
+  businessHours: "",
   socialMedia: {
     facebook: "",
     twitter: "",
     linkedin: "",
     instagram: "",
   },
+  logoUrl: "",
+  faviconUrl: "",
+  isActive: true,
 };
 
 export default function Settings() {
-  const { toast } = useToast();
+  const { 
+    settings: apiSettings, 
+    loading, 
+    updateSettings,
+    initializeSettings,
+  } = useSiteSettings();
+  
   const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  // Load settings on component mount
+  // Update local settings when API settings load
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      const response = await SiteSettingsService.getSettings();
-      if (response.success && response.data) {
-        setSettings(response.data);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load site settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (apiSettings) {
+      setSettings(apiSettings);
     }
-  };
+  }, [apiSettings]);
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      const response = await SiteSettingsService.updateSettings(settings);
-      
-      if (response.success) {
-        toast({
-          title: "Settings Saved!",
-          description: "Site settings have been updated successfully.",
-        });
-      } else {
-        throw new Error(response.message || 'Failed to save settings');
-      }
+      setSaving(true);
+      await updateSettings(settings);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     } finally {
       setSaving(false);
     }
@@ -88,24 +82,9 @@ export default function Settings() {
   const handleInitialize = async () => {
     try {
       setSaving(true);
-      const response = await SiteSettingsService.initialize();
-      
-      if (response.success) {
-        toast({
-          title: "Initialized!",
-          description: "Site settings have been initialized successfully.",
-        });
-        // Reload settings after initialization
-        await loadSettings();
-      } else {
-        throw new Error(response.message || 'Failed to initialize settings');
-      }
+      await initializeSettings();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to initialize settings. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     } finally {
       setSaving(false);
     }
@@ -212,6 +191,18 @@ export default function Settings() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
+                  <Label htmlFor="adminEmail">Admin Email</Label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={settings.adminEmail}
+                    onChange={(e) =>
+                      setSettings({ ...settings, adminEmail: e.target.value })
+                    }
+                    placeholder="admin@yourcompany.com"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="businessEmail">Business Email</Label>
                   <Input
                     id="businessEmail"
@@ -232,6 +223,104 @@ export default function Settings() {
                       setSettings({ ...settings, contactNumber: e.target.value })
                     }
                     placeholder="+1234567890"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Business Address Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Business Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                  <Input
+                    id="addressLine1"
+                    value={settings.businessAddress.line1}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, line1: e.target.value }
+                      })
+                    }
+                    placeholder="Street address, building name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addressLine2">Address Line 2</Label>
+                  <Input
+                    id="addressLine2"
+                    value={settings.businessAddress.line2 || ''}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, line2: e.target.value }
+                      })
+                    }
+                    placeholder="Apartment, suite, unit (optional)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City *</Label>
+                  <Input
+                    id="city"
+                    value={settings.businessAddress.city}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, city: e.target.value }
+                      })
+                    }
+                    placeholder="City name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State *</Label>
+                  <Input
+                    id="state"
+                    value={settings.businessAddress.state}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, state: e.target.value }
+                      })
+                    }
+                    placeholder="State/Province"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country *</Label>
+                  <Input
+                    id="country"
+                    value={settings.businessAddress.country}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, country: e.target.value }
+                      })
+                    }
+                    placeholder="Country name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pinCode">Pin Code *</Label>
+                  <Input
+                    id="pinCode"
+                    value={settings.businessAddress.pinCode}
+                    onChange={(e) =>
+                      setSettings({ 
+                        ...settings, 
+                        businessAddress: { ...settings.businessAddress, pinCode: e.target.value }
+                      })
+                    }
+                    placeholder="ZIP/Postal code"
                   />
                 </div>
               </div>
@@ -328,6 +417,53 @@ export default function Settings() {
                       })
                     }
                     placeholder="https://instagram.com/yourcompany"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Additional Settings Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Additional Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="siteDescription">Site Description</Label>
+                  <Input
+                    id="siteDescription"
+                    value={settings.siteDescription || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, siteDescription: e.target.value })
+                    }
+                    placeholder="Brief description of your business"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <Input
+                    id="timezone"
+                    value={settings.timezone || 'UTC'}
+                    onChange={(e) =>
+                      setSettings({ ...settings, timezone: e.target.value })
+                    }
+                    placeholder="UTC"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="businessHours">Business Hours</Label>
+                  <Input
+                    id="businessHours"
+                    value={settings.businessHours || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, businessHours: e.target.value })
+                    }
+                    placeholder="Mon-Fri 9AM-6PM"
                   />
                 </div>
               </div>

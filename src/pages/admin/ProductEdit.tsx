@@ -72,7 +72,15 @@ export default function ProductEdit() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("basic");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [localProduct, setLocalProduct] = useState<Partial<Product>>({});
+  const [localProduct, setLocalProduct] = useState<Partial<Product>>({
+    name: '',
+    category: '',
+    status: 'Draft',
+    shortDescription: '',
+    fullDescription: '',
+    features: [],
+    images: [],
+  });
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -139,6 +147,9 @@ export default function ProductEdit() {
         break;
       
       case 'features':
+        if (!value || !Array.isArray(value)) {
+          return 'At least one feature is required';
+        }
         const validFeatures = value.filter((f: string) => f.trim() !== '');
         if (validFeatures.length === 0) {
           return 'At least one feature is required';
@@ -154,7 +165,7 @@ export default function ProductEdit() {
         break;
       
       case 'images':
-        if (!value || value.length === 0) {
+        if (!value || !Array.isArray(value) || value.length === 0) {
           return 'At least one product image is required';
         }
         break;
@@ -179,6 +190,8 @@ export default function ProductEdit() {
 
   // Check if form is valid
   const isFormValid = (): boolean => {
+    // Don't validate until product is loaded
+    if (!product) return false;
     const errors = validateAllFields();
     return !Object.values(errors).some(error => error !== undefined);
   };

@@ -1,19 +1,6 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
-import { ApiResponse } from '../types';
-
-export interface SiteSettings {
-  siteName: string;
-  siteUrl: string;
-  businessEmail: string;
-  contactNumber: string;
-  socialMedia?: {
-    facebook?: string;
-    twitter?: string;
-    linkedin?: string;
-    instagram?: string;
-  };
-}
+import { ApiResponse, SiteSettings, BusinessAddress } from '../types';
 
 export class SiteSettingsService {
   // Initialize site settings

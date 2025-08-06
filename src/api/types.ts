@@ -343,25 +343,40 @@ export interface ReplyToEnquiryRequest {
   replyMessage: string;
 }
 
+// Address Types
+export interface BusinessAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  country: string;
+  pinCode: string;
+}
+
 // Settings Types
 export interface SiteSettings {
+  _id?: string;
+  key?: string;
   siteName: string;
   siteUrl: string;
+  siteDescription?: string;
+  businessEmail: string;
   adminEmail: string;
-  contactEmail: string;
-  phone: string;
-  address: string;
+  timezone?: string;
+  contactNumber: string;
+  businessAddress: BusinessAddress;
+  businessHours?: string;
   socialMedia: {
     facebook?: string;
     twitter?: string;
     linkedin?: string;
     instagram?: string;
   };
-  seo: {
-    metaTitle: string;
-    metaDescription: string;
-    keywords: string;
-  };
+  logoUrl?: string;
+  faviconUrl?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Dashboard Stats Types
