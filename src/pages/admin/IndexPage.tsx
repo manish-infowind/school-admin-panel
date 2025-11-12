@@ -71,10 +71,10 @@ const initialSections: PageSection[] = [
     status: "Active",
     lastModified: "2 hours ago",
     content: {
-      title: "Advanced Medical Technology",
-      subtitle: "MedoScopic Pharma",
+      title: "Secure Payment Platform",
+      subtitle: "Pinaypal",
       description:
-        "Leading the future of medical diagnostics with innovative solutions that improve patient outcomes and healthcare efficiency.",
+        "Leading the future of digital payments with innovative solutions that provide secure, fast, and reliable financial transactions.",
       buttonText: "Explore Products",
       buttonLink: "/products",
     },
@@ -88,10 +88,10 @@ const initialSections: PageSection[] = [
     status: "Active",
     lastModified: "1 day ago",
     content: {
-      title: "About MedoScopic",
-      subtitle: "Innovation in Healthcare",
+      title: "About Pinaypal",
+      subtitle: "Innovation in Payments",
       description:
-        "We are dedicated to developing cutting-edge medical technologies that enhance diagnostic accuracy and improve patient care worldwide.",
+        "We are dedicated to providing cutting-edge payment solutions that enhance financial security and improve transaction efficiency worldwide.",
       buttonText: "Learn More",
       buttonLink: "/about",
     },
@@ -902,7 +902,7 @@ export default function IndexPage() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              className="bg-brand-green hover:bg-brand-green/90 text-white"
             >
               {saving ? (
                 <>
@@ -948,7 +948,7 @@ export default function IndexPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <div className="h-12 w-12 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-lg flex items-center justify-center">
+                    <div className="h-12 w-12 bg-brand-green/20 rounded-lg flex items-center justify-center">
                       <Home className="h-6 w-6 text-brand-green" />
                     </div>
                     <div className="flex-1">
@@ -967,7 +967,7 @@ export default function IndexPage() {
                         }
                         className={
                           section.status === "Active"
-                            ? "bg-gradient-to-r from-brand-green to-brand-teal text-white"
+                            ? "bg-brand-green text-white"
                             : ""
                         }
                       >
@@ -1009,7 +1009,7 @@ export default function IndexPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: sections.length * 0.1 }}
                 >
-                  <div className="h-12 w-12 bg-gradient-to-br from-brand-green/10 to-brand-teal/10 rounded-lg flex items-center justify-center">
+                  <div className="h-12 w-12 bg-brand-green/10 rounded-lg flex items-center justify-center">
                     <Plus className="h-6 w-6 text-brand-green" />
                   </div>
                   <div className="flex-1">
@@ -1049,7 +1049,7 @@ export default function IndexPage() {
                       onClick={handleAddSection}
                       disabled={!newSectionType}
                       size="sm"
-                      className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                      className="bg-brand-green hover:bg-brand-green/90 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add
@@ -1169,7 +1169,7 @@ export default function IndexPage() {
                     <Button
                       onClick={handleSaveNewSection}
                       disabled={saving}
-                      className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                      className="bg-brand-green hover:bg-brand-green/90 text-white"
                     >
                       {saving ? (
                         <>
@@ -1400,7 +1400,7 @@ export default function IndexPage() {
                     <Button
                       onClick={() => handleSaveSection(selectedSection)}
                       disabled={saving}
-                      className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                      className="bg-brand-green hover:bg-brand-green/90 text-white"
                     >
                       {saving ? (
                         <>

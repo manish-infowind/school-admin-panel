@@ -65,9 +65,9 @@ export function IndexPagePreview({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="relative min-h-[500px] bg-gradient-to-br from-brand-green/10 via-brand-teal/10 to-brand-blue/10 rounded-xl overflow-hidden"
+            className="relative min-h-[500px] bg-brand-green/10 rounded-xl overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-green/5 to-brand-teal/5"></div>
+            <div className="absolute inset-0 bg-brand-green/5"></div>
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-16">
               <div className="max-w-4xl mx-auto space-y-6">
                 <motion.div
@@ -86,7 +86,7 @@ export function IndexPagePreview({
                   </p>
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white px-8 py-3 text-lg"
+                    className="bg-brand-green hover:bg-brand-green/90 text-white px-8 py-3 text-lg"
                   >
                     {section.content.buttonText}
                     <ArrowRight className="ml-2 h-5 w-5" />

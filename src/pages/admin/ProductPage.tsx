@@ -100,7 +100,7 @@ export default function ProductPage() {
           </div>
           <Button
             onClick={handleAddNewProduct}
-            className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+            className="bg-brand-green hover:bg-brand-green/90 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add New Product
@@ -142,7 +142,7 @@ export default function ProductPage() {
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                     whileHover={{ scale: 1.02 }}
                   >
-                  <div className="h-16 w-16 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-lg flex items-center justify-center">
+                  <div className="h-16 w-16 bg-brand-green/20 rounded-lg flex items-center justify-center">
                     <Package className="h-8 w-8 text-brand-green" />
                   </div>
                   <div className="flex-1">
@@ -164,7 +164,7 @@ export default function ProductPage() {
                         }
                         className={
                           product.status === "Published"
-                            ? "bg-gradient-to-r from-brand-green to-brand-teal text-white min-w-[80px] text-center"
+                            ? "bg-brand-green text-white min-w-[80px] text-center"
                             : "min-w-[80px] text-center"
                         }
                       >

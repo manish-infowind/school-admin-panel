@@ -30,8 +30,8 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Logo Icon */}
       <div className={`${sizeClasses[size]} relative`}>
         <img 
-          src="/logo.png" 
-          alt="MedoScopic Pharma Logo" 
+          src="/logo.svg" 
+          alt="Pinaypal Logo" 
           className="w-full h-full object-contain"
         />
       </div>
@@ -39,11 +39,8 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Text */}
       {showText && (
         <div className="flex flex-col">
-          <span className={`font-bold bg-gradient-to-r from-blue-800 to-teal-500 bg-clip-text text-transparent ${textSizes[size]}`}>
-            MEDOSCOPIC
-          </span>
-          <span className={`text-blue-400 ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'}`}>
-            PHARMA
+          <span className={`font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent ${textSizes[size]}`}>
+            PINAYPAL
           </span>
         </div>
       )}

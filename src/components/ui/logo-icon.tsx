@@ -19,9 +19,9 @@ export const LogoIcon: React.FC<LogoIconProps> = ({
   return (
     <div className={`${sizeClasses[size]} relative ${className}`}>
       <img 
-        src="/logo.png" 
-        alt="MedoScopic Pharma Logo" 
-        className="w-full h-full object-contain"
+        src="/logo.svg" 
+        alt="Pinaypal Logo" 
+        className="w-full h-full object-contain rounded-full"
       />
     </div>
   );

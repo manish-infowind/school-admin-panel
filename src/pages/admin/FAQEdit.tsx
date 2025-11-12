@@ -228,7 +228,7 @@ export default function FAQEdit() {
           <Button
             onClick={handleSave}
             disabled={!isFormValid() || updateFAQMutation.isPending}
-            className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+            className="bg-brand-green hover:bg-brand-green/90 text-white"
           >
             {updateFAQMutation.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

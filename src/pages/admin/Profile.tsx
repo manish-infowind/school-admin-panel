@@ -255,7 +255,7 @@ export default function Profile() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+            className="bg-brand-green hover:bg-brand-green/90 text-white"
           >
             {saving ? (
               <>
@@ -298,7 +298,7 @@ export default function Profile() {
                         uploadingAvatar || imageLoading ? 'opacity-50' : 'opacity-100'
                       }`}
                     />
-                    <AvatarFallback className="bg-gradient-to-br from-brand-green to-brand-teal text-white text-xl transition-all duration-300 ease-in-out relative">
+                    <AvatarFallback className="bg-brand-green text-white text-xl transition-all duration-300 ease-in-out relative">
                       {(uploadingAvatar || imageLoading) && uploadProgress > 0 ? (
                         <div className="relative w-full h-full flex items-center justify-center">
                           {/* Circular Progress Background */}
@@ -371,7 +371,7 @@ export default function Profile() {
                 <p className="text-muted-foreground">{profile.email}</p>
                 <Badge
                   variant="secondary"
-                  className="mt-2 bg-gradient-to-r from-brand-green to-brand-teal text-white font-medium shadow-sm border-0"
+                  className="mt-2 bg-brand-green hover:bg-brand-green/90 text-white font-medium shadow-sm border-0"
                 >
                   <Shield className="h-3 w-3 mr-1" />
                   {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}

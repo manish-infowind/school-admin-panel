@@ -26,28 +26,28 @@ const quickActions = [
     description: "Update the main landing page content",
     href: "/admin/index-page",
     icon: Home,
-    color: "bg-gradient-to-br from-brand-green to-brand-teal",
+    color: "bg-brand-green",
   },
   {
     title: "Manage Products",
     description: "Add, edit, or remove product listings",
     href: "/admin/products",
     icon: Package,
-    color: "bg-gradient-to-br from-brand-teal to-brand-blue",
+    color: "bg-brand-teal",
   },
   {
     title: "About Us",
     description: "Manage company information and team",
     href: "/admin/about-us",
     icon: Building,
-    color: "bg-gradient-to-br from-brand-blue to-brand-green",
+    color: "bg-brand-green",
   },
   {
     title: "View Enquiries",
     description: "Manage customer contact form submissions",
     href: "/admin/enquiries",
     icon: Mail,
-    color: "bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue",
+    color: "bg-brand-teal",
   },
 ];
 
@@ -243,28 +243,28 @@ export default function Dashboard() {
       value: dashboardData.stats.totalPages.toString(),
       change: "Admin panel ready",
       icon: FileText,
-      color: "from-brand-green to-brand-teal",
+      color: "bg-brand-green",
     },
     {
       title: "Products",
       value: dashboardData.stats.totalProducts.toString(),
       change: `${dashboardData.stats.publishedProducts} published, ${dashboardData.stats.draftProducts} drafts`,
       icon: Package,
-      color: "from-brand-teal to-brand-blue",
+      color: "bg-brand-teal",
     },
     {
       title: "Enquiries",
       value: dashboardData.stats.totalEnquiries.toString(),
       change: `${dashboardData.stats.newEnquiriesThisWeek} new this week`,
       icon: Mail,
-      color: "from-brand-blue to-brand-green",
+      color: "bg-brand-green",
     },
     {
       title: "Active Users",
       value: dashboardData.stats.activeUsers.toLocaleString(),
       change: `+${dashboardData.stats.userGrowthThisMonth}% this month`,
       icon: Users,
-      color: "from-brand-green via-brand-teal to-brand-blue",
+      color: "bg-brand-teal",
     },
   ] : [];
 
@@ -342,7 +342,7 @@ export default function Dashboard() {
             Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Welcome to your MedoScopic admin panel. Manage your website
+            Welcome to your Pinaypal admin panel. Manage your website
             content from here.
           </p>
         </div>
@@ -368,7 +368,7 @@ export default function Dashboard() {
                   {stat.title}
                 </CardTitle>
                 <div
-                  className={`h-8 w-8 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}
+                  className={`h-8 w-8 rounded-lg ${stat.color} flex items-center justify-center`}
                 >
                   <stat.icon className="h-4 w-4 text-white" />
                 </div>
@@ -450,7 +450,7 @@ export default function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
                 >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-green to-brand-teal flex items-center justify-center flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-brand-green flex items-center justify-center flex-shrink-0">
                     <Edit3 className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">

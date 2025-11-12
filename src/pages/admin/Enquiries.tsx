@@ -989,7 +989,7 @@ export default function Enquiries() {
               Export
             </Button>
             <Button 
-              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              className="bg-brand-green hover:bg-brand-green/90 text-white"
               onClick={() => navigate('/admin/campaigns')}
             >
               <Mail className="h-4 w-4 mr-2" />
@@ -1067,7 +1067,7 @@ export default function Enquiries() {
             <Button
               variant={hasActiveFilters ? "default" : "outline"}
               onClick={clearAllFilters}
-              className={`px-3 py-2 text-sm ${hasActiveFilters ? 'bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white' : ''}`}
+              className={`px-3 py-2 text-sm ${hasActiveFilters ? 'bg-brand-green hover:bg-brand-green/90 text-white text-white' : ''}`}
             >
               Clear All Filters
               {hasActiveFilters && (
@@ -1134,7 +1134,7 @@ export default function Enquiries() {
                 <Button
                   variant={startDate || endDate ? "default" : "outline"}
                   onClick={toggleDatePicker}
-                  className={`px-3 py-2 h-auto text-sm ${startDate || endDate ? 'bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white' : ''}`}
+                  className={`px-3 py-2 h-auto text-sm ${startDate || endDate ? 'bg-brand-green hover:bg-brand-green/90 text-white text-white' : ''}`}
                 >
                   <CalendarDays className="h-4 w-4 mr-2" />
                   {startDate && endDate ? (
@@ -1281,7 +1281,7 @@ export default function Enquiries() {
                       <Button
                         size="sm"
                         onClick={() => setIsDatePickerOpen(false)}
-                        className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                        className="flex-1 bg-brand-green hover:bg-brand-green/90 text-white"
                       >
                         Apply
                       </Button>
@@ -1671,7 +1671,7 @@ export default function Enquiries() {
                     >
                       <DialogTrigger asChild>
                         <Button 
-                          className="flex-1 bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                          className="flex-1 bg-brand-green hover:bg-brand-green/90 text-white"
                           disabled={isUpdating}
                         >
                           {isUpdating ? (
@@ -1710,7 +1710,7 @@ export default function Enquiries() {
                             <Button
                               onClick={handleReply}
                               disabled={!replyMessage.trim() || isUpdating}
-                              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                              className="bg-brand-green hover:bg-brand-green/90 text-white"
                             >
                               {isUpdating ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -2003,7 +2003,7 @@ export default function Enquiries() {
                 <Button
                   onClick={exportEnquiries}
                   disabled={isExporting || (exportDateRange === "custom" && (!exportCustomStartDate || !exportCustomEndDate))}
-                  className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                  className="bg-brand-green hover:bg-brand-green/90 text-white"
                   size="sm"
                 >
                   {isExporting ? (

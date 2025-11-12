@@ -435,7 +435,7 @@ export function PasswordChangeModal({
               <Button 
                 type="submit" 
                 disabled={changingPassword || !passwordValidation.isValid || !passwordMatch || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 {changingPassword ? (
                   <>
@@ -486,7 +486,7 @@ export function PasswordChangeModal({
               <Button 
                 type="submit" 
                 disabled={verifyingOtp || formData.otp.length !== 6}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 {verifyingOtp ? (
                   <>
@@ -517,7 +517,7 @@ export function PasswordChangeModal({
                 onClick={() => {
                   logout();
                 }}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 Go to Login Now
               </Button>

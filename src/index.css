@@ -9,104 +9,136 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Background & Foreground - Light Mode */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 10%; /* #1A1A1A */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 10%; /* #1A1A1A */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 0 0% 10%; /* #1A1A1A */
 
-    --primary: 155 100% 41%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Purple Brand Color */
+    --primary: 268 95% 60%; /* #A33AF8 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 186 74% 58%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary - Super Like Blue */
+    --secondary: 195 92% 61%; /* #3FBDF8 */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted */
+    --muted: 0 0% 96%; /* #F5F5F5 */
+    --muted-foreground: 0 0% 40%; /* #666666 */
 
-    --accent: 230 83% 43%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Purple */
+    --accent: 268 95% 60%; /* #A33AF8 */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive - Error Red */
+    --destructive: 3 78% 55%; /* #E53935 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 155 100% 41%;
+    /* Success - Green */
+    --success: 122 39% 49%; /* #43A047 */
+    --success-foreground: 0 0% 100%; /* #FFFFFF */
+
+    /* Boost - Orange */
+    --boost: 35 100% 50%; /* #FF8300 */
+    --boost-foreground: 0 0% 100%; /* #FFFFFF */
+
+    /* Border & Input */
+    --border: 0 0% 88%; /* #E0E0E0 */
+    --input: 0 0% 88%; /* #E0E0E0 */
+    --ring: 268 95% 60%; /* #A33AF8 */
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 155 100% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 155 100% 96%;
-    --sidebar-accent-foreground: 155 100% 20%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 155 100% 41%;
+    /* Sidebar - Light Mode */
+    --sidebar-background: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 0 0% 10%; /* #1A1A1A */
+    --sidebar-primary: 268 95% 60%; /* #A33AF8 */
+    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --sidebar-accent: 268 95% 96%; /* Light purple tint */
+    --sidebar-accent-foreground: 268 95% 20%; /* Dark purple */
+    --sidebar-border: 0 0% 88%; /* #E0E0E0 */
+    --sidebar-ring: 268 95% 60%; /* #A33AF8 */
 
-    /* MedoScopic brand colors */
-    --brand-green: 155 100% 41%;
-    --brand-teal: 186 74% 58%;
-    --brand-blue: 230 83% 43%;
+    /* Brand colors - Purple Theme */
+    --brand-green: 268 95% 60%; /* #A33AF8 - Main Purple */
+    --brand-teal: 195 92% 61%; /* #3FBDF8 - Super Like Blue */
+    --brand-blue: 268 95% 60%; /* #A33AF8 - Purple (keeping for compatibility) */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(var(--brand-green)),
-      hsl(var(--brand-teal)),
-      hsl(var(--brand-blue))
+      hsl(268 95% 60%),
+      hsl(195 92% 61%),
+      hsl(268 95% 75%)
     );
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Background & Foreground - Dark Mode */
+    --background: 0 0% 7%; /* #121212 */
+    --foreground: 0 0% 96%; /* #F4F4F4 */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%; /* #121212 */
+    --card-foreground: 0 0% 96%; /* #F4F4F4 */
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 7%; /* #121212 */
+    --popover-foreground: 0 0% 96%; /* #F4F4F4 */
 
-    --primary: 155 100% 41%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Purple Brand Color */
+    --primary: 268 95% 60%; /* #A33AF8 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 186 74% 58%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary - Super Like Blue */
+    --secondary: 195 92% 61%; /* #3FBDF8 */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted */
+    --muted: 0 0% 15%; /* #252525 */
+    --muted-foreground: 0 0% 70%; /* #B3B3B3 */
 
-    --accent: 230 83% 43%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Purple */
+    --accent: 268 95% 60%; /* #A33AF8 */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive - Error Red */
+    --destructive: 3 78% 55%; /* #E53935 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 155 100% 41%;
+    /* Success - Green */
+    --success: 122 39% 49%; /* #43A047 */
+    --success-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --sidebar-background: 230 20% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 155 100% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 20% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 155 100% 41%;
+    /* Boost - Yellow (dark mode) */
+    --boost: 50 100% 68%; /* #FFD54F */
+    --boost-foreground: 0 0% 10%; /* #1A1A1A */
 
-    /* MedoScopic brand colors for dark mode */
-    --brand-green: 155 100% 41%;
-    --brand-teal: 186 74% 58%;
-    --brand-blue: 230 83% 43%;
+    /* Border & Input */
+    --border: 0 0% 18%; /* #2D2D2D */
+    --input: 0 0% 18%; /* #2D2D2D */
+    --ring: 268 95% 60%; /* #A33AF8 */
+
+    /* Sidebar - Dark Mode */
+    --sidebar-background: 0 0% 12%; /* #1E1E1E */
+    --sidebar-foreground: 0 0% 96%; /* #F4F4F4 */
+    --sidebar-primary: 268 95% 60%; /* #A33AF8 */
+    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --sidebar-accent: 0 0% 15%; /* #252525 */
+    --sidebar-accent-foreground: 0 0% 96%; /* #F4F4F4 */
+    --sidebar-border: 0 0% 18%; /* #2D2D2D */
+    --sidebar-ring: 268 95% 60%; /* #A33AF8 */
+
+    /* Brand colors - Purple Theme (Dark Mode) */
+    --brand-green: 268 95% 60%; /* #A33AF8 - Main Purple */
+    --brand-teal: 195 92% 61%; /* #3FBDF8 - Super Like Blue */
+    --brand-blue: 268 95% 60%; /* #A33AF8 - Purple (keeping for compatibility) */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(var(--brand-green)),
-      hsl(var(--brand-teal)),
-      hsl(var(--brand-blue))
+      hsl(268 95% 60%),
+      hsl(195 92% 61%),
+      hsl(268 95% 75%)
     );
   }
 }
@@ -118,5 +150,23 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Solid button with very subtle gradient - appears mostly solid */
+  .btn-solid-gradient {
+    background: hsl(268 95% 60%);
+    background-image: linear-gradient(135deg, hsl(268 95% 60%) 0%, hsl(268 95% 60.5%) 100%);
+  }
+  
+  .btn-solid-gradient:hover {
+    background: hsl(268 95% 58%);
+    background-image: linear-gradient(135deg, hsl(268 95% 58%) 0%, hsl(268 95% 58.5%) 100%);
+  }
+  
+  /* Solid icon background with subtle gradient */
+  .icon-solid-gradient {
+    background: linear-gradient(135deg, hsl(268 95% 60% / 0.2) 0%, hsl(268 95% 60% / 0.18) 100%);
   }
 }

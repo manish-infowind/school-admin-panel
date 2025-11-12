@@ -63,7 +63,7 @@ export function ProductPreview({
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-lg flex items-center justify-center">
+                  <div className="h-12 w-12 bg-brand-green/20 rounded-lg flex items-center justify-center">
                     <Package className="h-6 w-6 text-brand-green" />
                   </div>
                   <div>
@@ -104,7 +104,7 @@ export function ProductPreview({
                 product.images.map((image, index) => (
                   <div
                     key={index}
-                    className="aspect-square bg-gradient-to-br from-brand-green/10 to-brand-teal/10 rounded-lg overflow-hidden border"
+                    className="aspect-square bg-brand-green/10 rounded-lg overflow-hidden border"
                   >
                     <img
                       src={image}
@@ -116,13 +116,13 @@ export function ProductPreview({
                         e.currentTarget.nextElementSibling?.classList.remove('hidden');
                       }}
                     />
-                    <div className="w-full h-full bg-gradient-to-br from-brand-green/10 to-brand-teal/10 flex items-center justify-center hidden">
+                    <div className="w-full h-full bg-brand-green/10 flex items-center justify-center hidden">
                       <Package className="h-12 w-12 text-brand-green" />
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="col-span-3 aspect-video bg-gradient-to-br from-brand-green/10 to-brand-teal/10 rounded-lg flex items-center justify-center">
+                <div className="col-span-3 aspect-video bg-brand-green/10 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <Package className="h-16 w-16 mx-auto text-brand-green mb-2" />
                     <p className="text-muted-foreground">No images available</p>
@@ -185,7 +185,7 @@ export function ProductPreview({
               <Button 
                 onClick={onSave}
                 disabled={isSaving}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 {isSaving ? (
                   <>
@@ -205,7 +205,7 @@ export function ProductPreview({
                   onClose(); // Close the preview modal
                   onEdit?.(); // Call the edit handler
                 }}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+                className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 Edit Product
               </Button>

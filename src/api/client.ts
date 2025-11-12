@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_CONFIG, HTTP_STATUS, API_ERROR_TYPES } from './config';
 import { ApiResponse, ApiError, ApiRequestOptions } from './types';
+import { getMockResponse } from './mockService';
 
 class ApiClient {
   private baseURL: string;
@@ -189,6 +190,12 @@ class ApiClient {
       timeout = this.timeout,
       signal,
     } = options;
+
+    // Try to get mock response first
+    const mockResponse = await getMockResponse<T>(endpoint, method, body, options.params);
+    if (mockResponse !== null) {
+      return mockResponse;
+    }
 
     const config: AxiosRequestConfig = {
       method,

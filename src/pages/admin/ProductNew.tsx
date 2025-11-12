@@ -352,7 +352,7 @@ export default function ProductNew() {
             <Button
               onClick={handleSave}
               disabled={!isFormValid() || createProductMutation.isPending || isSaving}
-              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              className="bg-brand-green hover:bg-brand-green/90 text-white"
             >
               {createProductMutation.isPending || isSaving ? (
                 <>

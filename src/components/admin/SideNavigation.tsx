@@ -93,8 +93,10 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
     >
       {/* Header with Logo */}
-      <div className="flex h-52 items-center justify-center px-6">
-        <LogoIcon size="xl" className="h-52 w-52" />
+      <div className="flex h-32 items-center justify-center px-6 py-4">
+        <div className="h-24 w-24 rounded-full overflow-hidden bg-brand-green p-3 shadow-lg flex items-center justify-center">
+          <LogoIcon size="lg" className="h-16 w-16" />
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -149,7 +151,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
         <div className="flex items-center gap-2 px-2 py-1">
           <LogoIcon size="sm" />
           <div className="flex flex-col">
-            <span className="text-sm font-medium">MedoScopic</span>
+            <span className="text-sm font-medium">Pinaypal</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>

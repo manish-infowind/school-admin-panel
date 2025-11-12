@@ -404,7 +404,7 @@ export default function ProductEdit() {
             <Button
               onClick={handleSave}
               disabled={isSaving || !isFormValid()}
-              className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80"
+              className="bg-brand-green hover:bg-brand-green/90 text-white"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

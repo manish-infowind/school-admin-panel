@@ -59,9 +59,9 @@ export function SectionPreview({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative min-h-[400px] bg-gradient-to-br from-brand-green/10 via-brand-teal/10 to-brand-blue/10 rounded-xl overflow-hidden"
+            className="relative min-h-[400px] bg-brand-green/10 rounded-xl overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-green/5 to-brand-teal/5"></div>
+            <div className="absolute inset-0 bg-brand-green/5"></div>
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-12">
               <div className="max-w-3xl mx-auto space-y-6">
                 <motion.div
@@ -80,7 +80,7 @@ export function SectionPreview({
                   </p>
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white px-6 py-2 text-base"
+                    className="bg-brand-green hover:bg-brand-green/90 text-white px-6 py-2 text-base"
                   >
                     {section.content.buttonText}
                     <ArrowRight className="ml-2 h-4 w-4" />

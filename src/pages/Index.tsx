@@ -23,11 +23,11 @@ const Index = () => {
           </div>
 
           <h1 className="text-5xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent mb-4">
-            MedoScopic Pharma
+            Pinaypal
           </h1>
 
           <p className="text-lg text-muted-foreground mb-8">
-            Advanced Medical Technology & Pharmaceutical Solutions
+            Secure Payment Platform & Financial Solutions
           </p>
         </motion.div>
 
@@ -45,14 +45,14 @@ const Index = () => {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
-                Welcome to the MedoScopic Pharma content management system.
+                Welcome to the Pinaypal content management system.
                 Access the admin panel to manage your website content, products,
                 and pages.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Link to={isAuthenticated ? "/admin" : "/login"} className="flex-1">
-                  <Button className="w-full bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white">
+                  <Button className="w-full bg-brand-green hover:bg-brand-green/90 text-white">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
                     {isAuthenticated ? "Enter Admin Panel" : "Login to Admin Panel"}
                     <ArrowRight className="h-4 w-4 ml-2" />
@@ -77,7 +77,7 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <p>© 2024 MedoScopic Pharma. All rights reserved.</p>
+          <p>© 2024 Pinaypal. All rights reserved.</p>
         </motion.div>
       </div>
     </div>

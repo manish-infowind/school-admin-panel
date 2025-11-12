@@ -102,7 +102,7 @@ export function TopNavigation({
                     : profile?.firstName || profile?.lastName || user?.fullName || user?.username || 'Admin User'}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {profile?.email || user?.email || 'admin@medoscopic.com'}
+                  {profile?.email || user?.email || 'admin@pinaypal.com'}
                 </p>
                 {profile?.role && (
                   <Badge

@@ -50,7 +50,7 @@ export default function ProductDetails() {
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
-            <Button className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
+            <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
               <Edit3 className="h-4 w-4 mr-2" />
               Edit Selected
             </Button>
@@ -84,7 +84,7 @@ export default function ProductDetails() {
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 bg-gradient-to-br from-brand-blue/20 to-brand-green/20 rounded-lg flex items-center justify-center">
+                    <div className="h-12 w-12 bg-brand-green/20 rounded-lg flex items-center justify-center">
                       <FileText className="h-6 w-6 text-brand-blue" />
                     </div>
                     <div className="flex-1">
@@ -145,19 +145,19 @@ export default function ProductDetails() {
                 <div className="space-y-2">
                   <Badge
                     variant="secondary"
-                    className="bg-gradient-to-r from-brand-blue/10 to-brand-green/10 text-brand-blue block"
+                    className="bg-brand-green/10 text-brand-green block"
                   >
                     Rich Text Editor
                   </Badge>
                   <Badge
                     variant="secondary"
-                    className="bg-gradient-to-r from-brand-green/10 to-brand-teal/10 text-brand-green block"
+                    className="bg-brand-green/10 text-brand-green block"
                   >
                     Image Gallery Manager
                   </Badge>
                   <Badge
                     variant="secondary"
-                    className="bg-gradient-to-r from-brand-teal/10 to-brand-blue/10 text-brand-teal block"
+                    className="bg-brand-teal/10 text-brand-teal block"
                   >
                     Feature Manager
                   </Badge>

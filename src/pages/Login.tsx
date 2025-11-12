@@ -181,7 +181,7 @@ const Login = () => {
             </div>
 
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent mb-2">
-              MedoScopic Pharma
+              Pinaypal
             </h1>
 
             <p className="text-sm text-muted-foreground mb-8">
@@ -207,7 +207,7 @@ const Login = () => {
           </div>
 
           <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent mb-2">
-            MedoScopic Pharma
+            Pinaypal
           </h1>
 
           <p className="text-sm text-muted-foreground mb-8">
@@ -304,7 +304,7 @@ const Login = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 text-white"
+                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white"
                   disabled={isLoggingIn}
                 >
                   {isLoggingIn ? (
@@ -340,7 +340,7 @@ const Login = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <p>© 2024 MedoScopic Pharma. All rights reserved.</p>
+          <p>© 2024 Pinaypal. All rights reserved.</p>
         </motion.div>
       </div>
 

@@ -325,7 +325,7 @@ export default function AdminManagement() {
           </div>
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80">
+              <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Admin
               </Button>
@@ -479,7 +479,7 @@ export default function AdminManagement() {
                   <Button
                     onClick={handleCreateAdmin}
                     disabled={isCreating}
-                    className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 px-6"
+                    className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
                   >
                     {isCreating ? (
                       <>
@@ -897,7 +897,7 @@ export default function AdminManagement() {
               <Button
                 onClick={handleEditAdmin}
                 disabled={isUpdating}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 px-6"
+                className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
               >
                 {isUpdating ? (
                   <>
@@ -1065,7 +1065,7 @@ export default function AdminManagement() {
               <Button
                 onClick={handleChangePassword}
                 disabled={isChangingPassword}
-                className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 px-6"
+                className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
               >
                 {isChangingPassword ? (
                   <>
@@ -1094,7 +1094,7 @@ export default function AdminManagement() {
             <div className="space-y-6">
               {/* Admin Header */}
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-16 h-16 bg-gradient-to-br from-brand-green/20 to-brand-teal/20 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-brand-green/20 rounded-full flex items-center justify-center">
                   <Users className="h-8 w-8 text-brand-green" />
                 </div>
                 <div className="flex-1">
@@ -1205,7 +1205,7 @@ export default function AdminManagement() {
                     setIsViewModalOpen(false);
                     openEditModal(selectedAdmin);
                   }}
-                  className="bg-gradient-to-r from-brand-green to-brand-teal hover:from-brand-green/80 hover:to-brand-teal/80 px-6"
+                  className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Admin

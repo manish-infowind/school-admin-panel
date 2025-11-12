@@ -143,7 +143,7 @@ export function CampaignPreviewModal({
               <div className="bg-muted p-4 border-b">
                 <div className="text-sm font-medium">Subject: {campaign.subject}</div>
                 <div className="text-xs text-muted-foreground">
-                  From: MedoScopic &lt;noreply@medoscopic.com&gt;
+                  From: Pinaypal &lt;noreply@pinaypal.com&gt;
                 </div>
               </div>
               
