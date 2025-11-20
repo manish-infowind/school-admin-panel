@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Users,
   Megaphone,
+  UserPen,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +42,11 @@ const navigation = [
     name: "Index Page",
     href: "/admin/index-page",
     icon: Home,
+  },
+  {
+    name: "User List",
+    href: "/admin/users",
+    icon: UserPen,
   },
   {
     name: "About Us",
