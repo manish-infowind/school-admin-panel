@@ -7,155 +7,42 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle, Shield } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "@/lib/authContext";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
+import { Check6DigitPassword, CheckEmail } from '@/validations/validations';
+import { useDispatch, useSelector } from "react-redux";
+import { loginInfo } from '@/redux/features/authSlice';
+import { RootState } from '@/redux/store/store';
+import { LoginAPi } from '@/api/services/authApis/loginApi';
+import { verify2FAApi } from '@/api/services/authApis/2faApi';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/admin';
+  const { isAuthenticated, isLoggingIn, isVerifying2FA } = useSelector((state: RootState) => state?.auth);
+
+  const [loginUser, setLoginUser] = useState({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [show2FAModal, setShow2FAModal] = useState(false);
-  const [loginResponse, setLoginResponse] = useState<any>(null);
   const [is2FAFlow, setIs2FAFlow] = useState(false);
-  
+
   // Validation states
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [touched, setTouched] = useState({
     email: false,
-    password: false
+    password: false,
   });
-  
-  const { login, verify2FA, isAuthenticated, isLoggingIn, isVerifying2FA, loginError, verify2FAError } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/admin';
-
-  // Validation functions
-  const validateEmail = (email: string): string => {
-    if (!email || email.trim() === '') {
-      return 'Email is required';
-    }
-    if (!email.includes('@')) {
-      return 'Please include an \'@\' in the email address';
-    }
-    if (!email.includes('.')) {
-      return 'Please include a valid domain in the email address';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-    return '';
-  };
-
-  const validatePassword = (password: string): string => {
-    if (!password || password.trim() === '') {
-      return 'Password is required';
-    }
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    return '';
-  };
-
-  // Handle input changes with validation
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.email) {
-      const error = validateEmail(value);
-      setEmailError(error);
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPassword(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.password) {
-      const error = validatePassword(value);
-      setPasswordError(error);
-    }
-  };
-
-  // Handle input blur (mark as touched and validate)
-  const handleEmailBlur = () => {
-    setTouched(prev => ({ ...prev, email: true }));
-    const error = validateEmail(email);
-    setEmailError(error);
-  };
-
-  const handlePasswordBlur = () => {
-    setTouched(prev => ({ ...prev, password: true }));
-    const error = validatePassword(password);
-    setPasswordError(error);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    // Mark all fields as touched
-    setTouched({ email: true, password: true });
-    
-    // Validate all fields
-    const emailValidation = validateEmail(email);
-    const passwordValidation = validatePassword(password);
-    
-    setEmailError(emailValidation);
-    setPasswordError(passwordValidation);
-    
-    // If there are validation errors, don't submit
-    if (emailValidation || passwordValidation) {
-      return;
-    }
-    
-    // Call login with email and password (device data will be added in AuthService)
-    login(email, password);
-  };
-
-  // Handle 2FA verification
-  const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
-    try {
-      await verify2FA(otpData);
-      setShow2FAModal(false);
-      setLoginResponse(null);
-      setIs2FAFlow(false);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Handle login response and 2FA
-  React.useEffect(() => {
-    if (loginError) {
-      // Extract error message from different possible structures
-      let errorMessage = 'An error occurred during login';
-      
-      if (typeof loginError === 'string') {
-        errorMessage = loginError;
-      } else if (loginError?.message) {
-        errorMessage = loginError.message;
-      } else if (loginError?.data?.message) {
-        errorMessage = loginError.data.message;
-      } else if (loginError?.response?.data?.message) {
-        errorMessage = loginError.response.data.message;
-      }
-      
-      setError(errorMessage);
-    }
-  }, [loginError]);
 
   // Check for 2FA requirement
-  React.useEffect(() => {
+  useEffect(() => {
     const tempToken = localStorage.getItem('tempToken');
     if (tempToken && !isLoggingIn && !isVerifying2FA) {
       setShow2FAModal(true);
@@ -163,6 +50,112 @@ const Login = () => {
     }
   }, [isLoggingIn, isVerifying2FA]);
 
+
+  // Handle input changes with validation
+  const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginUser({
+      ...loginUser,
+      [name]: value,
+    });
+  };
+
+
+  // Handle input blur (mark as touched and validate)
+  const blurHandler = (text: string) => {
+    if (text?.toLocaleLowerCase() === "email") {
+      setTouched(prev => ({ ...prev, email: true }));
+      const error = CheckEmail(loginUser?.email);
+      setEmailError(error);
+    } else {
+      setTouched(prev => ({ ...prev, password: true }));
+      const error = Check6DigitPassword(loginUser?.password);
+      setPasswordError(error);
+    }
+  };
+
+
+  // Login Submit Handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Mark all fields as touched
+    setTouched({ email: true, password: true });
+
+    // Validate all fields
+    const emailValidation = CheckEmail(loginUser?.email);
+    const passwordValidation = Check6DigitPassword(loginUser?.password);
+
+    setEmailError(emailValidation);
+    setPasswordError(passwordValidation);
+
+    // If there are validation errors, don't submit
+    if (emailValidation || passwordValidation) {
+      return;
+    };
+
+    // Call Login API -
+    try {
+      const payload = {
+        email: loginUser?.email,
+        password: loginUser?.password,
+      };
+
+      // const res = await LoginAPi(payload as any);
+      // console.log("Login_Ress",res)
+
+      // Navigate to admin dashboard after successful 2FA verification
+      navigate('/admin', { replace: true });
+
+      // Now have a static data only for development
+      dispatch(loginInfo({
+        id: "1",
+        username: "admin",
+        email: "paypal@gmail.com",
+        role: "Paypal_admin",
+        profilePic: "/logo.svg",
+        fullName: "Jai Dev",
+        phone: "+91-9876543210",
+        address: "Indore, India",
+      }));
+
+    } catch (error) {
+      console.log("login_catch_err", error)
+    }
+  };
+
+
+  // Handle 2FA verification
+  const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
+    try {
+      await verify2FA(otpData);
+      setShow2FAModal(false);
+      setIs2FAFlow(false);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+
+  // Verify 2FA Handler
+  const verify2FA = async (otpData: any) => {
+    const payload = { otp: otpData };
+    try {
+      const res = await verify2FAApi(payload);
+      if (res && res.data) {
+        // Update user in cache
+        console.log("verify2FA_res", res);
+
+        // Navigate to admin dashboard after successful 2FA verification
+        navigate('/admin', { replace: true });
+      }
+    } catch (error) {
+      // Don't navigate on error - let the component handle it
+      console.log("verify2FA_catch", error);
+    }
+  };
 
 
   // Don't show login form if user is already authenticated
@@ -191,7 +184,8 @@ const Login = () => {
         </div>
       </div>
     );
-  }
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
@@ -241,12 +235,14 @@ const Login = () => {
                     id="email"
                     type="email"
                     placeholder="Enter your email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    onBlur={handleEmailBlur}
-                    className={`focus:ring-brand-green focus:border-brand-green ${
-                      touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
+                    name="email"
+                    value={loginUser?.email}
+                    // onChange={handleEmailChange}
+                    // onBlur={handleEmailBlur}
+                    onChange={onChangeHandler}
+                    onBlur={() => blurHandler("email")}
+                    className={`focus:ring-brand-green focus:border-brand-green ${touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
                   />
                   {touched.email && emailError && (
                     <motion.div
@@ -268,12 +264,14 @@ const Login = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={handlePasswordChange}
-                      onBlur={handlePasswordBlur}
-                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${
-                        touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
+                      name="password"
+                      value={loginUser?.password}
+                      // onChange={handlePasswordChange}
+                      // onBlur={handlePasswordBlur}
+                      onChange={onChangeHandler}
+                      onBlur={() => blurHandler("password")}
+                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
                     />
                     <Button
                       type="button"
@@ -346,7 +344,7 @@ const Login = () => {
 
       {/* Two-Factor Authentication Modal */}
       <TwoFactorLoginModal
-        isOpen={show2FAModal}
+        isOpen={false}
         onClose={() => {
           setShow2FAModal(false);
           setIs2FAFlow(false);
@@ -355,7 +353,7 @@ const Login = () => {
         }}
         onVerify2FA={handleVerify2FA}
         verifying2FA={isVerifying2FA}
-        userEmail={email}
+        userEmail={loginUser?.email}
       />
     </div>
   );

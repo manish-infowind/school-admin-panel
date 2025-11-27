@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TopNavigation } from "./TopNavigation";
+import TopNavigation from "./TopNavigation";
 import { SideNavigation } from "./SideNavigation";
 import { AdminThemeProvider } from "./AdminThemeProvider";
 import { motion } from "framer-motion";

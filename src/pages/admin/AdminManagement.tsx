@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,6 @@ import {
   Shield,
   ShieldCheck,
   ShieldX,
-  Mail,
   Phone,
   MapPin,
   Calendar,
@@ -35,16 +35,20 @@ import {
   BarChart3,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminManagement } from "@/api/hooks/useAdminManagement";
-import { useAuth } from "@/lib/authContext";
 import { AdminUser, CreateAdminRequest, UpdateAdminRequest, ChangePasswordRequest } from "@/api/types";
-import { format } from "date-fns";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 export default function AdminManagement() {
+  // provide a narrow shape for the auth slice so TS knows about loginState.role
+  const auth = useSelector((state: RootState) =>
+      state?.auth as { loginState?: { role?: string } } | undefined
+  );
+  const loginState = auth?.loginState;
   const { toast } = useToast();
-  const { user } = useAuth();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -76,9 +80,9 @@ export default function AdminManagement() {
     newPassword: "",
     confirmPassword: "",
   });
-
+  
   // Check if current user is superadmin
-  const isSuperAdmin = user?.role === 'super_admin';
+  const isSuperAdmin = loginState?.role === 'super_admin';
 
   // Use the admin management hook
   const {
