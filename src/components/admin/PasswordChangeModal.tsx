@@ -12,30 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/authContext";
-
-// Password validation functions
-const validatePassword = (password: string) => {
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-  const isLongEnough = password.length >= 8;
-  
-  return {
-    hasUpperCase,
-    hasLowerCase,
-    hasNumber,
-    hasSpecialChar,
-    isLongEnough,
-    isValid: hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && isLongEnough
-  };
-};
-
-const validatePasswordMatch = (password: string, confirmPassword: string) => {
-  return password === confirmPassword && password.length > 0;
-};
-
+import { checkMatchedPassword, checkStrongPassword } from "@/validations/validations";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { LogoutApi } from "@/api/services/authApis/logoutApi";
+import { logout } from "../../redux/features/authSlice";
 interface PasswordChangeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,7 +24,7 @@ interface PasswordChangeModalProps {
   onVerifyOtp: (data: { otp: string; newPassword: string }) => Promise<boolean>;
   changingPassword: boolean;
   verifyingOtp: boolean;
-}
+};
 
 export function PasswordChangeModal({
   isOpen,
@@ -53,8 +34,11 @@ export function PasswordChangeModal({
   changingPassword,
   verifyingOtp,
 }: PasswordChangeModalProps) {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const { toast } = useToast();
-  const { logout } = useAuth();
+
   const [step, setStep] = useState<'password' | 'otp' | 'success'>('password');
   const [showPasswords, setShowPasswords] = useState({
     current: false,
@@ -70,7 +54,7 @@ export function PasswordChangeModal({
   });
 
   // Real-time validation state
-  const [passwordValidation, setPasswordValidation] = useState(validatePassword(''));
+  const [passwordValidation, setPasswordValidation] = useState(checkStrongPassword(''));
   const [passwordMatch, setPasswordMatch] = useState(true);
 
   // Error state for current password
@@ -85,20 +69,43 @@ export function PasswordChangeModal({
   // Flag to track if password was changed successfully
   const [passwordChanged, setPasswordChanged] = useState(false);
 
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, []);
+
+
+  // Handle hard reload scenarios
+  useEffect(() => {
+    const passwordChangedFlag = localStorage.getItem('passwordChanged');
+    if (passwordChangedFlag === 'true') {
+      // Clear the flag
+      localStorage.removeItem('passwordChanged');
+      // Logout immediately
+      logoutHandler();
+    }
+  }, [logout]);
+
+
   // Update validation when passwords change
   const handlePasswordChange = (field: 'newPassword' | 'confirmPassword', value: string) => {
     const newFormData = { ...formData, [field]: value };
     setFormData(newFormData);
-    
+
     if (field === 'newPassword') {
-      setPasswordValidation(validatePassword(value));
+      setPasswordValidation(checkStrongPassword(value));
     }
-    
+
     // Check password match
     if (field === 'newPassword' || field === 'confirmPassword') {
       const newPassword = field === 'newPassword' ? value : newFormData.newPassword;
       const confirmPassword = field === 'confirmPassword' ? value : newFormData.confirmPassword;
-      const isMatch = validatePasswordMatch(newPassword, confirmPassword);
+      const isMatch = checkMatchedPassword(newPassword, confirmPassword);
       setPasswordMatch(isMatch);
     }
   };
@@ -129,7 +136,7 @@ export function PasswordChangeModal({
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
-      
+
       // Only proceed to OTP step if successful
       if (success) {
         setStep('otp');
@@ -161,11 +168,11 @@ export function PasswordChangeModal({
     }
 
     try {
-      const success = await onVerifyOtp({ 
+      const success = await onVerifyOtp({
         otp: formData.otp,
-        newPassword: formData.newPassword 
+        newPassword: formData.newPassword
       });
-      
+
       // Only proceed to success step if successful
       if (success) {
         setPasswordChanged(true);
@@ -195,35 +202,15 @@ export function PasswordChangeModal({
           if (countdownRef.current) {
             clearInterval(countdownRef.current);
           }
-          
+
           // Logout after countdown
-          logout();
+          logoutHandler();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
   };
-
-  // Cleanup countdown on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, []);
-
-  // Handle hard reload scenarios
-  useEffect(() => {
-    const passwordChangedFlag = localStorage.getItem('passwordChanged');
-    if (passwordChangedFlag === 'true') {
-      // Clear the flag
-      localStorage.removeItem('passwordChanged');
-      // Logout immediately
-      logout();
-    }
-  }, [logout]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,16 +220,6 @@ export function PasswordChangeModal({
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await handleVerifyOtp();
-  };
-
-  const handleSuccessClose = () => {
-    // Clear countdown if still running
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-    }
-    
-    // Logout when manually closing success modal
-    logout();
   };
 
   const handleClose = () => {
@@ -263,24 +240,34 @@ export function PasswordChangeModal({
       new: false,
       confirm: false,
     });
-    setPasswordValidation(validatePassword(''));
+    setPasswordValidation(checkStrongPassword(''));
     setPasswordMatch(true);
     setCurrentPasswordError(null);
     setOtpError(null);
     setCountdown(5);
     setPasswordChanged(false);
-    
+
     // Clear any pending countdown
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
     }
-    
+
     onClose();
   };
 
+  // Logout Handler
+  const logoutHandler = async () => {
+    // need to implement Confirm modal before logout
+    // const res = await LogoutApi();
+    // console.log("LogoutApi_res", res)
+    dispatch(logout());
+    navigate('/login');
+  };
+
+
   return (
-    <Dialog 
-      open={isOpen} 
+    <Dialog
+      open={isOpen}
       onOpenChange={passwordChanged ? undefined : handleClose}
     >
       <DialogContent className="sm:max-w-md">
@@ -290,11 +277,11 @@ export function PasswordChangeModal({
             {step === 'password' ? 'Change Password' : step === 'otp' ? 'Verify OTP' : 'Success'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'password' 
+            {step === 'password'
               ? 'Enter your current password and choose a new one. You will receive an OTP to verify the change.'
               : step === 'otp'
-              ? 'Enter the 6-digit OTP sent to your email to complete the password change.'
-              : 'Password changed successfully! You will be redirected to login page.'
+                ? 'Enter the 6-digit OTP sent to your email to complete the password change.'
+                : 'Password changed successfully! You will be redirected to login page.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -432,8 +419,8 @@ export function PasswordChangeModal({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={changingPassword || !passwordValidation.isValid || !passwordMatch || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
                 className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
@@ -483,8 +470,8 @@ export function PasswordChangeModal({
               <Button type="button" variant="outline" onClick={() => setStep('password')}>
                 Back
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={verifyingOtp || formData.otp.length !== 6}
                 className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
@@ -513,10 +500,8 @@ export function PasswordChangeModal({
               </p>
             </div>
             <div className="flex justify-center">
-              <Button 
-                onClick={() => {
-                  logout();
-                }}
+              <Button
+                onClick={logoutHandler}
                 className="bg-brand-green hover:bg-brand-green/90 text-white"
               >
                 Go to Login Now
