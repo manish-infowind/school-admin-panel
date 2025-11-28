@@ -618,3 +618,47 @@ export interface DetailedCampaignStats extends CampaignStats {
     unknown: number;
   };
 } 
+
+export interface CreateUserRequest {
+  userName: string;
+  isActive: boolean;
+  status: string;
+  contactNumber: string | number;
+  email?: string;
+  profileScore: string | number;
+  gender?: string;
+  city?: string;
+};
+
+export interface TableSortingInterface {
+    children: React.ReactNode;
+    sortKey: string;
+    currentSortKey: string;
+    currentDirection: 'asc' | 'desc';
+    onSort: (key: string) => void;
+};
+
+export interface UserListInterface {
+    id: number;
+    name: string;
+    isActive: boolean;
+    status: string;
+    contact: string;
+    email: string;
+    profileScore : string,
+    gender: string;
+    city: string;
+};
+
+export interface PaginationControlInterface {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  pageSizeOptions: number[];
+  startItem: number;
+  endItem: number;
+  visiblePages: (number | string)[];
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}

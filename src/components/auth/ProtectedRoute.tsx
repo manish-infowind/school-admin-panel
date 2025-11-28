@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/lib/authContext';
+import { useSelector } from "react-redux";
+import { RootState } from '@/redux/store/store';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
+  const { isAuthenticated } = useSelector((state: RootState) => state?.auth);
+
+  const [loading, setloading] = useState(false);
 
   if (loading) {
     return (
@@ -23,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     // Redirect to login page with the intended destination
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

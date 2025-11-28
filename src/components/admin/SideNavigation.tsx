@@ -1,30 +1,25 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard,
   Package,
   Home,
-  FileText,
   ChevronRight,
-  X,
   Building,
   Mail,
   Shield,
   HelpCircle,
   Users,
   Megaphone,
+  UserPen,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store/store";
 
-interface SideNavigationProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 const navigation = [
   {
@@ -41,6 +36,11 @@ const navigation = [
     name: "Index Page",
     href: "/admin/index-page",
     icon: Home,
+  },
+  {
+    name: "User List",
+    href: "/admin/users",
+    icon: UserPen,
   },
   {
     name: "About Us",
@@ -69,10 +69,21 @@ const navigation = [
   },
 ];
 
+interface SideNavigationProps {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
-  const { user } = useAuth();
-  const isSuperAdmin = user?.role === 'super_admin';
+
+  // provide a narrow shape for the auth slice so TS knows about loginState.role
+  const auth = useSelector((state: RootState) =>
+    state?.auth as { loginState?: { role?: string } } | undefined
+  );
+  const loginState = auth?.loginState;
+  const isSuperAdmin = loginState?.role === 'super_admin';
 
   // Add Admin Management for Super Admins
   const allNavigation = [
@@ -119,7 +130,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                       className={cn(
                         "w-full justify-start gap-3 h-10 text-base",
                         isActive &&
-                          "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                       )}
                     >
                       <item.icon className="h-5 w-5" />
