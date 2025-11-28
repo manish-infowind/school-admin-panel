@@ -44,7 +44,7 @@ const TopNavigation = ({ onToggleSidebar }: TopNavigationProps) => {
     // const res = await LogoutApi();
     // console.log("LogoutApi_res", res)
     dispatch(logout());
-    navigate('/login');
+    navigate('/');
   };
 
 

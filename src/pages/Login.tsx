@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { loginInfo } from '@/redux/features/authSlice';
 import { RootState } from '@/redux/store/store';
 import { LoginAPi } from '@/api/services/authApis/loginApi';
 import { verify2FAApi } from '@/api/services/authApis/2faApi';
+import PasswordChangeModal from '@/components/admin/PasswordChangeModal';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -39,6 +40,8 @@ const Login = () => {
     email: false,
     password: false,
   });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [modalType, setModalType] = useState<"forgotpassword" | "">("");
 
 
   // Check for 2FA requirement
@@ -187,6 +190,29 @@ const Login = () => {
   };
 
 
+  // Forgot password modal handling
+  const openForgotPasswordHandler = useCallback(() => {
+    setShowPasswordModal(true);
+    setModalType("forgotpassword");
+  }, []);
+
+  const closeForgotPasswordHandler = useCallback(() => {
+    // Clear any password-related errors when closing modal
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      resetError();
+    }
+    setShowPasswordModal(false);
+  }, []);
+
+  const resetError = () => {
+    setError('');
+  };
+
+  const clearModalType = useCallback(() => {
+    setModalType("");
+  }, []);
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
       <div className="max-w-md w-full space-y-8 p-8">
@@ -266,8 +292,6 @@ const Login = () => {
                       placeholder="Enter your password"
                       name="password"
                       value={loginUser?.password}
-                      // onChange={handlePasswordChange}
-                      // onBlur={handlePasswordBlur}
                       onChange={onChangeHandler}
                       onBlur={() => blurHandler("password")}
                       className={`focus:ring-brand-green focus:border-brand-green pr-10 ${touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
@@ -321,7 +345,8 @@ const Login = () => {
 
               <div className="pt-4">
                 <Link
-                  to="/"
+                  to="#"
+                  onClick={openForgotPasswordHandler}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -355,6 +380,15 @@ const Login = () => {
         verifying2FA={isVerifying2FA}
         userEmail={loginUser?.email}
       />
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        type={modalType}
+        isOpen={showPasswordModal}
+        onClose={closeForgotPasswordHandler}
+        clearType={clearModalType}
+      />
+
     </div>
   );
 };
