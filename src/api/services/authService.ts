@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
-import { LoginRequest, LoginResponse, LoginResponse2FA, Verify2FARequest, RefreshTokenResponse, User, ApiResponse } from '../types';
+import { LoginRequest, LoginResponse, LoginResponse2FA, LoginResponseLegacy, Verify2FARequest, RefreshTokenResponse, User, ApiResponse } from '../types';
 
 export class AuthService {
   // Get device information
@@ -179,46 +179,82 @@ export class AuthService {
     };
   }
 
-  // Login user
-  static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse2FA>> {
+  // Login user - simplified to only send email and password as per API documentation
+  static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse2FA | LoginResponse>> {
     try {
-      // Get actual device data
-      const deviceData = this.getDeviceData();
-
-      // Get IP address
-      const ipAddress = await this.getIPAddress();
-
-      // Get location with multiple fallback methods
-      let location = await this.getAccurateLocation(ipAddress);
-
+      // API only requires email and password - no device data, IP, or location needed
       const loginData = {
-        ...credentials,
-        deviceData,
-        ipAddress,
-        location,
+        email: credentials.email,
+        password: credentials.password,
       };
 
-      const response = await apiClient.post<LoginResponse2FA>(
+      const response = await apiClient.post<LoginResponse>(
         API_CONFIG.ENDPOINTS.AUTH.LOGIN,
         loginData
       );
 
       if (response.success && response.data) {
-        // Check if 2FA is required
-        if (response.data.requiresOTP) {
-          // Store temp token for 2FA verification
-          if (response.data.tempToken) {
-            localStorage.setItem('tempToken', response.data.tempToken);
-          }
-        } else {
+        const loginData = response.data;
+        
+        // Handle new API response structure
+        if (loginData.tokens) {
           // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.data.accessToken);
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
+          localStorage.setItem('accessToken', loginData.tokens.accessToken);
+          localStorage.setItem('refreshToken', loginData.tokens.refreshToken);
+          
+          // Store user data in a format compatible with existing code
+          const userData: User = {
+            id: loginData.id,
+            email: loginData.email,
+            username: loginData.email.split('@')[0],
+            role: loginData.is_super_admin ? 'super_admin' : 'admin',
+            profilePic: '',
+            firstName: '',
+            lastName: '',
+            phone: '',
+            location: '',
+            isActive: true,
+            permissions: loginData.permissions || [], // Now stores UserPermission[] objects
+            roles: loginData.roles || [],
+            isSuperAdmin: loginData.is_super_admin,
+          };
+          
+          // Store all user data synchronously before any navigation
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('sessionId', loginData.sessionId);
+          localStorage.setItem('isSuperAdmin', String(loginData.is_super_admin));
+          
+          // Force a small delay to ensure localStorage is written
+          // This helps prevent race conditions with context updates
+          await new Promise(resolve => setTimeout(resolve, 0));
+        } else {
+          // Handle legacy response structure (for backward compatibility)
+          // TODO: 2FA logic commented out - no APIs available yet
+          // const legacyData = loginData as any;
+          // if (legacyData.requiresOTP) {
+          //   // Store temp token for 2FA verification
+          //   if (legacyData.tempToken) {
+          //     localStorage.setItem('tempToken', legacyData.tempToken);
+          //   }
+          // } else if (legacyData.accessToken) {
+          //   // Store tokens in localStorage
+          //   localStorage.setItem('accessToken', legacyData.accessToken);
+          //   localStorage.setItem('refreshToken', legacyData.refreshToken);
+          //   localStorage.setItem('user', JSON.stringify(legacyData.user));
+          // }
+          
+          // Fallback for legacy format without tokens structure
+          const legacyData = loginData as any;
+          if (legacyData.accessToken) {
+            // Store tokens in localStorage
+            localStorage.setItem('accessToken', legacyData.accessToken);
+            localStorage.setItem('refreshToken', legacyData.refreshToken);
+            localStorage.setItem('user', JSON.stringify(legacyData.user));
+          }
         }
       }
 
-      return response;
+      return response as ApiResponse<LoginResponse2FA | LoginResponse>;
     } catch (error) {
       throw error;
     }
@@ -343,30 +379,33 @@ export class AuthService {
     }
   }
 
-  // Verify 2FA OTP
-  static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponse>> {
-    try {
-      const response = await apiClient.post<LoginResponse>(
-        API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
-        otpData
-      );
+  // Verify 2FA OTP - COMMENTED OUT: No 2FA APIs available yet
+  // static async verify2FA(otpData: Verify2FARequest): Promise<ApiResponse<LoginResponseLegacy>> {
+  //   try {
+  //     const response = await apiClient.post<LoginResponseLegacy>(
+  //       API_CONFIG.ENDPOINTS.AUTH.VERIFY_2FA,
+  //       otpData
+  //     );
 
-      if (response.success && response.data) {
-        // Store tokens and user data
-        localStorage.setItem('accessToken', response.data.accessToken);
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
-        if (response.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
-      }
+  //     if (response.success && response.data) {
+  //       // Store tokens and user data (legacy format)
+  //       const legacyData = response.data as any;
+  //       if (legacyData.accessToken) {
+  //         localStorage.setItem('accessToken', legacyData.accessToken);
+  //       }
+  //       if (legacyData.refreshToken) {
+  //         localStorage.setItem('refreshToken', legacyData.refreshToken);
+  //       }
+  //       if (legacyData.user) {
+  //         localStorage.setItem('user', JSON.stringify(legacyData.user));
+  //       }
+  //     }
 
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
+  //     return response;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 }
 
 export default AuthService; 

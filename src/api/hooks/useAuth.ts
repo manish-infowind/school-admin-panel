@@ -26,19 +26,34 @@ export const useAuth = () => {
     mutationFn: (credentials: LoginRequest) => {
       return AuthService.login(credentials);
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       if (response.success && response.data) {
-        // Check if 2FA is required
-        if (response.data.requiresOTP) {
-          // Don't navigate - 2FA verification is needed
-          return;
+        // TODO: 2FA logic commented out - no APIs available yet
+        // Check if 2FA is required (legacy support)
+        // const loginData = response.data as any;
+        // if (loginData.requiresOTP) {
+        //   // Don't navigate - 2FA verification is needed
+        //   return;
+        // }
+        
+        // Small delay to ensure localStorage is fully written
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Get user from localStorage (stored by AuthService.login)
+        const user = AuthService.getCurrentUser();
+        if (user) {
+          // Update user in cache
+          queryClient.setQueryData(authKeys.user(), user);
         }
         
-        // Update user in cache
-        queryClient.setQueryData(authKeys.user(), response.data.user);
+        // Invalidate and refetch user to ensure context is updated
+        await queryClient.invalidateQueries({ queryKey: authKeys.user() });
         
         // Navigate to admin dashboard after successful login
-        navigate('/admin', { replace: true });
+        // Use setTimeout to ensure React has time to update context
+        setTimeout(() => {
+          navigate('/admin', { replace: true });
+        }, 100);
       }
     },
     onError: (error) => {
@@ -46,24 +61,31 @@ export const useAuth = () => {
     },
   });
 
-  // Verify 2FA mutation
-  const verify2FAMutation = useMutation({
-    mutationFn: (otpData: Verify2FARequest) => {
-      return AuthService.verify2FA(otpData);
-    },
-    onSuccess: (response) => {
-      if (response.success && response.data) {
-        // Update user in cache
-        queryClient.setQueryData(authKeys.user(), response.data.user);
-        
-        // Navigate to admin dashboard after successful 2FA verification
-        navigate('/admin', { replace: true });
-      }
-    },
-    onError: (error) => {
-      // Don't navigate on error - let the component handle it
-    },
-  });
+  // Verify 2FA mutation - COMMENTED OUT: No 2FA APIs available yet
+  // const verify2FAMutation = useMutation({
+  //   mutationFn: (otpData: Verify2FARequest) => {
+  //     return AuthService.verify2FA(otpData);
+  //   },
+  //   onSuccess: (response) => {
+  //     if (response.success && response.data) {
+  //       // Update user in cache
+  //       queryClient.setQueryData(authKeys.user(), response.data.user);
+  //       
+  //       // Navigate to admin dashboard after successful 2FA verification
+  //       navigate('/admin', { replace: true });
+  //     }
+  //   },
+  //   onError: (error) => {
+  //     // Don't navigate on error - let the component handle it
+  //   },
+  // });
+  
+  // Placeholder mutation to prevent errors
+  const verify2FAMutation = {
+    mutate: () => {},
+    isPending: false,
+    error: null,
+  };
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -97,27 +119,30 @@ export const useAuth = () => {
     },
   });
 
+  // Calculate isAuthenticated based on both user query and localStorage
+  const isAuthenticated = AuthService.isAuthenticated() || !!user;
+  
   return {
     // State
     user,
-    isAuthenticated: AuthService.isAuthenticated(),
+    isAuthenticated,
     isLoading: isLoadingUser,
     
     // Actions
     login: loginMutation.mutate,
-    verify2FA: verify2FAMutation.mutate,
+    verify2FA: verify2FAMutation.mutate, // COMMENTED OUT: No 2FA APIs available yet
     logout: logoutMutation.mutate,
     refreshToken: refreshTokenMutation.mutate,
     
     // Mutation states
     isLoggingIn: loginMutation.isPending,
-    isVerifying2FA: verify2FAMutation.isPending,
+    isVerifying2FA: verify2FAMutation.isPending, // COMMENTED OUT: No 2FA APIs available yet
     isLoggingOut: logoutMutation.isPending,
     isRefreshingToken: refreshTokenMutation.isPending,
     
     // Errors
     loginError: loginMutation.error,
-    verify2FAError: verify2FAMutation.error,
+    verify2FAError: verify2FAMutation.error, // COMMENTED OUT: No 2FA APIs available yet
     logoutError: logoutMutation.error,
     refreshTokenError: refreshTokenMutation.error,
   };

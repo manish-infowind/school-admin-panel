@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -41,6 +49,11 @@ import { useAdminManagement } from "@/api/hooks/useAdminManagement";
 import { useAuth } from "@/lib/authContext";
 import { AdminUser, CreateAdminRequest, UpdateAdminRequest, ChangePasswordRequest } from "@/api/types";
 import { format } from "date-fns";
+import { useRoles, useAdminRoles } from "@/api/hooks/useRoles";
+import { usePermissions, useAdminPermissions } from "@/api/hooks/usePermissions";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function AdminManagement() {
   const { toast } = useToast();
@@ -65,14 +78,61 @@ export default function AdminManagement() {
     lastName: "",
     role: "admin",
     phone: "",
+    countryCode: "+1",
     location: "",
     bio: "",
-    permissions: ["read", "write"],
+    permissions: [],
     isActive: true,
   });
 
-  // Password change form
-  const [passwordData, setPasswordData] = useState<ChangePasswordRequest>({
+  // Role and permission selection (separate from formData)
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
+  
+  // Edit mode: selected roles and permissions
+  const [editSelectedRoleId, setEditSelectedRoleId] = useState<number | null>(null);
+  const [editSelectedPermissionIds, setEditSelectedPermissionIds] = useState<number[]>([]);
+
+  // Password validation state
+  const [passwordErrors, setPasswordErrors] = useState({
+    hasUppercase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    hasMinLength: false,
+  });
+
+  // Fetch roles and permissions (hooks already return extracted arrays)
+  const { roles, assignRole, isLoadingRoles, rolesError } = useRoles();
+  const { permissions, assignPermissions, isLoadingPermissions, permissionsError } = usePermissions();
+  
+  // Fetch current admin roles and permissions when editing
+  const { adminRoles, isLoading: isLoadingAdminRoles } = useAdminRoles(selectedAdmin?.id || '');
+  const { adminPermissions, isLoading: isLoadingAdminPermissions } = useAdminPermissions(selectedAdmin?.id || '');
+  
+  // Debug: Log when roles/permissions are fetched
+  useEffect(() => {
+    if (roles && roles.length > 0) {
+      console.log('Roles loaded:', roles);
+    }
+    if (rolesError) {
+      console.error('Error loading roles:', rolesError);
+    }
+  }, [roles, rolesError]);
+  
+  useEffect(() => {
+    if (permissions && permissions.length > 0) {
+      console.log('Permissions loaded:', permissions);
+    }
+    if (permissionsError) {
+      console.error('Error loading permissions:', permissionsError);
+    }
+  }, [permissions, permissionsError]);
+
+  // Password change form (for admin management, we don't need currentPassword)
+  const [passwordData, setPasswordData] = useState<{
+    newPassword: string;
+    confirmPassword: string;
+  }>({
     newPassword: "",
     confirmPassword: "",
   });
@@ -122,9 +182,26 @@ export default function AdminManagement() {
     setCurrentPage(page);
   };
 
+  // Password validation function
+  const validatePassword = (password: string) => {
+    setPasswordErrors({
+      hasUppercase: /[A-Z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*]/.test(password),
+      hasMinLength: password.length >= 8,
+    });
+  };
+
+  // Handle password change
+  const handlePasswordChange = (password: string) => {
+    setFormData({ ...formData, password });
+    validatePassword(password);
+  };
+
   // Handle create admin
   const handleCreateAdmin = async () => {
-    if (!formData.username || !formData.email || !formData.password || !formData.firstName || !formData.lastName) {
+    // Validate required fields
+    if (!formData.username || !formData.email || !formData.password || !formData.firstName || !formData.lastName || !formData.countryCode) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -133,20 +210,102 @@ export default function AdminManagement() {
       return;
     }
 
-    createAdmin(formData);
-    setIsCreateModalOpen(false);
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      firstName: "",
-      lastName: "",
-      role: "admin",
-      phone: "",
-      location: "",
-      bio: "",
-      permissions: ["read", "write"],
-      isActive: true,
+    // Validate password
+    if (!passwordErrors.hasUppercase || !passwordErrors.hasNumber || !passwordErrors.hasSpecialChar || !passwordErrors.hasMinLength) {
+      toast({
+        title: "Password Validation Error",
+        description: "Password must meet all requirements.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that either role OR permissions are assigned
+    if (!selectedRoleId && selectedPermissionIds.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please assign at least one role or individual permission.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create admin first
+    createAdmin(formData, {
+      onSuccess: async (response) => {
+        if (response.success && response.data) {
+          const adminId = response.data.id;
+          
+          // Assign role if selected
+          if (selectedRoleId) {
+            assignRole(
+              { adminId, roleId: selectedRoleId },
+              {
+                onSuccess: () => {
+                  toast({
+                    title: "Success",
+                    description: "Role assigned successfully",
+                  });
+                },
+                onError: (error: any) => {
+                  toast({
+                    title: "Warning",
+                    description: `Admin created but role assignment failed: ${error?.message || 'Unknown error'}`,
+                    variant: "destructive",
+                  });
+                },
+              }
+            );
+          }
+
+          // Assign permissions if selected
+          if (selectedPermissionIds.length > 0) {
+            assignPermissions(
+              { adminId, permissionIds: selectedPermissionIds },
+              {
+                onSuccess: () => {
+                  toast({
+                    title: "Success",
+                    description: "Permissions assigned successfully",
+                  });
+                },
+                onError: (error: any) => {
+                  toast({
+                    title: "Warning",
+                    description: `Admin created but permission assignment failed: ${error?.message || 'Unknown error'}`,
+                    variant: "destructive",
+                  });
+                },
+              }
+            );
+          }
+
+          // Reset form
+          setIsCreateModalOpen(false);
+          setFormData({
+            username: "",
+            email: "",
+            password: "",
+            firstName: "",
+            lastName: "",
+            role: "admin",
+            phone: "",
+            countryCode: "+1",
+            location: "",
+            bio: "",
+            permissions: [],
+            isActive: true,
+          });
+          setSelectedRoleId(null);
+          setSelectedPermissionIds([]);
+          setPasswordErrors({
+            hasUppercase: false,
+            hasNumber: false,
+            hasSpecialChar: false,
+            hasMinLength: false,
+          });
+        }
+      },
     });
   };
 
@@ -161,19 +320,72 @@ export default function AdminManagement() {
       return;
     }
 
+    // Validate that either role OR permissions are assigned
+    if (!editSelectedRoleId && editSelectedPermissionIds.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please assign at least one role or individual permission.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updateData: UpdateAdminRequest = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       phone: formData.phone,
+      countryCode: formData.countryCode,
       location: formData.location,
       bio: formData.bio,
-      permissions: formData.permissions,
       isActive: formData.isActive,
     };
 
-    updateAdmin({ id: selectedAdmin.id, data: updateData });
-    setIsEditModalOpen(false);
-    setSelectedAdmin(null);
+    // Update admin details first
+    updateAdmin({ id: selectedAdmin.id, data: updateData }, {
+      onSuccess: async () => {
+        // Assign/update role if selected
+        if (editSelectedRoleId) {
+          // Check if admin already has this role
+          const hasRole = adminRoles?.roles?.some(r => r.id === editSelectedRoleId);
+          if (!hasRole) {
+            // Assign new role (this will replace existing roles if backend doesn't support multiple)
+            assignRole(
+              { adminId: selectedAdmin.id, roleId: editSelectedRoleId },
+              {
+                onError: (error: any) => {
+                  toast({
+                    title: "Warning",
+                    description: `Admin updated but role assignment failed: ${error?.message || 'Unknown error'}`,
+                    variant: "destructive",
+                  });
+                },
+              }
+            );
+          }
+        }
+
+        // Assign/update permissions if selected
+        if (editSelectedPermissionIds.length > 0) {
+          assignPermissions(
+            { adminId: selectedAdmin.id, permissionIds: editSelectedPermissionIds },
+            {
+              onError: (error: any) => {
+                toast({
+                  title: "Warning",
+                  description: `Admin updated but permission assignment failed: ${error?.message || 'Unknown error'}`,
+                  variant: "destructive",
+                });
+              },
+            }
+          );
+        }
+
+        setIsEditModalOpen(false);
+        setSelectedAdmin(null);
+        setEditSelectedRoleId(null);
+        setEditSelectedPermissionIds([]);
+      },
+    });
   };
 
   // Handle delete admin
@@ -204,7 +416,14 @@ export default function AdminManagement() {
       return;
     }
 
-    changePassword({ id: selectedAdmin.id, data: passwordData });
+    changePassword({ 
+      id: selectedAdmin.id, 
+      data: {
+        currentPassword: "", // Not required for admin management password change
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+      } as ChangePasswordRequest
+    });
     setIsPasswordModalOpen(false);
     setSelectedAdmin(null);
     setPasswordData({ newPassword: "", confirmPassword: "" });
@@ -214,20 +433,52 @@ export default function AdminManagement() {
   const openEditModal = (admin: AdminUser) => {
     setSelectedAdmin(admin);
     setFormData({
-      username: admin.username,
+      username: admin.username || admin.email.split('@')[0],
       email: admin.email,
       password: "",
       firstName: admin.firstName,
       lastName: admin.lastName,
       role: admin.role,
       phone: admin.phone,
-      location: admin.location,
+      countryCode: admin.countryCode || "+1",
+      location: admin.location || "",
       bio: admin.bio || "",
       permissions: admin.permissions,
       isActive: admin.isActive,
     });
+    
+    // Initialize role and permission selection from admin's current assignments
+    // These will be populated when adminRoles and adminPermissions are fetched
+    setEditSelectedRoleId(null);
+    setEditSelectedPermissionIds([]);
+    
     setIsEditModalOpen(true);
   };
+  
+  // Update edit role/permission selection when admin roles/permissions are fetched
+  useEffect(() => {
+    if (selectedAdmin && adminRoles?.roles && adminRoles.roles.length > 0) {
+      // Set the first role (or you can allow multiple roles if backend supports it)
+      setEditSelectedRoleId(adminRoles.roles[0].id);
+    } else {
+      setEditSelectedRoleId(null);
+    }
+  }, [adminRoles, selectedAdmin]);
+  
+  // Update edit permission selection when admin permissions are fetched
+  useEffect(() => {
+    if (selectedAdmin && adminPermissions?.permissions) {
+      // Extract permission IDs from permission names
+      // We need to map permission names to IDs from the permissions list
+      const permissionNames = adminPermissions.permissions.map(p => p.permissionName);
+      const permissionIds = permissions
+        .filter(p => permissionNames.includes(p.permissionName))
+        .map(p => p.id);
+      setEditSelectedPermissionIds(permissionIds);
+    } else {
+      setEditSelectedPermissionIds([]);
+    }
+  }, [adminPermissions, selectedAdmin, permissions]);
 
   // Open delete modal
   const openDeleteModal = (admin: AdminUser) => {
@@ -380,24 +631,57 @@ export default function AdminManagement() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Password *</label>
+                    <Label htmlFor="password">Password *</Label>
                     <Input
+                      id="password"
                       type="password"
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
                       placeholder="Enter password"
                       className="h-10"
                     />
+                    {formData.password && (
+                      <div className="mt-2 space-y-1">
+                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasMinLength ? 'text-green-600' : 'text-red-600'}`}>
+                          {passwordErrors.hasMinLength ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                          <span>At least 8 characters</span>
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasUppercase ? 'text-green-600' : 'text-red-600'}`}>
+                          {passwordErrors.hasUppercase ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                          <span>At least one uppercase letter (A-Z)</span>
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasNumber ? 'text-green-600' : 'text-red-600'}`}>
+                          {passwordErrors.hasNumber ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                          <span>At least one number (0-9)</span>
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasSpecialChar ? 'text-green-600' : 'text-red-600'}`}>
+                          {passwordErrors.hasSpecialChar ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                          <span>At least one special character (!@#$%^&*)</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Contact Information Section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Phone</label>
+                      <Label htmlFor="countryCode">Country Code *</Label>
                       <Input
+                        id="countryCode"
+                        value={formData.countryCode}
+                        onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                        placeholder="+1"
+                        className="h-10"
+                      />
+                      <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone *</Label>
+                      <Input
+                        id="phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="Enter phone number"
@@ -405,8 +689,9 @@ export default function AdminManagement() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Location</label>
+                      <Label htmlFor="location">Location</Label>
                       <Input
+                        id="location"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                         placeholder="Enter location"
@@ -427,43 +712,90 @@ export default function AdminManagement() {
 
                 {/* Role & Permissions Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Role & Permissions</h3>
+                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                    Role & Permissions <span className="text-red-500">*</span>
+                  </h3>
+                  <Alert>
+                    <AlertDescription>
+                      You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
+                    </AlertDescription>
+                  </Alert>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Role Selection */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Role</label>
+                      <Label htmlFor="role">Assign Role (Optional)</Label>
                       <select
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'super_admin' })}
+                        id="role"
+                        value={selectedRoleId || ""}
+                        onChange={(e) => setSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
                         className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
                       >
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Permissions</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['read', 'write', 'delete', 'admin'].map((permission) => (
-                          <label key={permission} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50">
-                            <input
-                              type="checkbox"
-                              checked={formData.permissions?.includes(permission)}
-                              onChange={(e) => {
-                                const permissions = formData.permissions || [];
-                                if (e.target.checked) {
-                                  setFormData({ ...formData, permissions: [...permissions, permission] });
-                                } else {
-                                  setFormData({ ...formData, permissions: permissions.filter(p => p !== permission) });
-                                }
-                              }}
-                              className="rounded border-gray-300"
-                            />
-                            <span className="text-sm capitalize font-medium">{permission}</span>
-                          </label>
+                        <option value="">Select a role...</option>
+                        {roles?.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.roleName} {role.description ? `- ${role.description}` : ''}
+                          </option>
                         ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        Select a role to assign all permissions from that role
+                      </p>
+                    </div>
+
+                    {/* Individual Permissions */}
+                    <div className="space-y-2">
+                      <Label>Assign Individual Permissions (Optional)</Label>
+                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                        {isLoadingPermissions ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span className="text-sm text-muted-foreground">Loading permissions...</span>
+                          </div>
+                        ) : permissions && permissions.length > 0 ? (
+                          permissions.map((permission) => (
+                            <label
+                              key={permission.id}
+                              className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPermissionIds.includes(permission.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPermissionIds([...selectedPermissionIds, permission.id]);
+                                  } else {
+                                    setSelectedPermissionIds(selectedPermissionIds.filter(id => id !== permission.id));
+                                  }
+                                }}
+                                className="rounded border-gray-300"
+                              />
+                              <span className="text-sm font-medium">{permission.permissionName}</span>
+                              {permission.allowedActions && permission.allowedActions.length > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {permission.allowedActions.join(", ")}
+                                </Badge>
+                              )}
+                            </label>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
+                        )}
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Select individual permissions to assign directly to the admin
+                      </p>
                     </div>
                   </div>
+
+                  {/* Validation Message */}
+                  {!selectedRoleId && selectedPermissionIds.length === 0 && (
+                    <Alert variant="destructive">
+                      <AlertDescription>
+                        Please assign at least one role or individual permission.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -632,112 +964,104 @@ export default function AdminManagement() {
               </div>
             ) : (
               <>
-                <div className="space-y-3">
-                  {(admins as AdminUser[]).map((admin, index) => (
-                    <motion.div
-                      key={admin.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="p-4 border rounded-lg"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium truncate">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {!admins || admins.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                            No admins found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        (admins as AdminUser[]).map((admin) => (
+                          <TableRow key={admin.id}>
+                            <TableCell className="font-medium">
                               {admin.firstName} {admin.lastName}
-                            </h3>
-                            {getRoleBadge(admin.role)}
-                            {getStatusBadge(admin.isActive)}
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {admin.email}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            @{admin.username}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              Created {formatDate(admin.createdAt)}
-                            </div>
-                            {admin.lastLogin && (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Last login {formatDate(admin.lastLogin)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openViewModal(admin)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditModal(admin)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Admin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openPasswordModal(admin)}>
-                              <Lock className="h-4 w-4 mr-2" />
-                              Change Password
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => toggleStatus(admin.id)}
-                              disabled={isTogglingStatus}
-                            >
-                              {isTogglingStatus ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : admin.isActive ? (
-                                <ShieldX className="h-4 w-4 mr-2" />
-                              ) : (
-                                <ShieldCheck className="h-4 w-4 mr-2" />
-                              )}
-                              {admin.isActive ? "Deactivate" : "Activate"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => openDeleteModal(admin)}
-                              disabled={isDeleting}
-                              className="text-destructive"
-                            >
-                              {isDeleting ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4 mr-2" />
-                              )}
-                              Delete Admin
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </motion.div>
-                  ))}
-
-                  {(admins as AdminUser[]).length === 0 && !isLoading && (
-                    <div className="text-center py-8">
-                      <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">
-                        No Admins Found
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {searchTerm || roleFilter !== "all" || statusFilter !== "all"
-                          ? "Try adjusting your search or filters."
-                          : "No admins have been created yet."}
-                      </p>
-                    </div>
-                  )}
+                            </TableCell>
+                            <TableCell>{admin.email}</TableCell>
+                            <TableCell>@{admin.username || admin.email.split('@')[0]}</TableCell>
+                            <TableCell>{getRoleBadge(admin.role)}</TableCell>
+                            <TableCell>{getStatusBadge(admin.isActive)}</TableCell>
+                            <TableCell>{admin.phone || '-'}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDate(admin.createdAt)}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {admin.lastLogin ? formatDate(admin.lastLogin) : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openViewModal(admin)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openEditModal(admin)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Admin
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openPasswordModal(admin)}>
+                                    <Lock className="h-4 w-4 mr-2" />
+                                    Change Password
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => toggleStatus(admin.id)}
+                                    disabled={isTogglingStatus}
+                                  >
+                                    {isTogglingStatus ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : admin.isActive ? (
+                                      <ShieldX className="h-4 w-4 mr-2" />
+                                    ) : (
+                                      <ShieldCheck className="h-4 w-4 mr-2" />
+                                    )}
+                                    {admin.isActive ? "Deactivate" : "Activate"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => openDeleteModal(admin)}
+                                    disabled={isDeleting}
+                                    className="text-destructive"
+                                  >
+                                    {isDeleting ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                    )}
+                                    Delete Admin
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
+
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
@@ -828,10 +1152,22 @@ export default function AdminManagement() {
             {/* Contact Information Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Phone</label>
+                  <Label htmlFor="edit-countryCode">Country Code *</Label>
                   <Input
+                    id="edit-countryCode"
+                    value={formData.countryCode}
+                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    placeholder="+1"
+                    className="h-10"
+                  />
+                  <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone *</Label>
+                  <Input
+                    id="edit-phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="Enter phone number"
@@ -839,8 +1175,9 @@ export default function AdminManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Location</label>
+                  <Label htmlFor="edit-location">Location</Label>
                   <Input
+                    id="edit-location"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="Enter location"
@@ -859,29 +1196,109 @@ export default function AdminManagement() {
               </div>
             </div>
 
-            {/* Permissions Section */}
+            {/* Role & Permissions Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Permissions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {['read', 'write', 'delete', 'admin'].map((permission) => (
-                  <label key={permission} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={formData.permissions?.includes(permission)}
-                      onChange={(e) => {
-                        const permissions = formData.permissions || [];
-                        if (e.target.checked) {
-                          setFormData({ ...formData, permissions: [...permissions, permission] });
-                        } else {
-                          setFormData({ ...formData, permissions: permissions.filter(p => p !== permission) });
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm capitalize font-medium">{permission}</span>
-                  </label>
-                ))}
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                Role & Permissions <span className="text-red-500">*</span>
+              </h3>
+              <Alert>
+                <AlertDescription>
+                  You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Assign Role (Optional)</Label>
+                  <select
+                    id="edit-role"
+                    value={editSelectedRoleId || ""}
+                    onChange={(e) => setEditSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
+                    disabled={isLoadingRoles}
+                  >
+                    <option value="">
+                      {isLoadingRoles ? "Loading roles..." : "Select a role..."}
+                    </option>
+                    {roles && roles.length > 0 ? (
+                      roles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.roleName} {role.description ? `- ${role.description}` : ''}
+                        </option>
+                      ))
+                    ) : (
+                      !isLoadingRoles && <option value="" disabled>No roles available</option>
+                    )}
+                  </select>
+                  {adminRoles?.roles && adminRoles.roles.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Current roles: {adminRoles.roles.map(r => r.roleName).join(', ')}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Select a role to assign all permissions from that role
+                  </p>
+                </div>
+
+                {/* Individual Permissions */}
+                <div className="space-y-2">
+                  <Label>Assign Individual Permissions (Optional)</Label>
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {isLoadingPermissions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading permissions...</span>
+                      </div>
+                    ) : permissions && permissions.length > 0 ? (
+                      permissions.map((permission) => (
+                        <label
+                          key={permission.id}
+                          className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editSelectedPermissionIds.includes(permission.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditSelectedPermissionIds([...editSelectedPermissionIds, permission.id]);
+                              } else {
+                                setEditSelectedPermissionIds(editSelectedPermissionIds.filter(id => id !== permission.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <span className="text-sm font-medium">{permission.permissionName}</span>
+                          {permission.allowedActions && permission.allowedActions.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {permission.allowedActions.join(", ")}
+                            </Badge>
+                          )}
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
+                    )}
+                  </div>
+                  {adminPermissions?.permissions && adminPermissions.permissions.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Current permissions: {adminPermissions.permissions.map(p => p.permissionName).join(', ')}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Select individual permissions to assign directly to the admin
+                  </p>
+                </div>
               </div>
+
+              {/* Validation Message */}
+              {!editSelectedRoleId && editSelectedPermissionIds.length === 0 && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Please assign at least one role or individual permission.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -1100,7 +1517,7 @@ export default function AdminManagement() {
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold">{selectedAdmin.firstName} {selectedAdmin.lastName}</h3>
                   <p className="text-sm text-muted-foreground">
-                    @{selectedAdmin.username}
+                    @{selectedAdmin.username || selectedAdmin.email.split('@')[0]}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {selectedAdmin.email}

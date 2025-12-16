@@ -3,7 +3,7 @@ import {
   profileService, 
   UserProfile, 
   UpdateProfileRequest, 
-  ChangePasswordRequest,
+  ChangePasswordRequest as ProfileChangePasswordRequest,
   VerifyOtpRequest,
   ResetPasswordRequest,
   ResetPasswordConfirmRequest,
@@ -13,6 +13,8 @@ import {
   UpdatePreferencesRequest,
   UserActivity
 } from '../services/profileService';
+import { PasswordService } from '../services/passwordService';
+import { ChangePasswordRequest } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UseProfileReturn {
@@ -188,22 +190,23 @@ export function useProfile(): UseProfileReturn {
     setError(null);
     
     try {
-      const response = await profileService.changePassword(data);
+      // Use the new PasswordService for change password
+      const response = await PasswordService.changePassword(data);
       
       if (response.success) {
         toast({
-          title: "OTP Sent",
-          description: response.message || "OTP sent to your email for password change verification",
+          title: "Success",
+          description: response.data?.message || response.message || "Password changed successfully",
         });
         return true;
       } else {
-        setError(response.message || 'Failed to send OTP');
+        setError(response.message || 'Failed to change password');
         // Don't show toast error - let the modal handle it
         return false;
       }
     } catch (err) {
       // Handle ApiError objects from ApiClient
-      let errorMessage = 'Failed to send OTP';
+      let errorMessage = 'Failed to change password';
       if (err && typeof err === 'object') {
         if ('message' in err) {
           errorMessage = (err as any).message;

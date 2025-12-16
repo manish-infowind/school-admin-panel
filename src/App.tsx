@@ -24,6 +24,8 @@ import FAQ from "./pages/admin/FAQ";
 import FAQNew from "./pages/admin/FAQNew";
 import FAQEdit from "./pages/admin/FAQEdit";
 import AdminManagement from "./pages/admin/AdminManagement";
+import RolesManagement from "./pages/admin/RolesManagement";
+import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import Campaigns from "./pages/admin/Campaigns";
 
 const queryClient = new QueryClient();
@@ -181,6 +183,37 @@ const App = () => (
                 </ProtectedRoute>
             }
                       />
+            <Route
+              path="/admin/management/users"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <AdminManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/management/roles"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <RolesManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/management/permissions"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <PermissionsManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Redirect old /admin/management to users */}
             <Route
               path="/admin/management"
               element={

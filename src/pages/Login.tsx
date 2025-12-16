@@ -9,16 +9,18 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/authContext";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
+// COMMENTED OUT: No 2FA APIs available yet
+// import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [show2FAModal, setShow2FAModal] = useState(false);
-  const [loginResponse, setLoginResponse] = useState<any>(null);
-  const [is2FAFlow, setIs2FAFlow] = useState(false);
+  // COMMENTED OUT: No 2FA APIs available yet
+  // const [show2FAModal, setShow2FAModal] = useState(false);
+  // const [loginResponse, setLoginResponse] = useState<any>(null);
+  // const [is2FAFlow, setIs2FAFlow] = useState(false);
   
   // Validation states
   const [emailError, setEmailError] = useState('');
@@ -28,7 +30,9 @@ const Login = () => {
     password: false
   });
   
-  const { login, verify2FA, isAuthenticated, isLoggingIn, isVerifying2FA, loginError, verify2FAError } = useAuth();
+  const { login, isAuthenticated, isLoggingIn, loginError } = useAuth();
+  // COMMENTED OUT: No 2FA APIs available yet
+  // const { verify2FA, isVerifying2FA, verify2FAError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -100,7 +104,10 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear previous errors
     setError('');
+    setEmailError('');
+    setPasswordError('');
     
     // Mark all fields as touched
     setTouched({ email: true, password: true });
@@ -117,51 +124,83 @@ const Login = () => {
       return;
     }
     
-    // Call login with email and password (device data will be added in AuthService)
+    // Call login with email and password
     login(email, password);
   };
 
-  // Handle 2FA verification
-  const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
-    try {
-      await verify2FA(otpData);
-      setShow2FAModal(false);
-      setLoginResponse(null);
-      setIs2FAFlow(false);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
+  // Handle 2FA verification - COMMENTED OUT: No 2FA APIs available yet
+  // const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
+  //   try {
+  //     await verify2FA(otpData);
+  //     setShow2FAModal(false);
+  //     setLoginResponse(null);
+  //     setIs2FAFlow(false);
+  //     return true;
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // };
 
-  // Handle login response and 2FA
+  // Handle login response and errors
   React.useEffect(() => {
     if (loginError) {
       // Extract error message from different possible structures
       let errorMessage = 'An error occurred during login';
       
-      if (typeof loginError === 'string') {
+      // Debug: Log the error structure to help identify the issue
+      console.log('Login error received:', loginError);
+      
+      // Check for ApiError structure from API client
+      if (loginError && typeof loginError === 'object') {
+        // ApiError from client.ts has message property
+        if ('message' in loginError && loginError.message) {
+          errorMessage = String(loginError.message);
+        }
+        // Check for nested error structures
+        else if ('data' in loginError && loginError.data) {
+          if (typeof loginError.data === 'string') {
+            errorMessage = loginError.data;
+          } else if (loginError.data && typeof loginError.data === 'object' && 'message' in loginError.data) {
+            errorMessage = String(loginError.data.message);
+          }
+        }
+        // Check for axios error response structure
+        else if ('response' in loginError && loginError.response) {
+          const response = (loginError as any).response;
+          if (response.data?.message) {
+            errorMessage = String(response.data.message);
+          } else if (response.data?.data?.message) {
+            errorMessage = String(response.data.data.message);
+          } else if (response.statusText) {
+            errorMessage = String(response.statusText);
+          } else if (response.status) {
+            errorMessage = `Request failed with status ${response.status}`;
+          }
+        }
+        // Check for error string directly
+        else if (typeof (loginError as any).error === 'string') {
+          errorMessage = (loginError as any).error;
+        }
+      } else if (typeof loginError === 'string') {
         errorMessage = loginError;
-      } else if (loginError?.message) {
-        errorMessage = loginError.message;
-      } else if (loginError?.data?.message) {
-        errorMessage = loginError.data.message;
-      } else if (loginError?.response?.data?.message) {
-        errorMessage = loginError.response.data.message;
       }
       
+      console.log('Setting error message:', errorMessage);
       setError(errorMessage);
+    } else {
+      // Clear error when loginError is null/undefined
+      setError('');
     }
   }, [loginError]);
 
-  // Check for 2FA requirement
-  React.useEffect(() => {
-    const tempToken = localStorage.getItem('tempToken');
-    if (tempToken && !isLoggingIn && !isVerifying2FA) {
-      setShow2FAModal(true);
-      setIs2FAFlow(true);
-    }
-  }, [isLoggingIn, isVerifying2FA]);
+  // Check for 2FA requirement - COMMENTED OUT: No 2FA APIs available yet
+  // React.useEffect(() => {
+  //   const tempToken = localStorage.getItem('tempToken');
+  //   if (tempToken && !isLoggingIn && !isVerifying2FA) {
+  //     setShow2FAModal(true);
+  //     setIs2FAFlow(true);
+  //   }
+  // }, [isLoggingIn, isVerifying2FA]);
 
 
 
@@ -228,8 +267,9 @@ const Login = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {error && (
+              {error && error.trim() !== '' && (
                 <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -344,8 +384,8 @@ const Login = () => {
         </motion.div>
       </div>
 
-      {/* Two-Factor Authentication Modal */}
-      <TwoFactorLoginModal
+      {/* Two-Factor Authentication Modal - COMMENTED OUT: No 2FA APIs available yet */}
+      {/* <TwoFactorLoginModal
         isOpen={show2FAModal}
         onClose={() => {
           setShow2FAModal(false);
@@ -356,7 +396,7 @@ const Login = () => {
         onVerify2FA={handleVerify2FA}
         verifying2FA={isVerifying2FA}
         userEmail={email}
-      />
+      /> */}
     </div>
   );
 };

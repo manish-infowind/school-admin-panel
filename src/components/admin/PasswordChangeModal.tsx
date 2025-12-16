@@ -40,9 +40,9 @@ interface PasswordChangeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onChangePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => Promise<boolean>;
-  onVerifyOtp: (data: { otp: string; newPassword: string }) => Promise<boolean>;
+  onVerifyOtp?: (data: { otp: string; newPassword: string }) => Promise<boolean>; // Optional for backward compatibility
   changingPassword: boolean;
-  verifyingOtp: boolean;
+  verifyingOtp?: boolean; // Optional for backward compatibility
 }
 
 export function PasswordChangeModal({
@@ -112,12 +112,12 @@ export function PasswordChangeModal({
     }
   };
 
-  // Handle send OTP
+  // Handle password change (new API - single step, no OTP)
   const handleSendOtp = async () => {
     if (!passwordValidation.isValid || !passwordMatch) {
       toast({
         title: "Error",
-        description: "Please fix password validation errors before sending OTP",
+        description: "Please fix password validation errors before submitting",
         variant: "destructive",
       });
       return;
@@ -130,22 +130,23 @@ export function PasswordChangeModal({
         confirmPassword: formData.confirmPassword,
       });
       
-      // Only proceed to OTP step if successful
+      // Directly proceed to success step if successful (no OTP step)
       if (success) {
-        setStep('otp');
-        toast({
-          title: "Success",
-          description: "OTP sent to your email. Please check your inbox.",
-        });
+        setPasswordChanged(true);
+        // Store flag in localStorage for hard reload scenarios
+        localStorage.setItem('passwordChanged', 'true');
+        setStep('success');
+        startCountdown();
       } else {
         // Show error in current password field instead of toast
         setCurrentPasswordError("Current password is incorrect");
         // Stay on password step
       }
-    } catch (error) {
+    } catch (error: any) {
       // Show error in current password field instead of toast
-      setCurrentPasswordError("Current password is incorrect");
-      // Don't proceed to OTP step, stay on password step
+      const errorMessage = error?.message || error?.data?.message || "Current password is incorrect";
+      setCurrentPasswordError(errorMessage);
+      // Don't proceed to success step, stay on password step
     }
   };
 

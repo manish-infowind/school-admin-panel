@@ -1,0 +1,543 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Key,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Shield,
+  Loader2,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/api/hooks/usePermissions";
+import { useAuth } from "@/lib/authContext";
+import { canManagePermissions } from "@/lib/permissions";
+import { Permission, CreatePermissionRequest } from "@/api/types";
+
+export default function PermissionsManagement() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { permissions, isLoadingPermissions, createPermission, isCreatingPermission, updatePermission, isUpdatingPermission, deletePermission, isDeletingPermission } = usePermissions();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<CreatePermissionRequest>({
+    permissionName: "",
+    allowedActions: undefined,
+  });
+  const [selectedActions, setSelectedActions] = useState<{
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+  }>({
+    create: true,
+    read: true,
+    update: true,
+    delete: true,
+  });
+  const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [permissionToEdit, setPermissionToEdit] = useState<Permission | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editSelectedActions, setEditSelectedActions] = useState<{
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+  }>({
+    create: true,
+    read: true,
+    update: true,
+    delete: true,
+  });
+
+  // Check permissions
+  const canCreate = canManagePermissions(user, 'create');
+  const canRead = canManagePermissions(user, 'read');
+  const canUpdate = canManagePermissions(user, 'update');
+  const canDelete = canManagePermissions(user, 'delete');
+
+  const filteredPermissions = permissions.filter((permission) =>
+    permission.permissionName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreatePermission = async () => {
+    if (!formData.permissionName.trim()) {
+      toast({
+        title: "Error",
+        description: "Permission name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Build allowedActions array from selected actions
+    const allowedActions: string[] = [];
+    if (selectedActions.create) allowedActions.push('create');
+    if (selectedActions.read) allowedActions.push('read');
+    if (selectedActions.update) allowedActions.push('update');
+    if (selectedActions.delete) allowedActions.push('delete');
+
+    // If all actions are selected, don't send allowedActions (means all allowed)
+    const requestData: CreatePermissionRequest = {
+      permissionName: formData.permissionName,
+      ...(allowedActions.length < 4 ? { allowedActions } : {}),
+    };
+
+    createPermission(requestData, {
+      onSuccess: () => {
+        setIsCreateDialogOpen(false);
+        setFormData({ permissionName: "", allowedActions: undefined });
+        setSelectedActions({
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+        });
+      },
+    });
+  };
+
+  const formatAllowedActions = (allowedActions: string[] | null): string => {
+    if (!allowedActions || allowedActions.length === 0) {
+      return "All Actions";
+    }
+    return allowedActions.map(a => a.charAt(0).toUpperCase() + a.slice(1)).join(", ");
+  };
+
+  // Initialize edit dialog when permission is selected
+  useEffect(() => {
+    if (permissionToEdit) {
+      const allowedActions = permissionToEdit.allowedActions || ['create', 'read', 'update', 'delete'];
+      setEditSelectedActions({
+        create: allowedActions.includes('create'),
+        read: allowedActions.includes('read'),
+        update: allowedActions.includes('update'),
+        delete: allowedActions.includes('delete'),
+      });
+    }
+  }, [permissionToEdit]);
+
+  const handleUpdatePermission = () => {
+    if (!permissionToEdit) return;
+
+    // Build allowedActions array from selected actions
+    const allowedActions: string[] = [];
+    if (editSelectedActions.create) allowedActions.push('create');
+    if (editSelectedActions.read) allowedActions.push('read');
+    if (editSelectedActions.update) allowedActions.push('update');
+    if (editSelectedActions.delete) allowedActions.push('delete');
+
+    // If all actions are selected, don't send allowedActions (means all allowed)
+    const requestData = allowedActions.length < 4 ? { allowedActions } : {};
+
+    updatePermission(permissionToEdit.id, requestData, {
+      onSuccess: () => {
+        setIsEditDialogOpen(false);
+        setPermissionToEdit(null);
+        setEditSelectedActions({
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+        });
+      },
+    });
+  };
+
+  const handleDeletePermission = () => {
+    if (!permissionToDelete) return;
+
+    deletePermission(permissionToDelete.id, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        setPermissionToDelete(null);
+      },
+    });
+  };
+
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              You don't have permission to view permissions.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
+              Permissions Management
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage system permissions
+            </p>
+          </div>
+          {canCreate && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Permission
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Permission</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="permissionName">Permission Name</Label>
+                    <Input
+                      id="permissionName"
+                      placeholder="e.g., manage_users, view_reports"
+                      value={formData.permissionName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, permissionName: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Use lowercase with underscores (e.g., manage_users, view_reports)
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Allowed Actions (Optional)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Select which CRUD operations are allowed. Leave all checked for all actions.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedActions.create}
+                          onChange={(e) =>
+                            setSelectedActions({ ...selectedActions, create: e.target.checked })
+                          }
+                          className="rounded"
+                        />
+                        <span>Create</span>
+                      </label>
+                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedActions.read}
+                          onChange={(e) =>
+                            setSelectedActions({ ...selectedActions, read: e.target.checked })
+                          }
+                          className="rounded"
+                        />
+                        <span>Read</span>
+                      </label>
+                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedActions.update}
+                          onChange={(e) =>
+                            setSelectedActions({ ...selectedActions, update: e.target.checked })
+                          }
+                          className="rounded"
+                        />
+                        <span>Update</span>
+                      </label>
+                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedActions.delete}
+                          onChange={(e) =>
+                            setSelectedActions({ ...selectedActions, delete: e.target.checked })
+                          }
+                          className="rounded"
+                        />
+                        <span>Delete</span>
+                      </label>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleCreatePermission}
+                    disabled={isCreatingPermission}
+                    className="w-full bg-brand-green hover:bg-brand-green/90"
+                  >
+                    {isCreatingPermission ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Permission"
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </motion.div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>All Permissions</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search permissions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingPermissions ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Permission Name</TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Allowed Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPermissions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <div className="flex flex-col items-center">
+                          <Key className="h-12 w-12 mb-4" />
+                          <p>No permissions found</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredPermissions.map((permission) => (
+                      <TableRow key={permission.id}>
+                        <TableCell className="font-medium">{permission.permissionName}</TableCell>
+                        <TableCell>{permission.id}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {!permission.allowedActions || permission.allowedActions.length === 0 ? (
+                              <Badge variant="secondary">All Actions</Badge>
+                            ) : (
+                              permission.allowedActions.map((action) => (
+                                <Badge key={action} variant="outline" className="text-xs">
+                                  {action.charAt(0).toUpperCase() + action.slice(1)}
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {canUpdate && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setPermissionToEdit(permission);
+                                  setIsEditDialogOpen(true);
+                                }}
+                                disabled={isUpdatingPermission}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setPermissionToDelete(permission);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                disabled={isDeletingPermission}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Permission Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Permission: {permissionToEdit?.permissionName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Permission Name</Label>
+              <Input
+                value={permissionToEdit?.permissionName || ''}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Permission names are immutable and cannot be changed.
+              </p>
+            </div>
+            <div>
+              <Label>Allowed Actions</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Select which CRUD operations are allowed for this permission.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editSelectedActions.create}
+                    onChange={(e) =>
+                      setEditSelectedActions({ ...editSelectedActions, create: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <span>Create</span>
+                </label>
+                <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editSelectedActions.read}
+                    onChange={(e) =>
+                      setEditSelectedActions({ ...editSelectedActions, read: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <span>Read</span>
+                </label>
+                <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editSelectedActions.update}
+                    onChange={(e) =>
+                      setEditSelectedActions({ ...editSelectedActions, update: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <span>Update</span>
+                </label>
+                <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editSelectedActions.delete}
+                    onChange={(e) =>
+                      setEditSelectedActions({ ...editSelectedActions, delete: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <span>Delete</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdatePermission}
+                disabled={isUpdatingPermission}
+                className="bg-brand-green hover:bg-brand-green/90"
+              >
+                {isUpdatingPermission ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Permission"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Permission</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete the permission <strong>{permissionToDelete?.permissionName}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              <strong>Note:</strong> This permission cannot be deleted if it is assigned to any user or role. 
+              You must first remove the permission from all users and roles.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeletePermission}
+                disabled={isDeletingPermission}
+              >
+                {isDeletingPermission ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
