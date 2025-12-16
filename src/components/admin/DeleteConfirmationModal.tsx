@@ -53,7 +53,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
           {/* Confirmation Message */}
           <div className="text-center space-y-2">
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-gray-700 dark:text-gray-300" style={{ whiteSpace: "pre-line" }}>
               {message}
             </p>
             <p className="font-semibold text-gray-900 dark:text-gray-100">

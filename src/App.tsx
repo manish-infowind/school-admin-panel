@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthProvider } from "@/lib/authContext";
-import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
@@ -27,6 +26,7 @@ import AdminManagement from "./pages/admin/AdminManagement";
 import RolesManagement from "./pages/admin/RolesManagement";
 import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import Campaigns from "./pages/admin/Campaigns";
+import UsersList from "./pages/admin/UserList";
 
 const queryClient = new QueryClient();
 
@@ -38,8 +38,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
         <Routes>
-          <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Login />} />
 
             {/* Admin Routes - Protected */}
           <Route
@@ -230,6 +229,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <Campaigns />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <UsersList />
                   </AdminLayout>
                 </ProtectedRoute>
               }

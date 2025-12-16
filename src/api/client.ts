@@ -68,13 +68,13 @@ class ApiClient {
               } else {
                 // Refresh failed, clear tokens and redirect to login
                 this.clearAuthTokens();
-                window.location.href = '/login';
+                window.location.href = '/';
                 return Promise.reject(error);
               }
             } catch (refreshError) {
               // Refresh failed, clear tokens and redirect to login
               this.clearAuthTokens();
-              window.location.href = '/login';
+              window.location.href = '/';
               return Promise.reject(error);
             }
           }

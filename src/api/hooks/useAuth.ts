@@ -95,12 +95,12 @@ export const useAuth = () => {
       queryClient.clear();
       
       // Navigate to login page
-      navigate('/login');
+      navigate('/');
     },
     onError: () => {
       // Clear cache even if API call fails
       queryClient.clear();
-      navigate('/login');
+      navigate('/');
     },
   });
 

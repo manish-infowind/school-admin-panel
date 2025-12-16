@@ -1,7 +1,10 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/authContext";
+import { canAccessAdminManagement } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -33,7 +36,6 @@ import {
   Shield,
   ShieldCheck,
   ShieldX,
-  Mail,
   Phone,
   MapPin,
   Calendar,
@@ -43,10 +45,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminManagement } from "@/api/hooks/useAdminManagement";
-import { useAuth } from "@/lib/authContext";
 import { AdminUser, CreateAdminRequest, UpdateAdminRequest, ChangePasswordRequest } from "@/api/types";
 import { format } from "date-fns";
 import { useRoles, useAdminRoles } from "@/api/hooks/useRoles";
@@ -56,8 +56,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function AdminManagement() {
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -136,9 +137,9 @@ export default function AdminManagement() {
     newPassword: "",
     confirmPassword: "",
   });
-
-  // Check if current user is superadmin
-  const isSuperAdmin = user?.role === 'super_admin';
+  
+  // Check if current user can access admin management
+  const canAccess = canAccessAdminManagement(user);
 
   // Use the admin management hook
   const {
@@ -539,8 +540,8 @@ export default function AdminManagement() {
     });
   };
 
-  // If not superadmin, show access denied
-  if (!isSuperAdmin) {
+  // If user doesn't have permission, show access denied
+  if (!canAccess) {
     return (
       <div className="flex items-center justify-center py-12">
         <Card className="w-full max-w-md">
@@ -549,7 +550,7 @@ export default function AdminManagement() {
               <ShieldX className="h-12 w-12 mx-auto text-red-500 mb-4" />
               <h3 className="text-lg font-medium mb-2">Access Denied</h3>
               <p className="text-muted-foreground">
-                You don't have permission to access this page. Only Super Admins can manage other admins.
+                You don't have permission to access this page. You need "all_allowed" or "admin_management" permission to manage admins.
               </p>
             </div>
           </CardContent>

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard,
   ChevronRight,
@@ -28,10 +27,6 @@ import {
 } from "@/lib/permissions";
 import React, { useState, useEffect } from "react";
 
-interface SideNavigationProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 const navigation = [
   {
@@ -65,6 +60,12 @@ const navigation = [
     icon: Megaphone,
   },
 ];
+
+interface SideNavigationProps {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
 
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
@@ -141,7 +142,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                       className={cn(
                         "w-full justify-start gap-3 h-10 text-base",
                         isActive &&
-                          "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                       )}
                     >
                       <item.icon className="h-5 w-5" />

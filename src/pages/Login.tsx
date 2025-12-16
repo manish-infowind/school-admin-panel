@@ -1,154 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle, Shield } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "@/lib/authContext";
 import { LogoIcon } from "@/components/ui/logo-icon";
-// COMMENTED OUT: No 2FA APIs available yet
-// import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
+import { useAuth } from "@/lib/authContext";
+import { CheckEmail, Check6DigitPassword } from "@/validations/validations";
+import PasswordChangeModal from "@/components/admin/PasswordChangeModal";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/admin';
+  const { login, isAuthenticated, isLoggingIn, loginError } = useAuth();
+
+  const [loginUser, setLoginUser] = useState({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  // COMMENTED OUT: No 2FA APIs available yet
-  // const [show2FAModal, setShow2FAModal] = useState(false);
-  // const [loginResponse, setLoginResponse] = useState<any>(null);
-  // const [is2FAFlow, setIs2FAFlow] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [modalType, setModalType] = useState<"forgotpassword" | "">("");
   
   // Validation states
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [touched, setTouched] = useState({
     email: false,
-    password: false
+    password: false,
   });
-  
-  const { login, isAuthenticated, isLoggingIn, loginError } = useAuth();
-  // COMMENTED OUT: No 2FA APIs available yet
-  // const { verify2FA, isVerifying2FA, verify2FAError } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/admin';
-
-  // Validation functions
-  const validateEmail = (email: string): string => {
-    if (!email || email.trim() === '') {
-      return 'Email is required';
+  // Handle input changes
+  const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginUser({
+      ...loginUser,
+      [name]: value,
+    });
+    // Clear errors when user starts typing
+    if (name === 'email' && emailError) {
+      setEmailError('');
     }
-    if (!email.includes('@')) {
-      return 'Please include an \'@\' in the email address';
-    }
-    if (!email.includes('.')) {
-      return 'Please include a valid domain in the email address';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-    return '';
-  };
-
-  const validatePassword = (password: string): string => {
-    if (!password || password.trim() === '') {
-      return 'Password is required';
-    }
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    return '';
-  };
-
-  // Handle input changes with validation
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.email) {
-      const error = validateEmail(value);
-      setEmailError(error);
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPassword(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.password) {
-      const error = validatePassword(value);
-      setPasswordError(error);
+    if (name === 'password' && passwordError) {
+      setPasswordError('');
     }
   };
 
   // Handle input blur (mark as touched and validate)
-  const handleEmailBlur = () => {
-    setTouched(prev => ({ ...prev, email: true }));
-    const error = validateEmail(email);
-    setEmailError(error);
-  };
-
-  const handlePasswordBlur = () => {
-    setTouched(prev => ({ ...prev, password: true }));
-    const error = validatePassword(password);
-    setPasswordError(error);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Clear previous errors
-    setError('');
-    setEmailError('');
-    setPasswordError('');
-    
-    // Mark all fields as touched
-    setTouched({ email: true, password: true });
-    
-    // Validate all fields
-    const emailValidation = validateEmail(email);
-    const passwordValidation = validatePassword(password);
-    
-    setEmailError(emailValidation);
-    setPasswordError(passwordValidation);
-    
-    // If there are validation errors, don't submit
-    if (emailValidation || passwordValidation) {
-      return;
+  const blurHandler = (text: string) => {
+    if (text?.toLowerCase() === "email") {
+      setTouched(prev => ({ ...prev, email: true }));
+      const error = CheckEmail(loginUser?.email);
+      setEmailError(error);
+    } else {
+      setTouched(prev => ({ ...prev, password: true }));
+      const error = Check6DigitPassword(loginUser?.password);
+      setPasswordError(error);
     }
-    
-    // Call login with email and password
-    login(email, password);
   };
 
-  // Handle 2FA verification - COMMENTED OUT: No 2FA APIs available yet
-  // const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
-  //   try {
-  //     await verify2FA(otpData);
-  //     setShow2FAModal(false);
-  //     setLoginResponse(null);
-  //     setIs2FAFlow(false);
-  //     return true;
-  //   } catch (error) {
-  //     return false;
-  //   }
-  // };
 
   // Handle login response and errors
-  React.useEffect(() => {
+  useEffect(() => {
     if (loginError) {
       // Extract error message from different possible structures
       let errorMessage = 'An error occurred during login';
-      
-      // Debug: Log the error structure to help identify the issue
-      console.log('Login error received:', loginError);
       
       // Check for ApiError structure from API client
       if (loginError && typeof loginError === 'object') {
@@ -185,7 +106,6 @@ const Login = () => {
         errorMessage = loginError;
       }
       
-      console.log('Setting error message:', errorMessage);
       setError(errorMessage);
     } else {
       // Clear error when loginError is null/undefined
@@ -193,15 +113,29 @@ const Login = () => {
     }
   }, [loginError]);
 
-  // Check for 2FA requirement - COMMENTED OUT: No 2FA APIs available yet
-  // React.useEffect(() => {
-  //   const tempToken = localStorage.getItem('tempToken');
-  //   if (tempToken && !isLoggingIn && !isVerifying2FA) {
-  //     setShow2FAModal(true);
-  //     setIs2FAFlow(true);
-  //   }
-  // }, [isLoggingIn, isVerifying2FA]);
+  // Login Submit Handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
+    // Mark all fields as touched
+    setTouched({ email: true, password: true });
+
+    // Validate all fields
+    const emailValidation = CheckEmail(loginUser?.email);
+    const passwordValidation = Check6DigitPassword(loginUser?.password);
+
+    setEmailError(emailValidation);
+    setPasswordError(passwordValidation);
+
+    // If there are validation errors, don't submit
+    if (emailValidation || passwordValidation) {
+      return;
+    }
+
+    // Call login with email and password
+    login(loginUser.email, loginUser.password);
+  };
 
 
   // Don't show login form if user is already authenticated
@@ -230,7 +164,27 @@ const Login = () => {
         </div>
       </div>
     );
-  }
+  };
+
+
+  // Forgot password modal handling
+  const openForgotPasswordHandler = useCallback(() => {
+    setShowPasswordModal(true);
+    setModalType("forgotpassword");
+  }, []);
+
+  const closeForgotPasswordHandler = useCallback(() => {
+    // Clear any password-related errors when closing modal
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      setError('');
+    }
+    setShowPasswordModal(false);
+  }, [error]);
+
+  const clearModalType = useCallback(() => {
+    setModalType("");
+  }, []);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
@@ -281,12 +235,14 @@ const Login = () => {
                     id="email"
                     type="email"
                     placeholder="Enter your email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    onBlur={handleEmailBlur}
-                    className={`focus:ring-brand-green focus:border-brand-green ${
-                      touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
+                    name="email"
+                    value={loginUser?.email}
+                    // onChange={handleEmailChange}
+                    // onBlur={handleEmailBlur}
+                    onChange={onChangeHandler}
+                    onBlur={() => blurHandler("email")}
+                    className={`focus:ring-brand-green focus:border-brand-green ${touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
                   />
                   {touched.email && emailError && (
                     <motion.div
@@ -308,12 +264,12 @@ const Login = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={handlePasswordChange}
-                      onBlur={handlePasswordBlur}
-                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${
-                        touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
+                      name="password"
+                      value={loginUser?.password}
+                      onChange={onChangeHandler}
+                      onBlur={() => blurHandler("password")}
+                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
                     />
                     <Button
                       type="button"
@@ -363,11 +319,12 @@ const Login = () => {
 
               <div className="pt-4">
                 <Link
-                  to="/"
+                  to="#"
+                  onClick={openForgotPasswordHandler}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Home
+                  forgot password
                 </Link>
               </div>
             </CardContent>
@@ -384,19 +341,13 @@ const Login = () => {
         </motion.div>
       </div>
 
-      {/* Two-Factor Authentication Modal - COMMENTED OUT: No 2FA APIs available yet */}
-      {/* <TwoFactorLoginModal
-        isOpen={show2FAModal}
-        onClose={() => {
-          setShow2FAModal(false);
-          setIs2FAFlow(false);
-          // Clear temp token if user cancels
-          localStorage.removeItem('tempToken');
-        }}
-        onVerify2FA={handleVerify2FA}
-        verifying2FA={isVerifying2FA}
-        userEmail={email}
-      /> */}
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        type={modalType}
+        isOpen={showPasswordModal}
+        onClose={closeForgotPasswordHandler}
+        clearType={clearModalType}
+      />
     </div>
   );
 };
