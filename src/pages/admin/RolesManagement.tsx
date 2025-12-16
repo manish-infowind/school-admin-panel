@@ -32,7 +32,8 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useRoles } from "@/api/hooks/useRoles";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store/store";
 import { canManageRoles } from "@/lib/permissions";
 import { Role, CreateRoleRequest } from "@/api/types";
 import { RolePermissionsDialog } from "@/components/admin/RolePermissionsDialog";
@@ -41,7 +42,7 @@ import { RoleEditDialog } from "@/components/admin/RoleEditDialog";
 
 export default function RolesManagement() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const loginState = useSelector((state: RootState) => state.auth.loginState);
   const { roles, isLoadingRoles, createRole, isCreatingRole, deleteRole, isDeletingRole } = useRoles();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -57,10 +58,10 @@ export default function RolesManagement() {
   });
 
   // Check permissions
-  const canCreate = canManageRoles(user, 'create');
-  const canRead = canManageRoles(user, 'read');
-  const canUpdate = canManageRoles(user, 'update');
-  const canDelete = canManageRoles(user, 'delete');
+  const canCreate = canManageRoles(loginState as any, 'create');
+  const canRead = canManageRoles(loginState as any, 'read');
+  const canUpdate = canManageRoles(loginState as any, 'update');
+  const canDelete = canManageRoles(loginState as any, 'delete');
 
   const filteredRoles = roles.filter((role) =>
     role.roleName.toLowerCase().includes(searchTerm.toLowerCase()) ||

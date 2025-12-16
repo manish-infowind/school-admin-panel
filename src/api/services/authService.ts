@@ -362,6 +362,8 @@ export class AuthService {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('tempToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('sessionId');
+    localStorage.removeItem('isSuperAdmin');
   }
 
   // Check if token is expired (basic check)

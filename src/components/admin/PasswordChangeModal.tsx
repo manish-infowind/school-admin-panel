@@ -14,9 +14,11 @@ import { Loader2, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { checkMatchedPassword, checkStrongPassword } from "@/validations/validations";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/authContext";
+import { useDispatch } from "react-redux";
+import { logout } from "@/redux/features/authSlice";
 import { useProfile } from "@/api/hooks/useProfile";
 import { PasswordService } from "@/api/services/passwordService";
+import { LogoutApi } from "@/api/services/authApis/logoutApi";
 
 // Password validation functions
 const validatePassword = (password: string) => {
@@ -54,7 +56,7 @@ export function PasswordChangeModal({
   clearType,
 }: PasswordChangeModalProps) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const dispatch = useDispatch();
   const { changePassword, changingPassword: isChangingPassword } = useProfile();
   const { toast } = useToast();
 
@@ -265,12 +267,15 @@ export function PasswordChangeModal({
   // Logout Handler
   const logoutHandler = async () => {
     try {
-      await logout();
-      navigate('/');
-      handleClose();
+      // Call logout API
+      await LogoutApi();
     } catch (error) {
-      // Even if logout fails, navigate to home
-      navigate('/');
+      console.error("Logout error:", error);
+      // Continue with logout even if API call fails
+    } finally {
+      // Clear Redux state and localStorage
+      dispatch(logout());
+      navigate('/', { replace: true });
       handleClose();
     }
   };

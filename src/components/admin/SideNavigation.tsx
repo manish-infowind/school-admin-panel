@@ -18,7 +18,8 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store/store";
 import { 
   canAccessAdminManagement,
   canManageAdminUsers,
@@ -69,11 +70,11 @@ interface SideNavigationProps {
 
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
-  const { user } = useAuth();
+  const loginState = useSelector((state: RootState) => state.auth.loginState);
   const [adminManagementOpen, setAdminManagementOpen] = useState(false);
   
   // Check if user has permission to access admin management
-  const hasAdminAccess = canAccessAdminManagement(user);
+  const hasAdminAccess = canAccessAdminManagement(loginState as any);
   
   // Admin Management sub-items with permission checks
   const adminManagementItems = [
@@ -81,19 +82,19 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       name: "Admin Users",
       href: "/admin/management/users",
       icon: Users,
-      canAccess: canManageAdminUsers(user, 'read'),
+      canAccess: canManageAdminUsers(loginState as any, 'read'),
     },
     {
       name: "Roles",
       href: "/admin/management/roles",
       icon: UserCog,
-      canAccess: canManageRoles(user, 'read'),
+      canAccess: canManageRoles(loginState as any, 'read'),
     },
     {
       name: "Permissions",
       href: "/admin/management/permissions",
       icon: Key,
-      canAccess: canManagePermissions(user, 'read'),
+      canAccess: canManagePermissions(loginState as any, 'read'),
     },
   ].filter(item => item.canAccess);
 

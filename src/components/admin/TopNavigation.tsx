@@ -40,11 +40,19 @@ const TopNavigation = ({ onToggleSidebar }: TopNavigationProps) => {
 
   // Logout Handler
   const logoutHandler = async () => {
-    // need to implement Confirm modal before logout
-    // const res = await LogoutApi();
-    // console.log("LogoutApi_res", res)
-    dispatch(logout());
-    navigate('/');
+    try {
+      setLoading(true);
+      // Call logout API
+      await LogoutApi();
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Continue with logout even if API call fails
+    } finally {
+      // Clear Redux state and localStorage
+      dispatch(logout());
+      setLoading(false);
+      navigate('/', { replace: true });
+    }
   };
 
 

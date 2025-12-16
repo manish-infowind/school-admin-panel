@@ -8,15 +8,22 @@ import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle } from "lucide-rea
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { useAuth } from "@/lib/authContext";
 import { CheckEmail, Check6DigitPassword } from "@/validations/validations";
 import PasswordChangeModal from "@/components/admin/PasswordChangeModal";
+import { useDispatch, useSelector } from "react-redux";
+import { loginInfo, setLoading, setLoggingIn } from "@/redux/features/authSlice";
+import type { RootState } from "@/redux/store/store";
+import { AuthService } from "@/api/services/authService";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const { toast } = useToast();
   const from = location.state?.from?.pathname || '/admin';
-  const { login, isAuthenticated, isLoggingIn, loginError } = useAuth();
+  const { isAuthenticated, isLoggingIn } = useSelector((state: RootState) => state.auth);
+  const [loginError, setLoginError] = useState<any>(null);
 
   const [loginUser, setLoginUser] = useState({
     email: "",
@@ -65,58 +72,20 @@ const Login = () => {
   };
 
 
-  // Handle login response and errors
+  // Navigate to dashboard when authenticated
   useEffect(() => {
-    if (loginError) {
-      // Extract error message from different possible structures
-      let errorMessage = 'An error occurred during login';
-      
-      // Check for ApiError structure from API client
-      if (loginError && typeof loginError === 'object') {
-        // ApiError from client.ts has message property
-        if ('message' in loginError && loginError.message) {
-          errorMessage = String(loginError.message);
-        }
-        // Check for nested error structures
-        else if ('data' in loginError && loginError.data) {
-          if (typeof loginError.data === 'string') {
-            errorMessage = loginError.data;
-          } else if (loginError.data && typeof loginError.data === 'object' && 'message' in loginError.data) {
-            errorMessage = String(loginError.data.message);
-          }
-        }
-        // Check for axios error response structure
-        else if ('response' in loginError && loginError.response) {
-          const response = (loginError as any).response;
-          if (response.data?.message) {
-            errorMessage = String(response.data.message);
-          } else if (response.data?.data?.message) {
-            errorMessage = String(response.data.data.message);
-          } else if (response.statusText) {
-            errorMessage = String(response.statusText);
-          } else if (response.status) {
-            errorMessage = `Request failed with status ${response.status}`;
-          }
-        }
-        // Check for error string directly
-        else if (typeof (loginError as any).error === 'string') {
-          errorMessage = (loginError as any).error;
-        }
-      } else if (typeof loginError === 'string') {
-        errorMessage = loginError;
-      }
-      
-      setError(errorMessage);
-    } else {
-      // Clear error when loginError is null/undefined
-      setError('');
+    if (isAuthenticated) {
+      navigate('/admin', { replace: true });
     }
-  }, [loginError]);
+  }, [isAuthenticated, navigate]);
 
   // Login Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoginError(null);
+    dispatch(setLoggingIn(true));
+    dispatch(setLoading(true));
 
     // Mark all fields as touched
     setTouched({ email: true, password: true });
@@ -130,13 +99,102 @@ const Login = () => {
 
     // If there are validation errors, don't submit
     if (emailValidation || passwordValidation) {
+      dispatch(setLoggingIn(false));
+      dispatch(setLoading(false));
       return;
     }
 
-    // Call login with email and password
-    login(loginUser.email, loginUser.password);
+    try {
+      // Call login API
+      const response = await AuthService.login({
+        email: loginUser.email,
+        password: loginUser.password,
+      });
+
+      if (response.success && response.data) {
+        const loginData = response.data as any;
+        
+        // Get user data from localStorage (stored by AuthService.login)
+        const userData = AuthService.getCurrentUser();
+        
+        if (userData) {
+          // Store user data in Redux
+          dispatch(loginInfo(userData));
+          dispatch(setLoggingIn(false));
+          dispatch(setLoading(false));
+          
+          // Navigate to dashboard
+          navigate('/admin', { replace: true });
+        } else {
+          throw new Error('Failed to retrieve user data');
+        }
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
+    } catch (error: any) {
+      dispatch(setLoggingIn(false));
+      dispatch(setLoading(false));
+      setLoginError(error);
+      
+      // Extract error message
+      let errorMessage = 'An error occurred during login';
+      if (error && typeof error === 'object') {
+        if ('message' in error && error.message) {
+          errorMessage = String(error.message);
+        } else if ('data' in error && error.data) {
+          if (typeof error.data === 'string') {
+            errorMessage = error.data;
+          } else if (error.data && typeof error.data === 'object' && 'message' in error.data) {
+            errorMessage = String(error.data.message);
+          }
+        } else if ('response' in error && error.response) {
+          const response = error.response;
+          if (response.data?.message) {
+            errorMessage = String(response.data.message);
+          } else if (response.data?.data?.message) {
+            errorMessage = String(response.data.data.message);
+          } else if (response.statusText) {
+            errorMessage = String(response.statusText);
+          } else if (response.status) {
+            errorMessage = `Request failed with status ${response.status}`;
+          }
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      setError(errorMessage);
+    }
   };
 
+  // Initialize auth state from localStorage on mount
+  useEffect(() => {
+    const userData = AuthService.getCurrentUser();
+    const accessToken = AuthService.getAccessToken();
+    
+    if (userData && accessToken) {
+      // Restore user data to Redux if available
+      dispatch(loginInfo(userData));
+    }
+  }, [dispatch]);
+
+  // Forgot password modal handling - MUST be before any early returns
+  const openForgotPasswordHandler = useCallback(() => {
+    setShowPasswordModal(true);
+    setModalType("forgotpassword");
+  }, []);
+
+  const closeForgotPasswordHandler = useCallback(() => {
+    // Clear any password-related errors when closing modal
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      setError('');
+    }
+    setShowPasswordModal(false);
+  }, [error]);
+
+  const clearModalType = useCallback(() => {
+    setModalType("");
+  }, []);
 
   // Don't show login form if user is already authenticated
   if (isAuthenticated) {
@@ -164,26 +222,7 @@ const Login = () => {
         </div>
       </div>
     );
-  };
-
-
-  // Forgot password modal handling
-  const openForgotPasswordHandler = useCallback(() => {
-    setShowPasswordModal(true);
-    setModalType("forgotpassword");
-  }, []);
-
-  const closeForgotPasswordHandler = useCallback(() => {
-    // Clear any password-related errors when closing modal
-    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
-      setError('');
-    }
-    setShowPasswordModal(false);
-  }, [error]);
-
-  const clearModalType = useCallback(() => {
-    setModalType("");
-  }, []);
+  }
 
 
   return (

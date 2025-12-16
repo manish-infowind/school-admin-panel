@@ -5,8 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AuthProvider } from "@/lib/authContext";
 import Login from "./pages/Login";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { loginInfo } from "@/redux/features/authSlice";
+import { AuthService } from "@/api/services/authService";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductPage from "./pages/admin/ProductPage";
@@ -30,13 +33,31 @@ import UsersList from "./pages/admin/UserList";
 
 const queryClient = new QueryClient();
 
+// Component to initialize auth state from localStorage
+const AuthInitializer = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Sync Redux state with localStorage on app load
+    const userData = AuthService.getCurrentUser();
+    const accessToken = AuthService.getAccessToken();
+    
+    if (userData && accessToken) {
+      // Restore user data to Redux if available
+      dispatch(loginInfo(userData));
+    }
+  }, [dispatch]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
+        <AuthInitializer />
         <Routes>
             <Route path="/" element={<Login />} />
 
@@ -247,7 +268,6 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

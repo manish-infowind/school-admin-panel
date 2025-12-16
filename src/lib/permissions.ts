@@ -24,7 +24,9 @@ export const PERMISSIONS = {
  */
 const getUserPermissions = (user: User | null | undefined): UserPermission[] => {
   if (!user) return [];
-  if (user.isSuperAdmin) return [{ permissionName: PERMISSIONS.ALL_ALLOWED, allowedActions: null }];
+  // Check both isSuperAdmin and is_super_admin for compatibility
+  const isSuperAdmin = user.isSuperAdmin || (user as any).is_super_admin;
+  if (isSuperAdmin) return [{ permissionName: PERMISSIONS.ALL_ALLOWED, allowedActions: null }];
   return user.permissions || [];
 };
 

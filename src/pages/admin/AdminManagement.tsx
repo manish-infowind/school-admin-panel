@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store/store";
 import { canAccessAdminManagement } from "@/lib/permissions";
 import {
   Table,
@@ -56,7 +57,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function AdminManagement() {
-  const { user } = useAuth();
+  const loginState = useSelector((state: RootState) => state.auth.loginState);
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -139,7 +140,7 @@ export default function AdminManagement() {
   });
   
   // Check if current user can access admin management
-  const canAccess = canAccessAdminManagement(user);
+  const canAccess = canAccessAdminManagement(loginState as any);
 
   // Use the admin management hook
   const {

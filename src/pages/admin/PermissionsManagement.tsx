@@ -31,13 +31,14 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/api/hooks/usePermissions";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store/store";
 import { canManagePermissions } from "@/lib/permissions";
 import { Permission, CreatePermissionRequest } from "@/api/types";
 
 export default function PermissionsManagement() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const loginState = useSelector((state: RootState) => state.auth.loginState);
   const { permissions, isLoadingPermissions, createPermission, isCreatingPermission, updatePermission, isUpdatingPermission, deletePermission, isDeletingPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -73,10 +74,10 @@ export default function PermissionsManagement() {
   });
 
   // Check permissions
-  const canCreate = canManagePermissions(user, 'create');
-  const canRead = canManagePermissions(user, 'read');
-  const canUpdate = canManagePermissions(user, 'update');
-  const canDelete = canManagePermissions(user, 'delete');
+  const canCreate = canManagePermissions(loginState as any, 'create');
+  const canRead = canManagePermissions(loginState as any, 'read');
+  const canUpdate = canManagePermissions(loginState as any, 'update');
+  const canDelete = canManagePermissions(loginState as any, 'delete');
 
   const filteredPermissions = permissions.filter((permission) =>
     permission.permissionName.toLowerCase().includes(searchTerm.toLowerCase())
