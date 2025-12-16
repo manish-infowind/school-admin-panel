@@ -1,3 +1,4 @@
+import React, { useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import {
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { useProfile } from "@/api/hooks/useProfile";
-import { PasswordChangeModal } from "@/components/admin/PasswordChangeModal";
+import PasswordChangeModal from "@/components/admin/PasswordChangeModal";
 import { TwoFactorModal } from "@/components/admin/TwoFactorModal";
 
 // Utility function to format relative time
@@ -61,15 +62,11 @@ export default function Profile() {
     error,
     saving,
     uploadingAvatar,
-    changingPassword,
-    verifyingOtp,
     settingUp2FA,
     enabling2FA,
     disabling2FA,
     updateProfile,
     uploadAvatar,
-    changePassword,
-    verifyOtp,
     setup2FA,
     enable2FA,
     disable2FA,
@@ -91,6 +88,8 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [imageLoading, setImageLoading] = useState<boolean>(false);
+  const [modalType, setModalType] = useState<"changepassword" | "">("");
+
 
   // Load profile data when component mounts
   useEffect(() => {
@@ -114,7 +113,7 @@ export default function Profile() {
         setUploadProgress(0);
         const newAvatarUrl = `${profile.avatar}?t=${Date.now()}`;
         setAvatarUrl(newAvatarUrl);
-        
+
         // Simulate realistic S3 loading progress
         let progress = 0;
         const progressInterval = setInterval(() => {
@@ -126,7 +125,7 @@ export default function Profile() {
             setUploadProgress(Math.round(progress));
           }
         }, 150);
-        
+
         // Create image object to track actual loading
         const img = new Image();
         img.onload = () => {
@@ -161,25 +160,25 @@ export default function Profile() {
       try {
         setUploadProgress(0);
         setImageLoading(true);
-        
+
         // Pass progress callback to uploadAvatar
         await uploadAvatar(file, (progress: number) => {
           setUploadProgress(Math.round(progress));
         });
-        
+
         // Update avatar URL immediately for smooth rendering
         if (file) {
           const newAvatarUrl = URL.createObjectURL(file);
           setAvatarUrl(newAvatarUrl);
         }
-        
+
         // Complete the progress
         setUploadProgress(100);
         setTimeout(() => {
           setImageLoading(false);
           setUploadProgress(0);
         }, 500);
-        
+
       } catch (error) {
         setImageLoading(false);
         setUploadProgress(0);
@@ -191,17 +190,26 @@ export default function Profile() {
     }
   };
 
-  const handlePasswordChange = async (passwordData: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => {
-    return await changePassword(passwordData);
-  };
 
-  const handleVerifyOtp = async (otpData: { otp: string; newPassword: string }) => {
-    return await verifyOtp(otpData);
-  };
+  const openForgotPasswordHandler = useCallback(() => {
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      resetError();
+    }
+    setShowPasswordModal(true);
+    setModalType("changepassword");
+  }, []);
+
+  const closeForgotPasswordHandler = useCallback(() => {
+    // Clear any password-related errors when closing modal
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      resetError();
+    }
+    setShowPasswordModal(false);
+  }, []);
+
+  const clearModalType = useCallback(() => {
+    setModalType("");
+  }, []);
 
   if (loading) {
     return (
@@ -291,12 +299,11 @@ export default function Profile() {
               <div className="flex flex-col items-center text-center flex-shrink-0">
                 <div className="relative">
                   <Avatar className="w-24 h-24 transition-all duration-300 ease-in-out">
-                    <AvatarImage 
-                      src={avatarUrl} 
-                      alt={profile.firstName || 'User'} 
-                      className={`transition-opacity duration-300 ease-in-out ${
-                        uploadingAvatar || imageLoading ? 'opacity-50' : 'opacity-100'
-                      }`}
+                    <AvatarImage
+                      src={avatarUrl}
+                      alt={profile.firstName || 'User'}
+                      className={`transition-opacity duration-300 ease-in-out ${uploadingAvatar || imageLoading ? 'opacity-50' : 'opacity-100'
+                        }`}
                     />
                     <AvatarFallback className="bg-brand-green text-white text-xl transition-all duration-300 ease-in-out relative">
                       {(uploadingAvatar || imageLoading) && uploadProgress > 0 ? (
@@ -332,11 +339,11 @@ export default function Profile() {
                       ) : uploadingAvatar ? (
                         <Loader2 className="h-6 w-6 animate-spin" />
                       ) : (
-                        profile.firstName && profile.lastName 
+                        profile.firstName && profile.lastName
                           ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`
-                          : profile.firstName 
+                          : profile.firstName
                             ? profile.firstName.charAt(0)
-                            : profile.lastName 
+                            : profile.lastName
                               ? profile.lastName.charAt(0)
                               : profile.email.charAt(0).toUpperCase()
                       )}
@@ -363,7 +370,7 @@ export default function Profile() {
                   />
                 </div>
                 <h3 className="text-xl font-semibold mt-4">
-                  {profile.firstName || profile.lastName 
+                  {profile.firstName || profile.lastName
                     ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
                     : profile.email.split('@')[0] || 'User'
                   }
@@ -456,7 +463,7 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Spacer to push content to top and make cards equal height */}
               <div className="flex-grow"></div>
             </CardContent>
@@ -602,15 +609,9 @@ export default function Profile() {
                     </p>
                   )}
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    // Clear any password-related errors when opening modal
-                    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
-                      resetError();
-                    }
-                    setShowPasswordModal(true);
-                  }}
+                <Button
+                  variant="outline"
+                  onClick={openForgotPasswordHandler}
                 >
                   <Key className="h-4 w-4 mr-2" />
                   Change Password
@@ -640,7 +641,7 @@ export default function Profile() {
                     </>
                   )}
                 </div>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setShow2FAModal(true)}
                 >
@@ -655,18 +656,10 @@ export default function Profile() {
 
       {/* Password Change Modal */}
       <PasswordChangeModal
+        type={modalType}
         isOpen={showPasswordModal}
-        onClose={() => {
-          // Clear any password-related errors when closing modal
-          if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
-            resetError();
-          }
-          setShowPasswordModal(false);
-        }}
-        onChangePassword={handlePasswordChange}
-        onVerifyOtp={handleVerifyOtp}
-        changingPassword={changingPassword}
-        verifyingOtp={verifyingOtp}
+        onClose={closeForgotPasswordHandler}
+        clearType={clearModalType}
       />
 
       {/* Two-Factor Authentication Modal */}

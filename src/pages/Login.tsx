@@ -1,169 +1,200 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle, Shield } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "@/lib/authContext";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { TwoFactorLoginModal } from "@/components/auth/TwoFactorLoginModal";
+import { CheckEmail, Check6DigitPassword } from "@/validations/validations";
+import PasswordChangeModal from "@/components/admin/PasswordChangeModal";
+import { useDispatch, useSelector } from "react-redux";
+import { loginInfo, setLoading, setLoggingIn } from "@/redux/features/authSlice";
+import type { RootState } from "@/redux/store/store";
+import { AuthService } from "@/api/services/authService";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const { toast } = useToast();
+  const from = location.state?.from?.pathname || '/admin';
+  const { isAuthenticated, isLoggingIn } = useSelector((state: RootState) => state.auth);
+  const [loginError, setLoginError] = useState<any>(null);
+
+  const [loginUser, setLoginUser] = useState({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [show2FAModal, setShow2FAModal] = useState(false);
-  const [loginResponse, setLoginResponse] = useState<any>(null);
-  const [is2FAFlow, setIs2FAFlow] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [modalType, setModalType] = useState<"forgotpassword" | "">("");
   
   // Validation states
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [touched, setTouched] = useState({
     email: false,
-    password: false
+    password: false,
   });
-  
-  const { login, verify2FA, isAuthenticated, isLoggingIn, isVerifying2FA, loginError, verify2FAError } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/admin';
-
-  // Validation functions
-  const validateEmail = (email: string): string => {
-    if (!email || email.trim() === '') {
-      return 'Email is required';
+  // Handle input changes
+  const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginUser({
+      ...loginUser,
+      [name]: value,
+    });
+    // Clear errors when user starts typing
+    if (name === 'email' && emailError) {
+      setEmailError('');
     }
-    if (!email.includes('@')) {
-      return 'Please include an \'@\' in the email address';
-    }
-    if (!email.includes('.')) {
-      return 'Please include a valid domain in the email address';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-    return '';
-  };
-
-  const validatePassword = (password: string): string => {
-    if (!password || password.trim() === '') {
-      return 'Password is required';
-    }
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    return '';
-  };
-
-  // Handle input changes with validation
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.email) {
-      const error = validateEmail(value);
-      setEmailError(error);
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPassword(value);
-    
-    // Clear error immediately when user starts typing
-    if (touched.password) {
-      const error = validatePassword(value);
-      setPasswordError(error);
+    if (name === 'password' && passwordError) {
+      setPasswordError('');
     }
   };
 
   // Handle input blur (mark as touched and validate)
-  const handleEmailBlur = () => {
-    setTouched(prev => ({ ...prev, email: true }));
-    const error = validateEmail(email);
-    setEmailError(error);
+  const blurHandler = (text: string) => {
+    if (text?.toLowerCase() === "email") {
+      setTouched(prev => ({ ...prev, email: true }));
+      const error = CheckEmail(loginUser?.email);
+      setEmailError(error);
+    } else {
+      setTouched(prev => ({ ...prev, password: true }));
+      const error = Check6DigitPassword(loginUser?.password);
+      setPasswordError(error);
+    }
   };
 
-  const handlePasswordBlur = () => {
-    setTouched(prev => ({ ...prev, password: true }));
-    const error = validatePassword(password);
-    setPasswordError(error);
-  };
 
+  // Navigate to dashboard when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Login Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+    setLoginError(null);
+    dispatch(setLoggingIn(true));
+    dispatch(setLoading(true));
+
     // Mark all fields as touched
     setTouched({ email: true, password: true });
-    
+
     // Validate all fields
-    const emailValidation = validateEmail(email);
-    const passwordValidation = validatePassword(password);
-    
+    const emailValidation = CheckEmail(loginUser?.email);
+    const passwordValidation = Check6DigitPassword(loginUser?.password);
+
     setEmailError(emailValidation);
     setPasswordError(passwordValidation);
-    
+
     // If there are validation errors, don't submit
     if (emailValidation || passwordValidation) {
+      dispatch(setLoggingIn(false));
+      dispatch(setLoading(false));
       return;
     }
-    
-    // Call login with email and password (device data will be added in AuthService)
-    login(email, password);
-  };
 
-  // Handle 2FA verification
-  const handleVerify2FA = async (otpData: { otp: string; tempToken: string }): Promise<boolean> => {
     try {
-      await verify2FA(otpData);
-      setShow2FAModal(false);
-      setLoginResponse(null);
-      setIs2FAFlow(false);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
+      // Call login API
+      const response = await AuthService.login({
+        email: loginUser.email,
+        password: loginUser.password,
+      });
 
-  // Handle login response and 2FA
-  React.useEffect(() => {
-    if (loginError) {
-      // Extract error message from different possible structures
-      let errorMessage = 'An error occurred during login';
+      if (response.success && response.data) {
+        const loginData = response.data as any;
+        
+        // Get user data from localStorage (stored by AuthService.login)
+        const userData = AuthService.getCurrentUser();
+        
+        if (userData) {
+          // Store user data in Redux
+          dispatch(loginInfo(userData));
+          dispatch(setLoggingIn(false));
+          dispatch(setLoading(false));
+          
+          // Navigate to dashboard
+          navigate('/admin', { replace: true });
+        } else {
+          throw new Error('Failed to retrieve user data');
+        }
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
+    } catch (error: any) {
+      dispatch(setLoggingIn(false));
+      dispatch(setLoading(false));
+      setLoginError(error);
       
-      if (typeof loginError === 'string') {
-        errorMessage = loginError;
-      } else if (loginError?.message) {
-        errorMessage = loginError.message;
-      } else if (loginError?.data?.message) {
-        errorMessage = loginError.data.message;
-      } else if (loginError?.response?.data?.message) {
-        errorMessage = loginError.response.data.message;
+      // Extract error message
+      let errorMessage = 'An error occurred during login';
+      if (error && typeof error === 'object') {
+        if ('message' in error && error.message) {
+          errorMessage = String(error.message);
+        } else if ('data' in error && error.data) {
+          if (typeof error.data === 'string') {
+            errorMessage = error.data;
+          } else if (error.data && typeof error.data === 'object' && 'message' in error.data) {
+            errorMessage = String(error.data.message);
+          }
+        } else if ('response' in error && error.response) {
+          const response = error.response;
+          if (response.data?.message) {
+            errorMessage = String(response.data.message);
+          } else if (response.data?.data?.message) {
+            errorMessage = String(response.data.data.message);
+          } else if (response.statusText) {
+            errorMessage = String(response.statusText);
+          } else if (response.status) {
+            errorMessage = `Request failed with status ${response.status}`;
+          }
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
       
       setError(errorMessage);
     }
-  }, [loginError]);
+  };
 
-  // Check for 2FA requirement
-  React.useEffect(() => {
-    const tempToken = localStorage.getItem('tempToken');
-    if (tempToken && !isLoggingIn && !isVerifying2FA) {
-      setShow2FAModal(true);
-      setIs2FAFlow(true);
+  // Initialize auth state from localStorage on mount
+  useEffect(() => {
+    const userData = AuthService.getCurrentUser();
+    const accessToken = AuthService.getAccessToken();
+    
+    if (userData && accessToken) {
+      // Restore user data to Redux if available
+      dispatch(loginInfo(userData));
     }
-  }, [isLoggingIn, isVerifying2FA]);
+  }, [dispatch]);
 
+  // Forgot password modal handling - MUST be before any early returns
+  const openForgotPasswordHandler = useCallback(() => {
+    setShowPasswordModal(true);
+    setModalType("forgotpassword");
+  }, []);
 
+  const closeForgotPasswordHandler = useCallback(() => {
+    // Clear any password-related errors when closing modal
+    if (error && (error.includes('password') || error.includes('Current password is incorrect'))) {
+      setError('');
+    }
+    setShowPasswordModal(false);
+  }, [error]);
+
+  const clearModalType = useCallback(() => {
+    setModalType("");
+  }, []);
 
   // Don't show login form if user is already authenticated
   if (isAuthenticated) {
@@ -192,6 +223,7 @@ const Login = () => {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
@@ -228,8 +260,9 @@ const Login = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {error && (
+              {error && error.trim() !== '' && (
                 <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -241,12 +274,14 @@ const Login = () => {
                     id="email"
                     type="email"
                     placeholder="Enter your email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    onBlur={handleEmailBlur}
-                    className={`focus:ring-brand-green focus:border-brand-green ${
-                      touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
+                    name="email"
+                    value={loginUser?.email}
+                    // onChange={handleEmailChange}
+                    // onBlur={handleEmailBlur}
+                    onChange={onChangeHandler}
+                    onBlur={() => blurHandler("email")}
+                    className={`focus:ring-brand-green focus:border-brand-green ${touched.email && emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
                   />
                   {touched.email && emailError && (
                     <motion.div
@@ -268,12 +303,12 @@ const Login = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={handlePasswordChange}
-                      onBlur={handlePasswordBlur}
-                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${
-                        touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
+                      name="password"
+                      value={loginUser?.password}
+                      onChange={onChangeHandler}
+                      onBlur={() => blurHandler("password")}
+                      className={`focus:ring-brand-green focus:border-brand-green pr-10 ${touched.password && passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
                     />
                     <Button
                       type="button"
@@ -323,11 +358,12 @@ const Login = () => {
 
               <div className="pt-4">
                 <Link
-                  to="/"
+                  to="#"
+                  onClick={openForgotPasswordHandler}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Home
+                  forgot password
                 </Link>
               </div>
             </CardContent>
@@ -344,18 +380,12 @@ const Login = () => {
         </motion.div>
       </div>
 
-      {/* Two-Factor Authentication Modal */}
-      <TwoFactorLoginModal
-        isOpen={show2FAModal}
-        onClose={() => {
-          setShow2FAModal(false);
-          setIs2FAFlow(false);
-          // Clear temp token if user cancels
-          localStorage.removeItem('tempToken');
-        }}
-        onVerify2FA={handleVerify2FA}
-        verifying2FA={isVerifying2FA}
-        userEmail={email}
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        type={modalType}
+        isOpen={showPasswordModal}
+        onClose={closeForgotPasswordHandler}
+        clearType={clearModalType}
       />
     </div>
   );

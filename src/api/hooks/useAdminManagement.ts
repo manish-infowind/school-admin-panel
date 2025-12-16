@@ -158,7 +158,7 @@ export const useAdminManagement = (params?: QueryParams) => {
 
   return {
     // Data
-    admins: adminsData?.data || [],
+    admins: adminsData?.data?.data || [],
     stats: statsData?.data,
     pagination: adminsData?.data?.pagination || { 
       page: 1, 

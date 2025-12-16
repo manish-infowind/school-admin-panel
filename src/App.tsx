@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AuthProvider } from "@/lib/authContext";
-import Index from "./pages/Index";
 import Login from "./pages/Login";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { loginInfo } from "@/redux/features/authSlice";
+import { AuthService } from "@/api/services/authService";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductPage from "./pages/admin/ProductPage";
@@ -24,9 +26,30 @@ import FAQ from "./pages/admin/FAQ";
 import FAQNew from "./pages/admin/FAQNew";
 import FAQEdit from "./pages/admin/FAQEdit";
 import AdminManagement from "./pages/admin/AdminManagement";
+import RolesManagement from "./pages/admin/RolesManagement";
+import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import Campaigns from "./pages/admin/Campaigns";
+import UsersList from "./pages/admin/UserList";
 
 const queryClient = new QueryClient();
+
+// Component to initialize auth state from localStorage
+const AuthInitializer = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Sync Redux state with localStorage on app load
+    const userData = AuthService.getCurrentUser();
+    const accessToken = AuthService.getAccessToken();
+    
+    if (userData && accessToken) {
+      // Restore user data to Redux if available
+      dispatch(loginInfo(userData));
+    }
+  }, [dispatch]);
+
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,10 +57,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
+        <AuthInitializer />
         <Routes>
-          <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Login />} />
 
             {/* Admin Routes - Protected */}
           <Route
@@ -182,6 +204,37 @@ const App = () => (
             }
                       />
             <Route
+              path="/admin/management/users"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <AdminManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/management/roles"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <RolesManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/management/permissions"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <PermissionsManagement />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Redirect old /admin/management to users */}
+            <Route
               path="/admin/management"
               element={
                 <ProtectedRoute>
@@ -201,11 +254,20 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <UsersList />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

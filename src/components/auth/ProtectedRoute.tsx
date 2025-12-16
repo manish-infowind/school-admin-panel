@@ -1,16 +1,22 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/lib/authContext';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/redux/store/store';
+import { AuthService } from '@/api/services/authService';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
+  const { isAuthenticated, loadingState } = useSelector((state: RootState) => state.auth);
+  
+  // Also check localStorage as fallback (in case Redux hasn't rehydrated yet)
+  const isAuthFromStorage = AuthService.isAuthenticated();
 
-  if (loading) {
+  // Show loading state while checking authentication
+  if (loadingState) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
         <div className="text-center">
@@ -21,9 +27,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  // Check both Redux state and localStorage
+  if (!isAuthenticated && !isAuthFromStorage) {
     // Redirect to login page with the intended destination
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

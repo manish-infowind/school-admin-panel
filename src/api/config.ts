@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   // Base URL for API calls - production server
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/admin',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/admin',
   
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -15,10 +15,33 @@ export const API_CONFIG = {
   // API endpoints
   ENDPOINTS: {
     AUTH: {
-      LOGIN: '/auth/login',
+      LOGIN: '/login',
       LOGOUT: '/auth/logout',
       REFRESH: '/auth/refresh',
       VERIFY_2FA: '/auth/verify-2fa',
+    },
+    PASSWORD: {
+      FORGOT: '/forgot-password',
+      RESET: '/reset-password',
+      CHANGE: '/change-password',
+    },
+    PERMISSIONS: {
+      CREATE: '/permissions/create',
+      LIST: '/permissions',
+      ASSIGN: '/permissions/assign',
+      GET_BY_ADMIN: '/admins/:adminId/permissions',
+      UPDATE: '/permissions/:permissionId',
+      DELETE: '/permissions/:permissionId',
+    },
+    ROLES: {
+      CREATE: '/roles/create',
+      LIST: '/roles',
+      ASSIGN: '/roles/assign',
+      GET_BY_ADMIN: '/admins/:adminId/roles',
+      ASSIGN_PERMISSIONS: '/roles/permissions/assign',
+      GET_ROLE_PERMISSIONS: '/roles/:roleId/permissions',
+      UPDATE: '/roles/:roleId',
+      DELETE: '/roles/:roleId',
     },
     USERS: {
       LIST: '/users',
