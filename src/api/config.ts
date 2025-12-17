@@ -156,6 +156,7 @@ export const API_CONFIG = {
       FLAGGED_USERS: '/face-verifications/flagged/users',
       STATISTICS: '/face-verifications/statistics',
       RETRY_HISTORY: '/face-verifications/group/:groupId/retries',
+      MANUAL_VERIFICATION: '/face-verifications/users/:userId/manual-verification',
     },
   },
 } as const;

@@ -205,3 +205,33 @@ export const useRetryHistory = (groupId: number | null) => {
   });
 };
 
+export const useManualVerification = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: number; data: { isVerified: boolean; adminNotes?: string } }) =>
+      FaceVerificationService.manualUpdateFaceVerification(userId, data),
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        toast({
+          title: variables.data.isVerified ? 'User Verified' : 'User De-verified',
+          description: response.data?.message || `User has been ${variables.data.isVerified ? 'verified' : 'de-verified'} successfully.`,
+        });
+        // Invalidate relevant queries
+        queryClient.invalidateQueries({ queryKey: faceVerificationKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: faceVerificationKeys.details() });
+        queryClient.invalidateQueries({ queryKey: faceVerificationKeys.statistics() });
+      }
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update face verification. Please try again.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+

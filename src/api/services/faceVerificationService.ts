@@ -14,6 +14,8 @@ import {
   VerificationStatistics,
   StatisticsParams,
   RetryHistoryResponse,
+  ManualVerificationRequest,
+  ManualVerificationResponse,
 } from '../types';
 
 export class FaceVerificationService {
@@ -169,6 +171,22 @@ export class FaceVerificationService {
     try {
       const url = API_CONFIG.ENDPOINTS.FACE_VERIFICATIONS.RETRY_HISTORY.replace(':groupId', String(groupId));
       const response = await apiClient.get<RetryHistoryResponse>(url);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Manually update user face verification status
+   */
+  static async manualUpdateFaceVerification(
+    userId: number,
+    data: { isVerified: boolean; adminNotes?: string }
+  ): Promise<ApiResponse<ManualVerificationResponse>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.FACE_VERIFICATIONS.MANUAL_VERIFICATION.replace(':userId', String(userId));
+      const response = await apiClient.put<ManualVerificationResponse>(url, data);
       return response;
     } catch (error) {
       throw error;

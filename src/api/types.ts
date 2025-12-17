@@ -1228,3 +1228,38 @@ export interface PaginationControlInterface {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
+
+export interface ManualVerificationRequest {
+  isVerified: boolean;
+  adminNotes?: string;
+}
+
+export interface ManualVerificationUser {
+  id: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  isFaceVerified: boolean;
+  accountCurrentStatus: number;
+  accountStatusName: string;
+  updatedAt: string;
+}
+
+export interface ManualVerificationVerification {
+  id: number;
+  requestId: string;
+  isVerified: boolean;
+  verificationStatus: string;
+  overallScore: number;
+  confidence: number;
+  updatedAt: string;
+}
+
+export interface ManualVerificationResponse {
+  user: ManualVerificationUser;
+  verification: ManualVerificationVerification | null;
+  action: 'verified' | 'de-verified';
+  message: string;
+}

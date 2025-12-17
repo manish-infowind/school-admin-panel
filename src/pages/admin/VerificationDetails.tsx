@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Clock, User, Mail, Phone, History } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, Clock, User, Mail, Phone, History, UserCheck, UserX } from 'lucide-react';
 import { useVerificationDetails, useApproveOrRejectVerification } from '@/api/hooks/useFaceVerification';
 import { StatusBadge } from '@/components/admin/face-verification/StatusBadge';
 import { ScoreIndicator } from '@/components/admin/face-verification/ScoreIndicator';
 import { VideoPlayer } from '@/components/admin/face-verification/VideoPlayer';
 import { ImageGallery } from '@/components/admin/face-verification/ImageGallery';
 import { ApprovalModal } from '@/components/admin/face-verification/ApprovalModal';
+import { ManualVerificationModal } from '@/components/admin/face-verification/ManualVerificationModal';
 import { format } from 'date-fns';
 import { ApprovalData, RetryAttempt } from '@/api/types';
 import { cn } from '@/lib/utils';
@@ -21,11 +22,12 @@ export default function VerificationDetails() {
   const navigate = useNavigate();
   const verificationId = id ? parseInt(id, 10) : 0;
 
-  const { data: verificationData, isLoading, error } = useVerificationDetails(verificationId);
+  const { data: verificationData, isLoading, error, refetch } = useVerificationDetails(verificationId);
   const approveOrRejectMutation = useApproveOrRejectVerification();
 
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedAttemptIndex, setSelectedAttemptIndex] = useState<number | null>(null);
+  const [isManualVerificationModalOpen, setIsManualVerificationModalOpen] = useState(false);
 
   const verification = verificationData?.data;
 
@@ -137,6 +139,28 @@ export default function VerificationDetails() {
                 )}
               </p>
             </div>
+          </div>
+          {/* Manual Verification Actions */}
+          <div className="flex items-center gap-2">
+            {!verification.user.isFaceVerified && (
+              <Button
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setIsManualVerificationModalOpen(true)}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Verify Manually
+              </Button>
+            )}
+            {verification.user.isFaceVerified && (
+              <Button
+                variant="destructive"
+                onClick={() => setIsManualVerificationModalOpen(true)}
+              >
+                <UserX className="h-4 w-4 mr-2" />
+                De-verify Manually
+              </Button>
+            )}
           </div>
         </div>
 
@@ -408,7 +432,7 @@ export default function VerificationDetails() {
             </Card>
 
             {/* Admin Actions */}
-            {verification.status === 'Pending' && (
+            {verification.verificationStatus === 'pending' && (
               <Card>
                 <CardHeader>
                   <CardTitle>Admin Actions</CardTitle>
@@ -494,6 +518,21 @@ export default function VerificationDetails() {
         onApprove={handleApproveSubmit}
         onReject={handleRejectSubmit}
         isLoading={approveOrRejectMutation.isPending}
+      />
+
+      {/* Manual Verification Modal */}
+      <ManualVerificationModal
+        userId={verification.userId}
+        userName={`${verification.user.firstName} ${verification.user.lastName}`}
+        userEmail={verification.user.email}
+        currentStatus={verification.user.isFaceVerified}
+        isAccountPaused={false} // TODO: Add isAccountPaused to user object if available
+        isOpen={isManualVerificationModalOpen}
+        onClose={() => setIsManualVerificationModalOpen(false)}
+        onSuccess={() => {
+          // Refetch verification details to get updated data
+          refetch();
+        }}
       />
     </div>
   );
