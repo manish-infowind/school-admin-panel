@@ -868,6 +868,131 @@ export interface UserListInterface {
     city: string;
 };
 
+// User Management API Types
+export interface UserListItem {
+  id: number;
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string;
+  countryCode: string;
+  gender: 'm' | 'f' | 'o';
+  dob: string | null;
+  profilePic: string | null;
+  profileImages: string[];
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  isFaceVerified: boolean;
+  isAccountPaused: boolean;
+  accountCurrentStatus: number;
+  accountStatusName?: string; // Optional - may not be in API response
+  accountStatusDescription?: string; // Optional - may not be in API response
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile {
+  height: number | null;
+  education: string | null;
+  relationshipGoal: string | null;
+  voiceUrl: string | null;
+  bio: string | null;
+}
+
+export interface UserAddress {
+  cityId: number | null;
+  cityName: string | null;
+  countryId: number | null;
+  lat: string | number | null; // Can be string or number
+  long: string | number | null; // Can be string or number
+  location: string | null;
+  isVerified: boolean;
+}
+
+export interface UserInteractions {
+  receivedLikes: number;
+  givenLikes: number;
+  receivedSuperLikes: number;
+  givenSuperLikes: number;
+  passes: number;
+  blocks: number;
+}
+
+export interface PlanFeature {
+  label: string;
+  limit?: number;
+  featureId?: number;
+  accessible?: boolean;
+  period?: string;
+}
+
+export interface UserSubscription {
+  id: number;
+  subscriptionId: string;
+  planId: number;
+  planName: string;
+  planPrice: number;
+  planDuration: string;
+  planFeatures: string[] | PlanFeature[]; // Can be array of strings or objects
+  periodType: 'month' | 'week';
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserDetails extends UserListItem {
+  isPausedByUser: boolean;
+  profile: UserProfile;
+  address: UserAddress;
+  interactions: UserInteractions;
+  subscriptions: UserSubscription[];
+  firstPlan: UserSubscription | null;
+}
+
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  countryCode?: string;
+  dob?: string;
+  gender?: 'm' | 'f' | 'o';
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  isFaceVerified?: boolean;
+  isAccountPaused?: boolean;
+  accountCurrentStatus?: number;
+}
+
+export interface UserListResponse {
+  data: UserListItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface UserListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  gender?: 'm' | 'f' | 'o';
+}
+
+export interface DeleteUserRequest {
+  deletionReason?: string;
+}
+
 export interface PaginationControlInterface {
   currentPage: number;
   totalPages: number;

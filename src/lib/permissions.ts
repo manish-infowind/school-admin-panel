@@ -20,20 +20,59 @@ export const PERMISSIONS = {
 } as const;
 
 /**
+ * Check if user has super_admin role
+ * This function checks multiple ways a user can be a super admin:
+ * 1. isSuperAdmin or is_super_admin flag
+ * 2. roles array containing 'super_admin' role
+ * 3. legacy role field set to 'super_admin'
+ */
+export const hasSuperAdminRole = (user: User | null | undefined): boolean => {
+  if (!user) return false;
+  
+  // Check isSuperAdmin flag
+  const isSuperAdmin = user.isSuperAdmin || (user as any).is_super_admin;
+  if (isSuperAdmin) return true;
+  
+  // Check roles array for super_admin role
+  if (user.roles && Array.isArray(user.roles)) {
+    const hasSuperAdmin = user.roles.some(role => 
+      role.roleName === 'super_admin' || role.roleName === 'superAdmin'
+    );
+    if (hasSuperAdmin) return true;
+  }
+  
+  // Check legacy role field
+  if ((user as any).role === 'super_admin' || (user as any).role === 'superAdmin') {
+    return true;
+  }
+  
+  return false;
+};
+
+/**
  * Get user permissions from User object
  */
 const getUserPermissions = (user: User | null | undefined): UserPermission[] => {
   if (!user) return [];
-  // Check both isSuperAdmin and is_super_admin for compatibility
-  const isSuperAdmin = user.isSuperAdmin || (user as any).is_super_admin;
-  if (isSuperAdmin) return [{ permissionName: PERMISSIONS.ALL_ALLOWED, allowedActions: null }];
+  
+  // If user has super_admin role, grant all permissions
+  if (hasSuperAdminRole(user)) {
+    return [{ permissionName: PERMISSIONS.ALL_ALLOWED, allowedActions: null }];
+  }
+  
   return user.permissions || [];
 };
 
 /**
  * Check if user has a specific permission name
+ * Super admins automatically have all permissions
  */
 export const hasPermissionName = (user: User | null | undefined, permissionName: string): boolean => {
+  // Super admins have all permissions
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   const permissions = getUserPermissions(user);
   
   // Check for all_allowed
@@ -46,12 +85,18 @@ export const hasPermissionName = (user: User | null | undefined, permissionName:
 
 /**
  * Check if user can perform a specific action on a permission
+ * Super admins automatically have access to all actions
  */
 export const canPerformAction = (
   user: User | null | undefined,
   permissionName: string,
   action: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // Super admins have access to everything
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   const permissions = getUserPermissions(user);
   
   // Check for all_allowed
@@ -76,11 +121,17 @@ export const canPerformAction = (
 
 /**
  * Check if user has any of the specified permission names
+ * Super admins automatically have all permissions
  */
 export const hasAnyPermissionName = (
   user: User | null | undefined,
   permissionNames: string[]
 ): boolean => {
+  // Super admins have all permissions
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   const permissions = getUserPermissions(user);
   
   // Check for all_allowed
@@ -96,11 +147,17 @@ export const hasAnyPermissionName = (
 
 /**
  * Check if user has all of the specified permission names
+ * Super admins automatically have all permissions
  */
 export const hasAllPermissionNames = (
   user: User | null | undefined,
   permissionNames: string[]
 ): boolean => {
+  // Super admins have all permissions
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   const permissions = getUserPermissions(user);
   
   // Check for all_allowed
@@ -116,8 +173,14 @@ export const hasAllPermissionNames = (
 
 /**
  * Check if user can access admin management section
+ * Super admins automatically have access
  */
 export const canAccessAdminManagement = (user: User | null | undefined): boolean => {
+  // Super admins have access to everything
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   return hasAnyPermissionName(user, [
     PERMISSIONS.ALL_ALLOWED,
     PERMISSIONS.ADMIN_MANAGEMENT,
@@ -126,31 +189,49 @@ export const canAccessAdminManagement = (user: User | null | undefined): boolean
 
 /**
  * Check if user can perform CRUD operations on admin users
+ * Super admins automatically have all operations
  */
 export const canManageAdminUsers = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // Super admins have access to everything
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   return canPerformAction(user, PERMISSIONS.ADMIN_MANAGEMENT, operation);
 };
 
 /**
  * Check if user can perform CRUD operations on roles
+ * Super admins automatically have all operations
  */
 export const canManageRoles = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // Super admins have access to everything
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   return canPerformAction(user, PERMISSIONS.ROLE_MANAGEMENT, operation);
 };
 
 /**
  * Check if user can perform CRUD operations on permissions
+ * Super admins automatically have all operations
  */
 export const canManagePermissions = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // Super admins have access to everything
+  if (hasSuperAdminRole(user)) {
+    return true;
+  }
+  
   return canPerformAction(user, PERMISSIONS.PERMISSION_MANAGEMENT, operation);
 };
 

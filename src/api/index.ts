@@ -16,10 +16,14 @@ export { PrivacyPolicyService } from './services/privacyPolicyService';
 export { AboutUsService } from './services/aboutUsService';
 export { profileService } from './services/profileService';
 export { EnquiryService } from './services/enquiryService';
+export { UserManagementService } from './services/userManagementService';
+export { AdminManagementService } from './services/adminManagementService';
 
 // Export hooks
 export { useProfile } from './hooks/useProfile';
 export { usePassword } from './hooks/usePassword';
 export { usePermissions, useAdminPermissions } from './hooks/usePermissions';
 export { useRoles, useAdminRoles, useRolePermissions } from './hooks/useRoles';
-export { useEnquiries } from './hooks/useEnquiries'; 
+export { useEnquiries } from './hooks/useEnquiries';
+export { useUserManagement } from './hooks/useUserManagement';
+export { useAdminManagement } from './hooks/useAdminManagement'; 

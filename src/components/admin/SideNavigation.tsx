@@ -36,6 +36,11 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
+    name: "System Users",
+    href: "/admin/users",
+    icon: UserCheck,
+  },
+  {
     name: "About Us",
     href: "/admin/about-us",
     icon: Building,
