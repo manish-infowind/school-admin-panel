@@ -59,18 +59,21 @@ const UserEditPage = () => {
         e.preventDefault();
         if (user) {
             // Clean up undefined values
-            const cleanedData: UpdateUserRequest = {};
-            Object.entries(formData).forEach(([key, value]) => {
+            const cleanedData: Partial<UpdateUserRequest> = {};
+            (Object.keys(formData) as Array<keyof UpdateUserRequest>).forEach((key) => {
+                const value = formData[key];
                 if (value !== undefined && value !== null && value !== '') {
-                    cleanedData[key as keyof UpdateUserRequest] = value;
+                    (cleanedData as Record<string, any>)[key] = value;
                 }
             });
 
             updateUser(
                 { id: user.id, data: cleanedData },
                 {
-                    onSuccess: () => {
-                        navigate('/admin/users');
+                    onSuccess: (response) => {
+                        if (response?.success) {
+                            navigate('/admin/users');
+                        }
                     },
                     onError: (error: any) => {
                         // Error toast is already handled by the hook
