@@ -1,30 +1,33 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard,
-  Package,
-  Home,
-  FileText,
   ChevronRight,
-  X,
+  ChevronDown,
   Building,
   Mail,
   Shield,
   HelpCircle,
   Users,
   Megaphone,
+  UserCog,
+  Key,
+  UserCheck,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import { useAuth } from "@/lib/authContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store/store";
+import { 
+  canAccessAdminManagement,
+  canManageAdminUsers,
+  canManageRoles,
+  canManagePermissions
+} from "@/lib/permissions";
+import React, { useState, useEffect } from "react";
 
-interface SideNavigationProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 const navigation = [
   {
@@ -33,14 +36,9 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: "Product Page",
-    href: "/admin/products",
-    icon: Package,
-  },
-  {
-    name: "Index Page",
-    href: "/admin/index-page",
-    icon: Home,
+    name: "System Users",
+    href: "/admin/users",
+    icon: UserCheck,
   },
   {
     name: "About Us",
@@ -69,20 +67,51 @@ const navigation = [
   },
 ];
 
+interface SideNavigationProps {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
-  const { user } = useAuth();
-  const isSuperAdmin = user?.role === 'super_admin';
-
-  // Add Admin Management for Super Admins
-  const allNavigation = [
-    ...navigation,
-    ...(isSuperAdmin ? [{
-      name: "Admin Management",
-      href: "/admin/management",
+  const loginState = useSelector((state: RootState) => state.auth.loginState);
+  const [adminManagementOpen, setAdminManagementOpen] = useState(false);
+  
+  // Check if user has permission to access admin management
+  const hasAdminAccess = canAccessAdminManagement(loginState as any);
+  
+  // Admin Management sub-items with permission checks
+  const adminManagementItems = [
+    {
+      name: "Admin Users",
+      href: "/admin/management/users",
       icon: Users,
-    }] : []),
-  ];
+      canAccess: canManageAdminUsers(loginState as any, 'read'),
+    },
+    {
+      name: "Roles",
+      href: "/admin/management/roles",
+      icon: UserCog,
+      canAccess: canManageRoles(loginState as any, 'read'),
+    },
+    {
+      name: "Permissions",
+      href: "/admin/management/permissions",
+      icon: Key,
+      canAccess: canManagePermissions(loginState as any, 'read'),
+    },
+  ].filter(item => item.canAccess);
+
+  // Check if any admin management route is active
+  const isAdminManagementActive = location.pathname.startsWith('/admin/management');
+  
+  // Auto-expand admin management if on one of its routes
+  React.useEffect(() => {
+    if (isAdminManagementActive) {
+      setAdminManagementOpen(true);
+    }
+  }, [isAdminManagementActive]);
 
   const sidebarContent = (
     <motion.div
@@ -102,7 +131,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       <ScrollArea className="flex-1">
         <div className="px-6 space-y-1 py-2">
           <div className="space-y-0.5">
-            {allNavigation.map((item) => {
+            {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <motion.div
@@ -119,7 +148,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                       className={cn(
                         "w-full justify-start gap-3 h-10 text-base",
                         isActive &&
-                          "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -143,6 +172,74 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                 </motion.div>
               );
             })}
+            
+            {/* Admin Management Section with Sub-items */}
+            {hasAdminAccess && (
+              <div className="mt-2">
+                <Button
+                  variant={isAdminManagementActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-between gap-3 h-10 text-base",
+                    isAdminManagementActive &&
+                      "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                  )}
+                  onClick={() => setAdminManagementOpen(!adminManagementOpen)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5" />
+                    <span>Admin Management</span>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: adminManagementOpen ? 90 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </motion.div>
+                </Button>
+                
+                <AnimatePresence>
+                  {adminManagementOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-sidebar-accent/30 pl-4">
+                        {adminManagementItems.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.href;
+                          return (
+                            <motion.div
+                              key={subItem.name}
+                              whileHover={{ x: 4 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            >
+                              <Link
+                                to={subItem.href}
+                                onClick={() => window.innerWidth < 1024 && onClose()}
+                              >
+                                <Button
+                                  variant={isSubActive ? "secondary" : "ghost"}
+                                  className={cn(
+                                    "w-full justify-start gap-3 h-9 text-sm",
+                                    isSubActive &&
+                                      "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                                  )}
+                                >
+                                  <subItem.icon className="h-4 w-4" />
+                                  {subItem.name}
+                                </Button>
+                              </Link>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
       </ScrollArea>

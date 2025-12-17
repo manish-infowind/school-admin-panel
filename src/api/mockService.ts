@@ -21,7 +21,7 @@ import {
 } from './mockData';
 
 // Check if we should use mock data (backend is down)
-const USE_MOCK_DATA = true; // Set to true when backend is down
+const USE_MOCK_DATA = true; // Set to true to use mocks for profile endpoints (API not available yet)
 
 export const shouldUseMockData = (): boolean => {
   return USE_MOCK_DATA;
@@ -37,13 +37,47 @@ export const getMockResponse = async <T>(
     return null;
   }
 
-  // Simulate network delay
-  await delay(300);
-
   // Normalize endpoint and extract query params
   let normalizedEndpoint = endpoint.replace(API_CONFIG.BASE_URL, '').replace(/^\/admin/, '');
   const urlParts = normalizedEndpoint.split('?');
   normalizedEndpoint = urlParts[0];
+  
+  // Never return mock data for roles, permissions, admin management, and auth endpoints - always use real APIs
+  // Keep mock service for user/profile endpoints for testing
+  const skipMockEndpoints = [
+    '/login',
+    '/forgot-password',
+    '/reset-password',
+    '/change-password',
+    '/permissions',
+    '/roles',
+    '/admins',
+    '/admin-management',
+    '/roles/assign',
+    '/permissions/assign',
+    '/roles/create',
+    '/permissions/create',
+    '/roles/permissions',
+    '/admins/',
+  ];
+  
+  // Don't skip if it's a user/profile endpoint - keep mock for testing
+  // Check if it's a profile endpoint (with or without query params)
+  const isUserProfileEndpoint = normalizedEndpoint.includes('/users/profile') || 
+                                 normalizedEndpoint.includes('/user/profile') ||
+                                 normalizedEndpoint === '/users/profile' ||
+                                 normalizedEndpoint.startsWith('/users/profile');
+  
+  const shouldSkip = !isUserProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
+    normalizedEndpoint.includes(skipEndpoint) || endpoint.includes(skipEndpoint)
+  );
+  
+  if (shouldSkip) {
+    return null; // Force real API call for roles, permissions, and admin management (but not user/profile)
+  }
+
+  // Simulate network delay
+  await delay(300);
   
   // Parse query parameters
   const queryParams: Record<string, string> = {};

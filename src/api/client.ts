@@ -68,13 +68,13 @@ class ApiClient {
               } else {
                 // Refresh failed, clear tokens and redirect to login
                 this.clearAuthTokens();
-                window.location.href = '/login';
+                window.location.href = '/';
                 return Promise.reject(error);
               }
             } catch (refreshError) {
               // Refresh failed, clear tokens and redirect to login
               this.clearAuthTokens();
-              window.location.href = '/login';
+              window.location.href = '/';
               return Promise.reject(error);
             }
           }
@@ -191,10 +191,47 @@ class ApiClient {
       signal,
     } = options;
 
-    // Try to get mock response first
-    const mockResponse = await getMockResponse<T>(endpoint, method, body, options.params);
-    if (mockResponse !== null) {
-      return mockResponse;
+    // Skip mock responses for roles, permissions, admin management, and auth - use real APIs
+    // Keep mock service for user/profile endpoints for testing
+    const skipMockEndpoints = [
+      '/login',
+      '/forgot-password',
+      '/reset-password',
+      '/change-password',
+      '/permissions',
+      '/roles',
+      '/admins',
+      '/admin-management',
+      '/roles/assign',
+      '/permissions/assign',
+      '/roles/create',
+      '/permissions/create',
+      '/roles/permissions',
+      '/admins/',
+    ];
+    
+    // Normalize endpoint for comparison (remove base URL and query params)
+    const normalizedEndpoint = endpoint.replace(this.baseURL, '').split('?')[0];
+    
+    // Don't skip if it's a user/profile endpoint - keep mock for testing
+    // Check if it's a profile endpoint (with or without query params)
+    const isUserProfileEndpoint = normalizedEndpoint.includes('/users/profile') || 
+                                  normalizedEndpoint.includes('/user/profile') ||
+                                  normalizedEndpoint === '/users/profile' ||
+                                  normalizedEndpoint.startsWith('/users/profile');
+    
+    const shouldSkipMock = !isUserProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
+      normalizedEndpoint.includes(skipEndpoint) || endpoint.includes(skipEndpoint)
+    );
+    
+    if (!shouldSkipMock) {
+      // Try to get mock response first for other endpoints
+      // Extract params from URL if present
+      const urlParams = endpoint.includes('?') ? new URLSearchParams(endpoint.split('?')[1]) : undefined;
+      const mockResponse = await getMockResponse<T>(endpoint, method, body, urlParams);
+      if (mockResponse !== null) {
+        return mockResponse;
+      }
     }
 
     const config: AxiosRequestConfig = {
@@ -210,9 +247,49 @@ class ApiClient {
     }
 
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.request(config);
-      return response.data;
+      const response: AxiosResponse<any> = await this.axiosInstance.request(config);
+      
+      // Transform API response format to match our ApiResponse type
+      // API returns: { statusCode, message, data }
+      // We expect: { success, message, data }
+      if (response.data) {
+        const apiData = response.data;
+        
+        // Check if it's the new API format (has statusCode)
+        if ('statusCode' in apiData) {
+          const isSuccess = apiData.statusCode >= 200 && apiData.statusCode < 300;
+          
+          // If error status code, throw error with message
+          if (!isSuccess) {
+            const errorMessage = apiData.message || `Request failed with status ${apiData.statusCode}`;
+            const apiError: ApiError = {
+              type: this.getErrorType(apiData.statusCode),
+              message: errorMessage,
+              status: apiData.statusCode,
+              timestamp: new Date().toISOString(),
+            };
+            throw apiError;
+          }
+          
+          return {
+            success: isSuccess,
+            data: apiData.data,
+            message: apiData.message,
+          } as ApiResponse<T>;
+        }
+        
+        // Otherwise, assume it's already in the expected format
+        return apiData as ApiResponse<T>;
+      }
+      
+      return response.data as ApiResponse<T>;
     } catch (error) {
+      // If it's already an ApiError, re-throw it
+      if (error && typeof error === 'object' && 'type' in error && 'message' in error) {
+        throw error;
+      }
+      
+      // Otherwise, handle it
       const apiError = this.handleError(error);
       throw apiError;
     }

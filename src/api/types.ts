@@ -28,19 +28,47 @@ export interface ApiError {
 export interface LoginRequest {
   email: string;
   password: string;
-  deviceData: {
+  deviceData?: {
     deviceType: string;
     os: string;
     browser: string;
   };
-  ipAddress: string;
-  location: {
+  ipAddress?: string;
+  location?: {
     latitude: number;
     longitude: number;
   };
 }
 
+export interface LoginTokens {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt: string;
+  refreshTokenExpiresAt: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+export interface UserPermission {
+  permissionName: string;
+  allowedActions: string[] | null; // null means all actions allowed
+}
+
 export interface LoginResponse {
+  id: string;
+  email: string;
+  is_super_admin: boolean;
+  permissions: UserPermission[]; // Updated: Array of permission objects
+  roles?: Array<{
+    id: number;
+    roleName: string;
+    description?: string;
+  }>;
+  tokens: LoginTokens;
+  sessionId: string;
+}
+
+export interface LoginResponseLegacy {
   accessToken: string;
   refreshToken: string;
   user: {
@@ -55,9 +83,180 @@ export interface LoginResponse {
   };
 }
 
-export interface LoginResponse2FA extends LoginResponse {
+export interface LoginResponse2FA extends LoginResponseLegacy {
   requiresOTP?: boolean;
   tempToken?: string;
+}
+
+// Password Management Types
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
+}
+
+// Permission Management Types
+export interface Permission {
+  id: number;
+  permissionName: string;
+  allowedActions: string[] | null; // null means all actions allowed
+}
+
+export interface CreatePermissionRequest {
+  permissionName: string;
+  allowedActions?: string[]; // Optional: ['create', 'read', 'update', 'delete']
+}
+
+export interface CreatePermissionResponse {
+  id: number;
+  permissionName: string;
+  allowedActions: string[] | null;
+}
+
+export interface UpdatePermissionRequest {
+  allowedActions?: string[]; // Optional: ['create', 'read', 'update', 'delete']
+}
+
+export interface UpdatePermissionResponse {
+  id: number;
+  permissionName: string;
+  allowedActions: string[] | null;
+}
+
+export interface PermissionsListResponse {
+  permissions: Permission[];
+}
+
+export interface AssignPermissionsRequest {
+  adminId: string;
+  permissionIds: number[];
+}
+
+export interface AssignPermissionsResponse {
+  adminId: string;
+  permissions: Array<{
+    permissionName: string;
+  }>;
+}
+
+export interface AdminPermissionsResponse {
+  adminId: string;
+  isSuperAdmin: boolean;
+  permissions: Array<{
+    permissionName: string;
+  }>;
+}
+
+// Role Management Types
+export interface Role {
+  id: number;
+  roleName: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface CreateRoleRequest {
+  roleName: string;
+  description?: string;
+}
+
+export interface CreateRoleResponse {
+  id: number;
+  roleName: string;
+  description?: string;
+}
+
+export interface UpdateRoleRequest {
+  roleName: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateRoleResponse {
+  id: number;
+  roleName: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface RolesListResponse {
+  roles: Role[];
+}
+
+export interface AssignRoleRequest {
+  adminId: string;
+  roleId: number;
+}
+
+export interface AssignRoleResponse {
+  adminId: string;
+  roles: Array<{
+    id: number;
+    roleName: string;
+    description?: string;
+  }>;
+}
+
+export interface AdminRolesResponse {
+  adminId: string;
+  isSuperAdmin: boolean;
+  roles: Array<{
+    id: number;
+    roleName: string;
+    description?: string;
+  }>;
+}
+
+export interface AssignPermissionsToRoleRequest {
+  roleId: number;
+  permissions: Array<{
+    permissionName: string;
+    crud: string[]; // Array of: 'create' | 'read' | 'update' | 'delete'
+  }>;
+}
+
+export interface AssignPermissionsToRoleResponse {
+  roleId: number;
+  roleName: string;
+  permissions: Array<{
+    id: number;
+    permissionName: string;
+    permissionAllowedActions: string[] | null;
+    roleAllowedActions: string[] | null;
+  }>;
+}
+
+export interface RolePermissionsResponse {
+  roleId: number;
+  roleName: string;
+  permissions: Array<{
+    id: number;
+    permissionName: string;
+    permissionAllowedActions: string[] | null;
+    roleAllowedActions: string[] | null;
+  }>;
 }
 
 export interface Verify2FARequest {
@@ -91,6 +290,13 @@ export interface User {
   phone: string;
   location: string;
   isActive: boolean;
+  permissions?: UserPermission[]; // Updated: Array of permission objects with allowedActions
+  roles?: Array<{
+    id: number;
+    roleName: string;
+    description?: string;
+  }>;
+  isSuperAdmin?: boolean; // Added for convenience
   lastLogin?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -99,19 +305,25 @@ export interface User {
 // Admin Management Types
 export interface AdminUser {
   id: string;
-  username: string;
+  username?: string; // Optional - may not be in API response
   email: string;
   firstName: string;
   lastName: string;
   role: 'admin' | 'super_admin';
   phone: string;
-  location: string;
-  bio?: string;
-  profilePic?: string;
+  countryCode?: string; // Optional - may be in API response
+  location: string | null;
+  bio?: string | null;
+  profilePic?: string | null;
   isActive: boolean;
   twoFactorEnabled: boolean;
   permissions: string[];
-  lastLogin?: string;
+  roles?: Array<{
+    id: number;
+    roleName: string;
+    description?: string;
+  }>;
+  lastLogin?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -124,20 +336,26 @@ export interface CreateAdminRequest {
   lastName: string;
   role: 'admin' | 'super_admin';
   phone: string;
+  countryCode: string; // Required: e.g., "+1", "+91"
   location: string;
   bio?: string;
   permissions?: string[];
   isActive?: boolean;
+  // Note: roleId and permissionIds should be assigned separately after admin creation
+  // via POST /admin/roles/assign and POST /admin/permissions/assign
 }
 
 export interface UpdateAdminRequest {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  countryCode?: string; // Optional: e.g., "+1", "+91"
   location?: string;
   bio?: string;
   permissions?: string[];
   isActive?: boolean;
+  // Note: roleId and permissionIds should be assigned separately after admin update
+  // via POST /admin/roles/assign and POST /admin/permissions/assign
 }
 
 export interface ChangePasswordRequest {
@@ -618,3 +836,172 @@ export interface DetailedCampaignStats extends CampaignStats {
     unknown: number;
   };
 } 
+
+export interface CreateUserRequest {
+  userName: string;
+  isActive: boolean;
+  status: string;
+  contactNumber: string | number;
+  email?: string;
+  profileScore: string | number;
+  gender?: string;
+  city?: string;
+};
+
+export interface TableSortingInterface {
+    children: React.ReactNode;
+    sortKey: string;
+    currentSortKey: string;
+    currentDirection: 'asc' | 'desc';
+    onSort: (key: string) => void;
+};
+
+export interface UserListInterface {
+    id: number;
+    name: string;
+    isActive: boolean;
+    status: string;
+    contact: string;
+    email: string;
+    profileScore : string,
+    gender: string;
+    city: string;
+};
+
+// User Management API Types
+export interface UserListItem {
+  id: number;
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string;
+  countryCode: string;
+  gender: 'm' | 'f' | 'o';
+  dob: string | null;
+  profilePic: string | null;
+  profileImages: string[];
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  isFaceVerified: boolean;
+  isAccountPaused: boolean;
+  accountCurrentStatus: number;
+  accountStatusName?: string; // Optional - may not be in API response
+  accountStatusDescription?: string; // Optional - may not be in API response
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile {
+  height: number | null;
+  education: string | null;
+  relationshipGoal: string | null;
+  voiceUrl: string | null;
+  bio: string | null;
+}
+
+export interface UserAddress {
+  cityId: number | null;
+  cityName: string | null;
+  countryId: number | null;
+  lat: string | number | null; // Can be string or number
+  long: string | number | null; // Can be string or number
+  location: string | null;
+  isVerified: boolean;
+}
+
+export interface UserInteractions {
+  receivedLikes: number;
+  givenLikes: number;
+  receivedSuperLikes: number;
+  givenSuperLikes: number;
+  passes: number;
+  blocks: number;
+}
+
+export interface PlanFeature {
+  label: string;
+  limit?: number;
+  featureId?: number;
+  accessible?: boolean;
+  period?: string;
+}
+
+export interface UserSubscription {
+  id: number;
+  subscriptionId: string;
+  planId: number;
+  planName: string;
+  planPrice: number;
+  planDuration: string;
+  planFeatures: string[] | PlanFeature[]; // Can be array of strings or objects
+  periodType: 'month' | 'week';
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserDetails extends UserListItem {
+  isPausedByUser: boolean;
+  profile: UserProfile;
+  address: UserAddress;
+  interactions: UserInteractions;
+  subscriptions: UserSubscription[];
+  firstPlan: UserSubscription | null;
+}
+
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  countryCode?: string;
+  dob?: string;
+  gender?: 'm' | 'f' | 'o';
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  isFaceVerified?: boolean;
+  isAccountPaused?: boolean;
+  accountCurrentStatus?: number;
+}
+
+export interface UserListResponse {
+  data: UserListItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface UserListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  gender?: 'm' | 'f' | 'o';
+}
+
+export interface DeleteUserRequest {
+  deletionReason?: string;
+}
+
+export interface PaginationControlInterface {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  pageSizeOptions: number[];
+  startItem: number;
+  endItem: number;
+  visiblePages: (number | string)[];
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
