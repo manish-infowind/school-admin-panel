@@ -30,6 +30,8 @@ import RolesManagement from "./pages/admin/RolesManagement";
 import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import Campaigns from "./pages/admin/Campaigns";
 import UsersList from "./pages/admin/UserList";
+import UserViewPage from "./pages/admin/UserViewPage";
+import UserEditPage from "./pages/admin/UserEditPage";
 
 const queryClient = new QueryClient();
 
@@ -260,6 +262,26 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <UsersList />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users/:id"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <UserViewPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <UserEditPage />
                   </AdminLayout>
                 </ProtectedRoute>
               }

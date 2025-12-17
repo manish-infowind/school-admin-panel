@@ -48,6 +48,8 @@ export const API_CONFIG = {
       CREATE: '/users',
       UPDATE: '/users/:id',
       DELETE: '/users/:id',
+      PAUSE: '/users/:id/pause',
+      DETAILS: '/users/:id',
       PROFILE: '/users/profile',
       PROFILE_AVATAR: '/users/profile/avatar',
       PROFILE_PASSWORD: '/users/profile/password',
