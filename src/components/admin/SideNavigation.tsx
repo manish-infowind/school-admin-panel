@@ -14,6 +14,7 @@ import {
   UserCog,
   Key,
   UserCheck,
+  ScanFace,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -64,6 +65,11 @@ const navigation = [
     name: "Campaigns",
     href: "/admin/campaigns",
     icon: Megaphone,
+  },
+  {
+    name: "Face Verifications",
+    href: "/admin/face-verifications",
+    icon: ScanFace,
   },
 ];
 

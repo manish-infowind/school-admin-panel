@@ -147,6 +147,16 @@ export const API_CONFIG = {
       RETRY_TRIGGER: '/campaigns/retry/trigger',
       RETRY_STATS: '/campaigns/retry/stats',
     },
+    FACE_VERIFICATIONS: {
+      LIST: '/face-verifications',
+      PENDING: '/face-verifications/pending',
+      DETAILS: '/face-verifications/:id',
+      APPROVE: '/face-verifications/:id/approve',
+      REVERIFY: '/face-verifications/users/:userId/reverify',
+      FLAGGED_USERS: '/face-verifications/flagged/users',
+      STATISTICS: '/face-verifications/statistics',
+      RETRY_HISTORY: '/face-verifications/group/:groupId/retries',
+    },
   },
 } as const;
 

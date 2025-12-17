@@ -32,6 +32,10 @@ import Campaigns from "./pages/admin/Campaigns";
 import UsersList from "./pages/admin/UserList";
 import UserViewPage from "./pages/admin/UserViewPage";
 import UserEditPage from "./pages/admin/UserEditPage";
+import FaceVerifications from "./pages/admin/FaceVerifications";
+import PendingVerifications from "./pages/admin/PendingVerifications";
+import VerificationDetails from "./pages/admin/VerificationDetails";
+import FlaggedUsers from "./pages/admin/FlaggedUsers";
 
 const queryClient = new QueryClient();
 
@@ -282,6 +286,46 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <UserEditPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/face-verifications"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <FaceVerifications />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/face-verifications/pending"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <PendingVerifications />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/face-verifications/:id"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <VerificationDetails />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/face-verifications/flagged"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <FlaggedUsers />
                   </AdminLayout>
                 </ProtectedRoute>
               }
