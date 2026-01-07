@@ -32,6 +32,7 @@ import Campaigns from "./pages/admin/Campaigns";
 import UsersList from "./pages/admin/UserList";
 import UserViewPage from "./pages/admin/UserViewPage";
 import UserEditPage from "./pages/admin/UserEditPage";
+import Report from "./pages/admin/Report";
 
 const queryClient = new QueryClient();
 
@@ -282,6 +283,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AdminLayout>
                     <UserEditPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <Report />
                   </AdminLayout>
                 </ProtectedRoute>
               }

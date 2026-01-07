@@ -448,7 +448,7 @@ export const mockDashboardData = {
   },
 };
 
-// Mock Admin Stats
+// Mock Admin Status
 export const mockAdminStats: AdminStats = {
   total: 2,
   superAdmins: 1,
@@ -458,7 +458,7 @@ export const mockAdminStats: AdminStats = {
   online: 1,
 };
 
-// Mock Enquiry Stats
+// Mock Enquiry Status
 export const mockEnquiryStats: EnquiryStats = {
   total: 25,
   new: 5,
@@ -559,4 +559,29 @@ export const filterArray = <T>(array: T[], filters: Record<string, any>) => {
     });
   });
 };
+
+// Mock Status Status
+export const allStatus = [
+    { name: "All Status", value: "all" },
+    { name: "Rejected", value: "reject" },
+    { name: "Resolved", value: "resolved" },
+    { name: "Closed", value: "closed" },
+];
+
+// Mock Category Status
+export const allCategories = [
+    { name: "All Categories", value: "all" },
+    { name: "Casual dating", value: "Casual dating" },
+    { name: "Serious relationship", value: "Serious relationship" },
+    { name: "Marriage", value: "Marriage" },
+    { name: "Friendship", value: "Friendship" },
+    { name: "Partnership", value: "Partnership" },
+    { name: "Other", value: "Other" },
+];
+
+// Mock Old/New Status
+export const oldNewQue = [
+    { name: "Newest First", value: "desc" },
+    { name: "Oldest First", value: "asc" },
+];
 

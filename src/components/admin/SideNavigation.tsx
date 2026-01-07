@@ -14,6 +14,7 @@ import {
   UserCog,
   Key,
   UserCheck,
+  ClipboardPenLine,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,6 +40,11 @@ const navigation = [
     name: "System Users",
     href: "/admin/users",
     icon: UserCheck,
+  },
+  {
+    name: "Report",
+    href: "/admin/reports",
+    icon: ClipboardPenLine,
   },
   {
     name: "About Us",
