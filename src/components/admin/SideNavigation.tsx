@@ -41,31 +41,32 @@ const navigation = [
     href: "/admin/users",
     icon: UserCheck,
   },
-  {
-    name: "About Us",
-    href: "/admin/about-us",
-    icon: Building,
-  },
-  {
-    name: "Enquiries",
-    href: "/admin/enquiries",
-    icon: Mail,
-  },
-  {
-    name: "Privacy Policy",
-    href: "/admin/privacy-policy",
-    icon: Shield,
-  },
-  {
-    name: "FAQ",
-    href: "/admin/faqs",
-    icon: HelpCircle,
-  },
-  {
-    name: "Campaigns",
-    href: "/admin/campaigns",
-    icon: Megaphone,
-  },
+  // Temporarily commented out - not in current scope
+  // {
+  //   name: "About Us",
+  //   href: "/admin/about-us",
+  //   icon: Building,
+  // },
+  // {
+  //   name: "Enquiries",
+  //   href: "/admin/enquiries",
+  //   icon: Mail,
+  // },
+  // {
+  //   name: "Privacy Policy",
+  //   href: "/admin/privacy-policy",
+  //   icon: Shield,
+  // },
+  // {
+  //   name: "FAQ",
+  //   href: "/admin/faqs",
+  //   icon: HelpCircle,
+  // },
+  // {
+  //   name: "Campaigns",
+  //   href: "/admin/campaigns",
+  //   icon: Megaphone,
+  // },
   {
     name: "Face Verifications",
     href: "/admin/face-verifications",

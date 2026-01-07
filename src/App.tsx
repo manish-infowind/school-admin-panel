@@ -12,23 +12,24 @@ import { loginInfo } from "@/redux/features/authSlice";
 import { AuthService } from "@/api/services/authService";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
-import ProductPage from "./pages/admin/ProductPage";
-import ProductEdit from "./pages/admin/ProductEdit";
-import ProductNew from "./pages/admin/ProductNew";
-import IndexPage from "./pages/admin/IndexPage";
-import ProductDetails from "./pages/admin/ProductDetails";
-import AboutUs from "./pages/admin/AboutUs";
-import Enquiries from "./pages/admin/Enquiries";
+// Temporarily commented out - not in current scope
+// import ProductPage from "./pages/admin/ProductPage";
+// import ProductEdit from "./pages/admin/ProductEdit";
+// import ProductNew from "./pages/admin/ProductNew";
+// import IndexPage from "./pages/admin/IndexPage";
+// import ProductDetails from "./pages/admin/ProductDetails";
+// import AboutUs from "./pages/admin/AboutUs";
+// import Enquiries from "./pages/admin/Enquiries";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
-import PrivacyPolicy from "./pages/admin/PrivacyPolicy";
-import FAQ from "./pages/admin/FAQ";
-import FAQNew from "./pages/admin/FAQNew";
-import FAQEdit from "./pages/admin/FAQEdit";
+// import PrivacyPolicy from "./pages/admin/PrivacyPolicy";
+// import FAQ from "./pages/admin/FAQ";
+// import FAQNew from "./pages/admin/FAQNew";
+// import FAQEdit from "./pages/admin/FAQEdit";
 import AdminManagement from "./pages/admin/AdminManagement";
 import RolesManagement from "./pages/admin/RolesManagement";
 import PermissionsManagement from "./pages/admin/PermissionsManagement";
-import Campaigns from "./pages/admin/Campaigns";
+// import Campaigns from "./pages/admin/Campaigns";
 import UsersList from "./pages/admin/UserList";
 import UserViewPage from "./pages/admin/UserViewPage";
 import UserEditPage from "./pages/admin/UserEditPage";
@@ -78,7 +79,8 @@ const App = () => (
                 </ProtectedRoute>
             }
           />
-          <Route
+          {/* Temporarily commented out - not in current scope */}
+          {/* <Route
             path="/admin/products"
             element={
                 <ProtectedRoute>
@@ -147,7 +149,7 @@ const App = () => (
               </AdminLayout>
                 </ProtectedRoute>
             }
-          />
+          /> */}
 
           <Route
             path="/admin/profile"
@@ -169,7 +171,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* Temporarily commented out - not in current scope */}
+            {/* <Route
               path="/admin/privacy-policy"
               element={
                 <ProtectedRoute>
@@ -208,7 +211,7 @@ const App = () => (
                   </AdminLayout>
                 </ProtectedRoute>
             }
-                      />
+                      /> */}
             <Route
               path="/admin/management/users"
               element={
@@ -250,7 +253,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* Temporarily commented out - not in current scope */}
+            {/* <Route
               path="/admin/campaigns"
               element={
                 <ProtectedRoute>
@@ -259,7 +263,7 @@ const App = () => (
                   </AdminLayout>
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/admin/users"
               element={
