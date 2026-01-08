@@ -1,61 +1,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Package,
-  Home,
-  FileText,
   Users,
   TrendingUp,
   Eye,
   Edit3,
-  Building,
-  Mail,
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { productStore } from "@/lib/productStore";
-import { DashboardService, DashboardData, DashboardStats, RecentActivity } from "@/api/services/dashboardService";
+import { DashboardService, DashboardData, RecentActivity } from "@/api/services/dashboardService";
 import { useToast } from "@/hooks/use-toast";
+import { ChartCard } from "@/components/admin/dashboard/ChartCard";
+import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
+import { useChartData } from "@/hooks/useChartData";
 
-const quickActions = [
-  {
-    title: "Edit Homepage",
-    description: "Update the main landing page content",
-    href: "/admin/index-page",
-    icon: Home,
-    color: "bg-brand-green",
-  },
-  {
-    title: "Manage Products",
-    description: "Add, edit, or remove product listings",
-    href: "/admin/products",
-    icon: Package,
-    color: "bg-brand-teal",
-  },
-  {
-    title: "About Us",
-    description: "Manage company information and team",
-    href: "/admin/about-us",
-    icon: Building,
-    color: "bg-brand-green",
-  },
-  {
-    title: "View Enquiries",
-    description: "Manage customer contact form submissions",
-    href: "/admin/enquiries",
-    icon: Mail,
-    color: "bg-brand-teal",
-  },
-];
+// Helper function to create initial chart config
+const createChartConfig = (): ChartConfig => {
+  const today = new Date();
+  return {
+    chartType: 'bar',
+    timeRange: 'monthly',
+    dateRange: {
+      from: (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })(),
+      to: today,
+    },
+    isDatePickerOpen: false,
+    calendarMonth: (() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d; })(),
+    selectedMonth: today.getMonth(),
+    selectedYear: today.getFullYear(),
+    selectedYears: [today.getFullYear()],
+  };
+};
 
 export default function Dashboard() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [products, setProducts] = useState(productStore.getProducts());
+  // Separate state for each chart
+  const [userGrowthChart, setUserGrowthChart] = useState<ChartConfig>(createChartConfig());
+  const [activeUsersChart, setActiveUsersChart] = useState<ChartConfig>(createChartConfig());
+  const [conversionChart, setConversionChart] = useState<ChartConfig>(createChartConfig());
+
+  // Use custom hook for chart data
+  const { data: userGrowthData } = useChartData(userGrowthChart);
+  const { data: activeUsersData } = useChartData(activeUsersChart);
+  const { data: conversionData } = useChartData(conversionChart);
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -239,32 +230,38 @@ export default function Dashboard() {
   // Use API data if available, otherwise use fallback
   const stats = dashboardData ? [
     {
-      title: "Total Pages",
-      value: dashboardData.stats.totalPages.toString(),
-      change: "Admin panel ready",
-      icon: FileText,
-      color: "bg-brand-green",
-    },
-    {
-      title: "Products",
-      value: dashboardData.stats.totalProducts.toString(),
-      change: `${dashboardData.stats.publishedProducts} published, ${dashboardData.stats.draftProducts} drafts`,
-      icon: Package,
-      color: "bg-brand-teal",
-    },
-    {
-      title: "Enquiries",
-      value: dashboardData.stats.totalEnquiries.toString(),
-      change: `${dashboardData.stats.newEnquiriesThisWeek} new this week`,
-      icon: Mail,
-      color: "bg-brand-green",
-    },
-    {
-      title: "Active Users",
+      title: "Total Users",
       value: dashboardData.stats.activeUsers.toLocaleString(),
       change: `+${dashboardData.stats.userGrowthThisMonth}% this month`,
       icon: Users,
+      color: "bg-brand-green",
+    },
+    {
+      title: "Daily Active Users",
+      value: activeUsersData?.activeUsers && activeUsersData.activeUsers.length > 0 
+        ? activeUsersData.activeUsers[activeUsersData.activeUsers.length - 1].dailyActive.toLocaleString() 
+        : "0",
+      change: "Last 24 hours",
+      icon: TrendingUp,
       color: "bg-brand-teal",
+    },
+    {
+      title: "Monthly Active Users",
+      value: activeUsersData?.activeUsers && activeUsersData.activeUsers.length > 0
+        ? activeUsersData.activeUsers[activeUsersData.activeUsers.length - 1].monthlyActive.toLocaleString()
+        : "0",
+      change: "Last 30 days",
+      icon: Users,
+      color: "bg-brand-teal",
+    },
+    {
+      title: "User Growth",
+      value: userGrowthData?.userGrowth && userGrowthData.userGrowth.length > 0
+        ? userGrowthData.userGrowth[userGrowthData.userGrowth.length - 1].newUsers.toString()
+        : "0",
+      change: `New users (${userGrowthChart.timeRange})`,
+      icon: TrendingUp,
+      color: "bg-brand-green",
     },
   ] : [];
 
@@ -318,6 +315,96 @@ export default function Dashboard() {
   };
 
   const recentActivity = dashboardData?.recentActivity || [];
+
+  // Prepare chart data for each chart
+  const userGrowthChartData = useMemo(() => {
+    if (!userGrowthData) return [];
+    
+    // Handle multi-year monthly comparison
+    if (userGrowthChart.timeRange === 'monthly' && userGrowthChart.selectedYears && userGrowthChart.selectedYears.length > 1) {
+      // Group data by month and create year-based keys
+      const monthDataMap = new Map<string, Record<string, string | number>>();
+      
+      userGrowthData.userGrowth.forEach(item => {
+        // Parse "Jan 2024" format
+        const parts = item.date.split(' ');
+        if (parts.length === 2) {
+          const month = parts[0]; // "Jan"
+          const year = parts[1]; // "2024"
+          
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+          
+          const monthData = monthDataMap.get(month)!;
+          monthData[`${year} - Total Users`] = item.users;
+          monthData[`${year} - New Users`] = item.newUsers;
+        }
+      });
+      
+      // Convert map to array and sort by month order
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      }) as Array<{ name: string; [key: string]: string | number }>;
+    }
+    
+    // Standard format for single year or other time ranges
+    return userGrowthData.userGrowth.map(item => ({
+      name: item.date,
+      'Total Users': item.users,
+      'New Users': item.newUsers,
+    }));
+  }, [userGrowthData, userGrowthChart.timeRange, userGrowthChart.selectedYears]);
+
+  const activeUsersChartData = useMemo(() => {
+    if (!activeUsersData) return [];
+    
+    // Handle multi-year monthly comparison
+    if (activeUsersChart.timeRange === 'monthly' && activeUsersChart.selectedYears && activeUsersChart.selectedYears.length > 1) {
+      const monthDataMap = new Map<string, Record<string, string | number>>();
+      
+      activeUsersData.activeUsers.forEach(item => {
+        const parts = item.date.split(' ');
+        if (parts.length === 2) {
+          const month = parts[0];
+          const year = parts[1];
+          
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+          
+          const monthData = monthDataMap.get(month)!;
+          monthData[`${year} - Daily Active`] = item.dailyActive;
+          monthData[`${year} - Monthly Active`] = item.monthlyActive;
+        }
+      });
+      
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      }) as Array<{ name: string; [key: string]: string | number }>;
+    }
+    
+    return activeUsersData.activeUsers.map(item => ({
+      name: item.date,
+      'Daily Active': item.dailyActive,
+      'Monthly Active': item.monthlyActive,
+    }));
+  }, [activeUsersData, activeUsersChart.timeRange, activeUsersChart.selectedYears]);
+
+  const conversionChartData = useMemo(() => {
+    if (!conversionData) return [];
+    return conversionData.conversions.map(item => ({
+      name: item.metric,
+      value: item.value,
+      percentage: item.percentage,
+    }));
+  }, [conversionData]);
 
   if (loading) {
     return (
@@ -382,52 +469,57 @@ export default function Dashboard() {
         ))}
       </motion.div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Edit3 className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {quickActions.map((action, index) => (
-                <motion.div
-                  key={action.title}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 + index * 0.1 }}
-                >
-                  <Link to={action.href}>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start h-auto p-4 hover:bg-sidebar-accent"
-                    >
-                      <div
-                        className={`h-10 w-10 rounded-lg ${action.color} flex items-center justify-center mr-3`}
-                      >
-                        <action.icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-medium">{action.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {action.description}
-                        </div>
-                      </div>
-                    </Button>
-                  </Link>
-                </motion.div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* Analytics Charts Section - Stacked Vertically */}
+      <div className="space-y-6">
+        {/* User Growth Chart */}
+        <ChartCard
+          title="User Growth Analytics"
+          icon={Users}
+          iconColor="text-brand-green"
+          config={userGrowthChart}
+          onConfigChange={setUserGrowthChart}
+          data={userGrowthChartData}
+          dataKeys={
+            userGrowthChart.timeRange === 'monthly' && userGrowthChart.selectedYears && userGrowthChart.selectedYears.length > 1
+              ? userGrowthChart.selectedYears.flatMap(year => [`${year.toString()} - Total Users`, `${year.toString()} - New Users`])
+              : ['Total Users', 'New Users']
+          }
+          delay={0.2}
+          originalData={userGrowthData}
+        />
 
+        {/* Active Users Chart */}
+        <ChartCard
+          title="Active Users Analytics"
+          icon={TrendingUp}
+          iconColor="text-brand-teal"
+          config={activeUsersChart}
+          onConfigChange={setActiveUsersChart}
+          data={activeUsersChartData}
+          dataKeys={
+            activeUsersChart.timeRange === 'monthly' && activeUsersChart.selectedYears && activeUsersChart.selectedYears.length > 1
+              ? activeUsersChart.selectedYears.flatMap(year => [`${year.toString()} - Daily Active`, `${year.toString()} - Monthly Active`])
+              : ['Daily Active', 'Monthly Active']
+          }
+          delay={0.3}
+          originalData={activeUsersData}
+        />
+
+        {/* Conversion Insights Chart */}
+        <ChartCard
+          title="Conversion Insights Analytics"
+          icon={TrendingUp}
+          iconColor="text-brand-blue"
+          config={conversionChart}
+          onConfigChange={setConversionChart}
+          data={conversionChartData}
+          dataKeys={['value']}
+          delay={0.4}
+          originalData={conversionData}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}

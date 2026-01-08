@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   // Base URL for API calls - production server
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/admin',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.91:8000/admin',
   
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -146,6 +146,17 @@ export const API_CONFIG = {
       DETAILED_STATS: '/campaigns/:id/detailed-stats',
       RETRY_TRIGGER: '/campaigns/retry/trigger',
       RETRY_STATS: '/campaigns/retry/stats',
+    },
+    FACE_VERIFICATIONS: {
+      LIST: '/face-verifications',
+      PENDING: '/face-verifications/pending',
+      DETAILS: '/face-verifications/:id',
+      APPROVE: '/face-verifications/:id/approve',
+      REVERIFY: '/face-verifications/users/:userId/reverify',
+      FLAGGED_USERS: '/face-verifications/flagged/users',
+      STATISTICS: '/face-verifications/statistics',
+      RETRY_HISTORY: '/face-verifications/group/:groupId/retries',
+      MANUAL_VERIFICATION: '/face-verifications/users/:userId/manual-verification',
     },
   },
 } as const;
