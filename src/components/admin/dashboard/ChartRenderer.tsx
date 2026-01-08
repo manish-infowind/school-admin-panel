@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
 
 const CHART_COLORS = ['#10b981', '#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
@@ -11,7 +11,7 @@ interface ChartData {
 
 interface ChartRendererProps {
   data: ChartData[];
-  chartType: 'bar' | 'pie';
+  chartType: 'bar' | 'pie' | 'line';
   dataKeys: string[];
   height?: number;
   isMultiYearMonthly?: boolean;
@@ -65,6 +65,45 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
             />
           ))}
         </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (chartType === 'line') {
+    return (
+      <ResponsiveContainer width="100%" height={height}>
+        <RechartsLineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis 
+            dataKey="name" 
+            angle={-45}
+            textAnchor="end"
+            height={100}
+            interval={0}
+            tick={{ fontSize: 11 }}
+            stroke="#6b7280"
+          />
+          <YAxis stroke="#6b7280" />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px'
+            }}
+          />
+          <Legend />
+          {dataKeys.map((key, index) => (
+            <Line 
+              key={key} 
+              type="monotone"
+              dataKey={key} 
+              stroke={CHART_COLORS[index % CHART_COLORS.length]}
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          ))}
+        </RechartsLineChart>
       </ResponsiveContainer>
     );
   }
@@ -176,22 +215,23 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
             outerRadius={selectedMonth ? 110 : 120}
             fill="#8884d8"
             dataKey="value"
-            onClick={(data, index, e) => {
+            activeIndex={undefined}
+            activeShape={false}
+            onClick={isMultiYearMonthly && !selectedMonth ? (data, index, e) => {
               // Click to show year breakdown (only for monthly multi-year view, and only when showing months)
-              if (isMultiYearMonthly && !selectedMonth) {
-                const monthName = data.originalName || data.name;
-                if (monthName) {
-                  setSelectedMonth(monthName);
-                }
+              const monthName = data.originalName || data.name;
+              if (monthName) {
+                setSelectedMonth(monthName);
               }
-            }}
+            } : undefined}
           >
             {pieData.map((entry, index) => (
               <Cell 
                 key={`cell-${index}`} 
                 fill={CHART_COLORS[index % CHART_COLORS.length]}
                 style={{ 
-                  cursor: isMultiYearMonthly && !selectedMonth ? 'pointer' : 'default'
+                  cursor: isMultiYearMonthly && !selectedMonth ? 'pointer' : 'default',
+                  outline: 'none'
                 }}
               />
             ))}

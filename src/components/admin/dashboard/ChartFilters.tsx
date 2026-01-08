@@ -4,12 +4,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar as CalendarIcon, BarChart3, PieChart, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, BarChart3, PieChart, LineChart, ChevronDown } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 export interface ChartConfig {
-  chartType: 'bar' | 'pie';
+  chartType: 'bar' | 'pie' | 'line';
   timeRange: 'daily' | 'weekly' | 'monthly' | 'custom';
   dateRange: {
     from: Date | undefined;
@@ -693,6 +693,15 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
         >
           <BarChart3 className="h-4 w-4 mr-1" />
           Bar
+        </Button>
+        <Button
+          variant={config.chartType === 'line' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => updateConfig({ chartType: 'line' })}
+          className="h-8"
+        >
+          <LineChart className="h-4 w-4 mr-1" />
+          Line
         </Button>
         <Button
           variant={config.chartType === 'pie' ? 'default' : 'ghost'}

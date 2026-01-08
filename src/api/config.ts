@@ -5,6 +5,8 @@ export const API_CONFIG = {
   
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
+  // Extended timeout for analytics requests (2 minutes)
+  ANALYTICS_TIMEOUT: 120000,
   
   // Default headers
   DEFAULT_HEADERS: {
@@ -90,6 +92,7 @@ export const API_CONFIG = {
       MAIN: '/dashboard',
       STATS: '/dashboard/stats',
       ACTIVITY: '/dashboard/activity',
+      USER_GROWTH: '/dashboard/analytics/user-growth',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

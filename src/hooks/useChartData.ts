@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { DashboardService, AnalyticsData } from "@/api/services/dashboardService";
+import { DashboardService, AnalyticsData, UserGrowthResponse } from "@/api/services/dashboardService";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 
 // Generate mock analytics data based on date range
@@ -123,6 +123,111 @@ const generateMockAnalyticsData = (
   };
 };
 
+// Load user growth data using the new dedicated API
+const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
+  try {
+    const options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    } = {};
+
+    // Build options based on timeRange
+    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
+      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        options.month = chartConfig.selectedMonth;
+        options.year = chartConfig.selectedYear;
+      }
+    } else if (chartConfig.timeRange === 'monthly') {
+      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        options.years = chartConfig.selectedYears;
+      }
+    } else if (chartConfig.timeRange === 'custom') {
+      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        options.startDate = chartConfig.dateRange.from;
+        options.endDate = chartConfig.dateRange.to;
+      }
+    }
+
+    const response = await DashboardService.getUserGrowth(chartConfig.timeRange, options);
+    
+    if (response.success && response.data) {
+      // Transform UserGrowthResponse to AnalyticsData format
+      return {
+        userGrowth: response.data.userGrowth,
+        activeUsers: [], // Will be loaded separately
+        conversions: [], // Will be loaded separately
+        performance: {
+          averageResponseTime: 0,
+          uptime: 0,
+          errorRate: 0,
+          throughput: 0,
+        },
+      };
+    } else {
+      // Fallback to mock data
+      let calculatedStartDate: Date;
+      let calculatedEndDate: Date = new Date();
+      
+      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        const minYear = Math.min(...chartConfig.selectedYears);
+        calculatedStartDate = new Date(minYear, 0, 1);
+        const maxYear = Math.max(...chartConfig.selectedYears);
+        calculatedEndDate = new Date(maxYear, 11, 31);
+      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        calculatedStartDate = chartConfig.dateRange.from;
+        calculatedEndDate = chartConfig.dateRange.to;
+      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else {
+        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+      }
+      
+      return generateMockAnalyticsData(
+        calculatedStartDate, 
+        calculatedEndDate, 
+        chartConfig.timeRange,
+        chartConfig.selectedYears
+      );
+    }
+  } catch (error) {
+    // Fallback to mock data on error
+    let calculatedStartDate: Date;
+    let calculatedEndDate: Date = new Date();
+    
+    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+      const minYear = Math.min(...chartConfig.selectedYears);
+      calculatedStartDate = new Date(minYear, 0, 1);
+      const maxYear = Math.max(...chartConfig.selectedYears);
+      calculatedEndDate = new Date(maxYear, 11, 31);
+    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+      calculatedStartDate = chartConfig.dateRange.from;
+      calculatedEndDate = chartConfig.dateRange.to;
+    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else {
+      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+    }
+    
+    return generateMockAnalyticsData(
+      calculatedStartDate, 
+      calculatedEndDate, 
+      chartConfig.timeRange,
+      chartConfig.selectedYears
+    );
+  }
+};
+
 const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
   try {
     let calculatedStartDate: Date | undefined;
@@ -236,25 +341,69 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
   }
 };
 
-export function useChartData(chartConfig: ChartConfig) {
+export function useChartData(chartConfig: ChartConfig, useUserGrowthApi: boolean = false) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    // Show loader immediately when filters change (before debounce)
     setLoading(true);
-    loadChartData(chartConfig).then(result => {
-      if (result) {
-        setData(result);
+
+    // On initial mount, load data immediately
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      const loadData = useUserGrowthApi ? loadUserGrowthData : loadChartData;
+      loadData(chartConfig).then(result => {
+        if (result) {
+          setData(result);
+        }
+        setLoading(false);
+      }).catch((error) => {
+        console.error('Error loading chart data:', error);
+        setLoading(false);
+      });
+      return;
+    }
+
+    // For subsequent changes, debounce the API call but loader is already showing
+    debounceTimerRef.current = setTimeout(() => {
+      const loadData = useUserGrowthApi ? loadUserGrowthData : loadChartData;
+      loadData(chartConfig).then(result => {
+        if (result) {
+          setData(result);
+        }
+        setLoading(false);
+        debounceTimerRef.current = null;
+      }).catch((error) => {
+        console.error('Error loading chart data:', error);
+        setLoading(false);
+        debounceTimerRef.current = null;
+      });
+    }, 800); // Wait 800ms after user stops interacting
+
+    // Cleanup function to clear timer on unmount or dependency change
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
       }
-      setLoading(false);
-    });
+    };
   }, [
     chartConfig.timeRange, 
     chartConfig.dateRange.from, 
     chartConfig.dateRange.to,
     chartConfig.selectedYears?.join(','), // Include selected years in dependencies
     chartConfig.selectedMonth, // Include selected month for daily/weekly
-    chartConfig.selectedYear // Include selected year for daily/weekly
+    chartConfig.selectedYear, // Include selected year for daily/weekly
+    useUserGrowthApi // Include this in dependencies
   ]);
 
   return { data, loading };
