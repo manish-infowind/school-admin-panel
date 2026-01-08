@@ -44,9 +44,10 @@ export default function Dashboard() {
   const [conversionChart, setConversionChart] = useState<ChartConfig>(createChartConfig());
 
   // Use custom hook for chart data
-  const { data: userGrowthData } = useChartData(userGrowthChart);
-  const { data: activeUsersData } = useChartData(activeUsersChart);
-  const { data: conversionData } = useChartData(conversionChart);
+  // Use the new dedicated User Growth API for user growth chart
+  const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, true);
+  const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart);
+  const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart);
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -486,6 +487,7 @@ export default function Dashboard() {
           }
           delay={0.2}
           originalData={userGrowthData}
+          loading={userGrowthLoading}
         />
 
         {/* Active Users Chart */}
@@ -503,6 +505,7 @@ export default function Dashboard() {
           }
           delay={0.3}
           originalData={activeUsersData}
+          loading={activeUsersLoading}
         />
 
         {/* Conversion Insights Chart */}
@@ -516,6 +519,7 @@ export default function Dashboard() {
           dataKeys={['value']}
           delay={0.4}
           originalData={conversionData}
+          loading={conversionLoading}
         />
       </div>
 

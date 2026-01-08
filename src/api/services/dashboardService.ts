@@ -67,6 +67,19 @@ export interface UserGrowthData {
   newUsers: number;
 }
 
+export interface UserGrowthMetadata {
+  totalRecords: number;
+  startDate: string;
+  endDate: string;
+  timeRange: string;
+  selectedYears?: number[];
+}
+
+export interface UserGrowthResponse {
+  userGrowth: UserGrowthData[];
+  metadata: UserGrowthMetadata;
+}
+
 export interface ActiveUsersData {
   date: string;
   dailyActive: number;
@@ -156,6 +169,57 @@ export class DashboardService {
       }
       
       const response = await apiClient.get<AnalyticsData>(url);
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get user growth analytics data
+  static async getUserGrowth(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<UserGrowthResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.USER_GROWTH}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<UserGrowthResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
       
       return response;
     } catch (error) {
