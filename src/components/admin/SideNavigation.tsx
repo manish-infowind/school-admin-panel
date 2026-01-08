@@ -4,24 +4,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutDashboard,
   ChevronRight,
-  ChevronDown,
-  Building,
-  Mail,
-  Shield,
-  HelpCircle,
   Users,
-  Megaphone,
   UserCog,
   Key,
   UserCheck,
   ScanFace,
+  ClipboardPenLine,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/redux/store/store";
-import { 
+import {
   canAccessAdminManagement,
   canManageAdminUsers,
   canManageRoles,
@@ -41,36 +36,15 @@ const navigation = [
     href: "/admin/users",
     icon: UserCheck,
   },
-  // Temporarily commented out - not in current scope
-  // {
-  //   name: "About Us",
-  //   href: "/admin/about-us",
-  //   icon: Building,
-  // },
-  // {
-  //   name: "Enquiries",
-  //   href: "/admin/enquiries",
-  //   icon: Mail,
-  // },
-  // {
-  //   name: "Privacy Policy",
-  //   href: "/admin/privacy-policy",
-  //   icon: Shield,
-  // },
-  // {
-  //   name: "FAQ",
-  //   href: "/admin/faqs",
-  //   icon: HelpCircle,
-  // },
-  // {
-  //   name: "Campaigns",
-  //   href: "/admin/campaigns",
-  //   icon: Megaphone,
-  // },
   {
     name: "Face Verifications",
     href: "/admin/face-verifications",
     icon: ScanFace,
+  },
+  {
+    name: "Report",
+    href: "/admin/reports",
+    icon: ClipboardPenLine,
   },
 ];
 
@@ -84,10 +58,10 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
   const loginState = useSelector((state: RootState) => state.auth.loginState);
   const [adminManagementOpen, setAdminManagementOpen] = useState(false);
-  
+
   // Check if user has permission to access admin management
   const hasAdminAccess = canAccessAdminManagement(loginState as any);
-  
+
   // Admin Management sub-items with permission checks
   const adminManagementItems = [
     {
@@ -112,7 +86,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
 
   // Check if any admin management route is active
   const isAdminManagementActive = location.pathname.startsWith('/admin/management');
-  
+
   // Auto-expand admin management if on one of its routes
   React.useEffect(() => {
     if (isAdminManagementActive) {
@@ -179,7 +153,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                 </motion.div>
               );
             })}
-            
+
             {/* Admin Management Section with Sub-items */}
             {hasAdminAccess && (
               <div className="mt-2">
@@ -188,7 +162,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                   className={cn(
                     "w-full justify-between gap-3 h-10 text-base",
                     isAdminManagementActive &&
-                      "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                    "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                   )}
                   onClick={() => setAdminManagementOpen(!adminManagementOpen)}
                 >
@@ -203,7 +177,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                     <ChevronRight className="h-5 w-5" />
                   </motion.div>
                 </Button>
-                
+
                 <AnimatePresence>
                   {adminManagementOpen && (
                     <motion.div
@@ -231,7 +205,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                                   className={cn(
                                     "w-full justify-start gap-3 h-9 text-sm",
                                     isSubActive &&
-                                      "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                                    "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                                   )}
                                 >
                                   <subItem.icon className="h-4 w-4" />
