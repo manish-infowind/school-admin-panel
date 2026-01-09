@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -29,7 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Users,
-  UserPlus,
   Search,
   MoreVertical,
   Edit,
@@ -55,11 +53,13 @@ import { usePermissions, useAdminPermissions } from "@/api/hooks/usePermissions"
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, XCircle } from "lucide-react";
+import PageHeader from "@/components/common/PageHeader";
+import { activeList, roleList } from "@/api/mockData";
 
 export default function AdminManagement() {
   const loginState = useSelector((state: RootState) => state.auth.loginState);
   const { toast } = useToast();
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -90,7 +90,7 @@ export default function AdminManagement() {
   // Role and permission selection (separate from formData)
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
-  
+
   // Edit mode: selected roles and permissions
   const [editSelectedRoleId, setEditSelectedRoleId] = useState<number | null>(null);
   const [editSelectedPermissionIds, setEditSelectedPermissionIds] = useState<number[]>([]);
@@ -106,11 +106,11 @@ export default function AdminManagement() {
   // Fetch roles and permissions (hooks already return extracted arrays)
   const { roles, assignRole, isLoadingRoles, rolesError } = useRoles();
   const { permissions, assignPermissions, isLoadingPermissions, permissionsError } = usePermissions();
-  
+
   // Fetch current admin roles and permissions when editing
   const { adminRoles, isLoading: isLoadingAdminRoles } = useAdminRoles(selectedAdmin?.id || '');
   const { adminPermissions, isLoading: isLoadingAdminPermissions } = useAdminPermissions(selectedAdmin?.id || '');
-  
+
   // Debug: Log when roles/permissions are fetched
   useEffect(() => {
     if (roles && roles.length > 0) {
@@ -120,7 +120,7 @@ export default function AdminManagement() {
       console.error('Error loading roles:', rolesError);
     }
   }, [roles, rolesError]);
-  
+
   useEffect(() => {
     if (permissions && permissions.length > 0) {
       console.log('Permissions loaded:', permissions);
@@ -138,7 +138,7 @@ export default function AdminManagement() {
     newPassword: "",
     confirmPassword: "",
   });
-  
+
   // Check if current user can access admin management
   const canAccess = canAccessAdminManagement(loginState as any);
 
@@ -237,7 +237,7 @@ export default function AdminManagement() {
       onSuccess: async (response) => {
         if (response.success && response.data) {
           const adminId = response.data.id;
-          
+
           // Assign role if selected
           if (selectedRoleId) {
             assignRole(
@@ -418,8 +418,8 @@ export default function AdminManagement() {
       return;
     }
 
-    changePassword({ 
-      id: selectedAdmin.id, 
+    changePassword({
+      id: selectedAdmin.id,
       data: {
         currentPassword: "", // Not required for admin management password change
         newPassword: passwordData.newPassword,
@@ -448,15 +448,15 @@ export default function AdminManagement() {
       permissions: admin.permissions,
       isActive: admin.isActive,
     });
-    
+
     // Initialize role and permission selection from admin's current assignments
     // These will be populated when adminRoles and adminPermissions are fetched
     setEditSelectedRoleId(null);
     setEditSelectedPermissionIds([]);
-    
+
     setIsEditModalOpen(true);
   };
-  
+
   // Update edit role/permission selection when admin roles/permissions are fetched
   useEffect(() => {
     if (selectedAdmin && adminRoles?.roles && adminRoles.roles.length > 0) {
@@ -466,7 +466,7 @@ export default function AdminManagement() {
       setEditSelectedRoleId(null);
     }
   }, [adminRoles, selectedAdmin]);
-  
+
   // Update edit permission selection when admin permissions are fetched
   useEffect(() => {
     if (selectedAdmin && adminPermissions?.permissions) {
@@ -541,6 +541,11 @@ export default function AdminManagement() {
     });
   };
 
+  // Open Create Admin Modal
+  const openAdminModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
   // If user doesn't have permission, show access denied
   if (!canAccess) {
     return (
@@ -562,274 +567,259 @@ export default function AdminManagement() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Admin Management
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage admin accounts, permissions, and access controls
-            </p>
-          </div>
-          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Admin
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-semibold">Add New Admin</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">First Name *</label>
-                      <Input
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        placeholder="Enter first name"
-                        className="h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Last Name *</label>
-                      <Input
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        placeholder="Enter last name"
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Username *</label>
-                      <Input
-                        value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        placeholder="Enter username"
-                        className="h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Email *</label>
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter email"
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => handlePasswordChange(e.target.value)}
-                      placeholder="Enter password"
-                      className="h-10"
-                    />
-                    {formData.password && (
-                      <div className="mt-2 space-y-1">
-                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasMinLength ? 'text-green-600' : 'text-red-600'}`}>
-                          {passwordErrors.hasMinLength ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                          <span>At least 8 characters</span>
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasUppercase ? 'text-green-600' : 'text-red-600'}`}>
-                          {passwordErrors.hasUppercase ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                          <span>At least one uppercase letter (A-Z)</span>
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasNumber ? 'text-green-600' : 'text-red-600'}`}>
-                          {passwordErrors.hasNumber ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                          <span>At least one number (0-9)</span>
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasSpecialChar ? 'text-green-600' : 'text-red-600'}`}>
-                          {passwordErrors.hasSpecialChar ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                          <span>At least one special character (!@#$%^&*)</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+      <PageHeader
+        page="admin"
+        heading="Admin Management"
+        subHeading="Manage admin accounts, permissions, and access controls."
+        openModal={openAdminModal}
+      />
+
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">Add New Admin</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Basic Information Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">First Name *</label>
+                  <Input
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    placeholder="Enter first name"
+                    className="h-10"
+                  />
                 </div>
-
-                {/* Contact Information Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="countryCode">Country Code *</Label>
-                      <Input
-                        id="countryCode"
-                        value={formData.countryCode}
-                        onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                        placeholder="+1"
-                        className="h-10"
-                      />
-                      <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone *</Label>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="Enter phone number"
-                        className="h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="Enter location"
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Bio</label>
-                    <Input
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      placeholder="Enter bio"
-                      className="h-10"
-                    />
-                  </div>
-                </div>
-
-                {/* Role & Permissions Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                    Role & Permissions <span className="text-red-500">*</span>
-                  </h3>
-                  <Alert>
-                    <AlertDescription>
-                      You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Role Selection */}
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Assign Role (Optional)</Label>
-                      <select
-                        id="role"
-                        value={selectedRoleId || ""}
-                        onChange={(e) => setSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
-                        className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
-                      >
-                        <option value="">Select a role...</option>
-                        {roles?.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.roleName} {role.description ? `- ${role.description}` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-muted-foreground">
-                        Select a role to assign all permissions from that role
-                      </p>
-                    </div>
-
-                    {/* Individual Permissions */}
-                    <div className="space-y-2">
-                      <Label>Assign Individual Permissions (Optional)</Label>
-                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
-                        {isLoadingPermissions ? (
-                          <div className="flex items-center justify-center py-4">
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            <span className="text-sm text-muted-foreground">Loading permissions...</span>
-                          </div>
-                        ) : permissions && permissions.length > 0 ? (
-                          permissions.map((permission) => (
-                            <label
-                              key={permission.id}
-                              className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedPermissionIds.includes(permission.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedPermissionIds([...selectedPermissionIds, permission.id]);
-                                  } else {
-                                    setSelectedPermissionIds(selectedPermissionIds.filter(id => id !== permission.id));
-                                  }
-                                }}
-                                className="rounded border-gray-300"
-                              />
-                              <span className="text-sm font-medium">{permission.permissionName}</span>
-                              {permission.allowedActions && permission.allowedActions.length > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {permission.allowedActions.join(", ")}
-                                </Badge>
-                              )}
-                            </label>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Select individual permissions to assign directly to the admin
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Validation Message */}
-                  {!selectedRoleId && selectedPermissionIds.length === 0 && (
-                    <Alert variant="destructive">
-                      <AlertDescription>
-                        Please assign at least one role or individual permission.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-end pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    disabled={isCreating}
-                    className="px-6"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCreateAdmin}
-                    disabled={isCreating}
-                    className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
-                  >
-                    {isCreating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Admin"
-                    )}
-                  </Button>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Last Name *</label>
+                  <Input
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    placeholder="Enter last name"
+                    className="h-10"
+                  />
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </motion.div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Username *</label>
+                  <Input
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    placeholder="Enter username"
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Email *</label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  placeholder="Enter password"
+                  className="h-10"
+                />
+                {formData.password && (
+                  <div className="mt-2 space-y-1">
+                    <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasMinLength ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordErrors.hasMinLength ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      <span>At least 8 characters</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasUppercase ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordErrors.hasUppercase ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      <span>At least one uppercase letter (A-Z)</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasNumber ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordErrors.hasNumber ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      <span>At least one number (0-9)</span>
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs ${passwordErrors.hasSpecialChar ? 'text-green-600' : 'text-red-600'}`}>
+                      {passwordErrors.hasSpecialChar ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      <span>At least one special character (!@#$%^&*)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Contact Information Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="countryCode">Country Code *</Label>
+                  <Input
+                    id="countryCode"
+                    value={formData.countryCode}
+                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    placeholder="+1"
+                    className="h-10"
+                  />
+                  <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone *</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="Enter phone number"
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Enter location"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Bio</label>
+                <Input
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Enter bio"
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            {/* Role & Permissions Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                Role & Permissions <span className="text-red-500">*</span>
+              </h3>
+              <Alert>
+                <AlertDescription>
+                  You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
+                </AlertDescription>
+              </Alert>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="role">Assign Role (Optional)</Label>
+                  <select
+                    id="role"
+                    value={selectedRoleId || ""}
+                    onChange={(e) => setSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
+                  >
+                    <option value="">Select a role...</option>
+                    {roles?.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.roleName} {role.description ? `- ${role.description}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a role to assign all permissions from that role
+                  </p>
+                </div>
+
+                {/* Individual Permissions */}
+                <div className="space-y-2">
+                  <Label>Assign Individual Permissions (Optional)</Label>
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {isLoadingPermissions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading permissions...</span>
+                      </div>
+                    ) : permissions && permissions.length > 0 ? (
+                      permissions.map((permission) => (
+                        <label
+                          key={permission.id}
+                          className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPermissionIds.includes(permission.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPermissionIds([...selectedPermissionIds, permission.id]);
+                              } else {
+                                setSelectedPermissionIds(selectedPermissionIds.filter(id => id !== permission.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <span className="text-sm font-medium">{permission.permissionName}</span>
+                          {permission.allowedActions && permission.allowedActions.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {permission.allowedActions.join(", ")}
+                            </Badge>
+                          )}
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Select individual permissions to assign directly to the admin
+                  </p>
+                </div>
+              </div>
+
+              {/* Validation Message */}
+              {!selectedRoleId && selectedPermissionIds.length === 0 && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Please assign at least one role or individual permission.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={isCreating}
+                className="px-6"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateAdmin}
+                disabled={isCreating}
+                className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Admin"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Statistics Cards */}
       {stats && (
@@ -914,18 +904,18 @@ export default function AdminManagement() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="px-3 py-2 border border-border rounded-md bg-background text-sm"
             >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
+              {roleList?.map(list => (
+                <option key={list?.value} value={list?.value}>{list?.name}</option>
+              ))}
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 border border-border rounded-md bg-background text-sm"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              {activeList?.map(list => (
+                <option key={list?.value} value={list?.value}>{list?.name}</option>
+              ))}
             </select>
           </div>
         </CardContent>
@@ -1208,7 +1198,7 @@ export default function AdminManagement() {
                   You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
                 </AlertDescription>
               </Alert>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Role Selection */}
                 <div className="space-y-2">

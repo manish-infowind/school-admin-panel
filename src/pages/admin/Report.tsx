@@ -213,7 +213,7 @@ const Report = () => {
     // Delete Report Section Handler
     const handleDeleteUser = useCallback(() => {
         setDeleteItemType(false);
-        console.log("deleteUser_jai", deleteUser);
+        console.log("deleteUser", deleteUser);
     }, []);
 
 

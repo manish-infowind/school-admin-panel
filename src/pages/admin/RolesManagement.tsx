@@ -17,18 +17,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   UserCog,
-  Plus,
   Search,
   Edit,
   Trash2,
   Shield,
   Loader2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useRoles } from "@/api/hooks/useRoles";
@@ -39,6 +36,7 @@ import { Role, CreateRoleRequest } from "@/api/types";
 import { RolePermissionsDialog } from "@/components/admin/RolePermissionsDialog";
 import { RoleDetailsDialog } from "@/components/admin/RoleDetailsDialog";
 import { RoleEditDialog } from "@/components/admin/RoleEditDialog";
+import PageHeader from "@/components/common/PageHeader";
 
 export default function RolesManagement() {
   const { toast } = useToast();
@@ -97,6 +95,11 @@ export default function RolesManagement() {
     });
   };
 
+  // Open Roles modal
+  const openPermissionModal = () => {
+    setIsCreateDialogOpen(true);
+  };
+
   if (!canRead) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -113,78 +116,63 @@ export default function RolesManagement() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Roles Management
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage user roles and their permissions
-            </p>
-          </div>
-          {canCreate && (
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Role
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Role</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="roleName">Role Name</Label>
-                    <Input
-                      id="roleName"
-                      placeholder="e.g., admin, moderator"
-                      value={formData.roleName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, roleName: e.target.value })
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Use lowercase with underscores (e.g., admin, super_admin)
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe the role's purpose..."
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({ ...formData, description: e.target.value })
-                      }
-                    />
-                  </div>
-                  <Button
-                    onClick={handleCreateRole}
-                    disabled={isCreatingRole}
-                    className="w-full bg-brand-green hover:bg-brand-green/90"
-                  >
-                    {isCreatingRole ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Role"
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </motion.div>
+      <PageHeader
+        page="roles"
+        heading="Roles Management"
+        subHeading="Manage user roles and their permissions."
+        openModal={openPermissionModal}
+      />
+
+      {canCreate && (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Role</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="roleName">Role Name</Label>
+                <Input
+                  id="roleName"
+                  placeholder="e.g., admin, moderator"
+                  value={formData.roleName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, roleName: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use lowercase with underscores (e.g., admin, super_admin)
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe the role's purpose..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                />
+              </div>
+              <Button
+                onClick={handleCreateRole}
+                disabled={isCreatingRole}
+                className="w-full bg-brand-green hover:bg-brand-green/90"
+              >
+                {isCreatingRole ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Role"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Card>
         <CardHeader>
@@ -230,7 +218,7 @@ export default function RolesManagement() {
                     </TableRow>
                   ) : (
                     filteredRoles.map((role) => (
-                      <TableRow 
+                      <TableRow
                         key={role.id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => {
@@ -357,7 +345,7 @@ export default function RolesManagement() {
               Are you sure you want to delete the role <strong>{roleToDelete?.roleName}</strong>?
             </p>
             <p className="text-xs text-muted-foreground">
-              <strong>Note:</strong> This role cannot be deleted if it is assigned to any user or has permissions assigned. 
+              <strong>Note:</strong> This role cannot be deleted if it is assigned to any user or has permissions assigned.
               You must first remove the role from all users and remove all permissions from the role.
             </p>
             <div className="flex justify-end gap-2">

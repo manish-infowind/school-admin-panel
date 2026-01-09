@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChartCard } from "@/components/admin/dashboard/ChartCard";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 import { useChartData } from "@/hooks/useChartData";
+import PageHeader from "@/components/common/PageHeader";
 
 // Helper function to create initial chart config
 const createChartConfig = (): ChartConfig => {
@@ -60,7 +61,7 @@ export default function Dashboard() {
     const loadDashboardData = async () => {
       try {
         const response = await DashboardService.getDashboard();
-        
+
         if (response.success && response.data) {
           setDashboardData(response.data);
         } else {
@@ -145,7 +146,7 @@ export default function Dashboard() {
           description: "Failed to load dashboard data. Using fallback data.",
           variant: "destructive",
         });
-        
+
         // Use fallback data
         setDashboardData({
           stats: {
@@ -239,8 +240,8 @@ export default function Dashboard() {
     },
     {
       title: "Daily Active Users",
-      value: activeUsersData?.activeUsers && activeUsersData.activeUsers.length > 0 
-        ? activeUsersData.activeUsers[activeUsersData.activeUsers.length - 1].dailyActive.toLocaleString() 
+      value: activeUsersData?.activeUsers && activeUsersData.activeUsers.length > 0
+        ? activeUsersData.activeUsers[activeUsersData.activeUsers.length - 1].dailyActive.toLocaleString()
         : "0",
       change: "Last 24 hours",
       icon: TrendingUp,
@@ -277,29 +278,29 @@ export default function Dashboard() {
       const date = new Date(timeString);
       const now = new Date();
       const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      
+
       // If it's less than 1 minute ago, show "Just now"
       if (diffInMinutes < 1) {
         return "Just now";
       }
-      
+
       // If it's less than 1 hour ago, show relative time
       if (diffInMinutes < 60) {
         return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
       }
-      
+
       // If it's less than 24 hours ago, show hours ago
       if (diffInMinutes < 1440) {
         const hours = Math.floor(diffInMinutes / 60);
         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
       }
-      
+
       // If it's less than 7 days ago, show days ago
       if (diffInMinutes < 10080) {
         const days = Math.floor(diffInMinutes / 1440);
         return `${days} day${days > 1 ? 's' : ''} ago`;
       }
-      
+
       // Otherwise show full date and time
       return date.toLocaleDateString('en-US', {
         day: 'numeric',
@@ -320,29 +321,29 @@ export default function Dashboard() {
   // Prepare chart data for each chart
   const userGrowthChartData = useMemo(() => {
     if (!userGrowthData) return [];
-    
+
     // Handle multi-year monthly comparison
     if (userGrowthChart.timeRange === 'monthly' && userGrowthChart.selectedYears && userGrowthChart.selectedYears.length > 1) {
       // Group data by month and create year-based keys
       const monthDataMap = new Map<string, Record<string, string | number>>();
-      
+
       userGrowthData.userGrowth.forEach(item => {
         // Parse "Jan 2024" format
         const parts = item.date.split(' ');
         if (parts.length === 2) {
           const month = parts[0]; // "Jan"
           const year = parts[1]; // "2024"
-          
+
           if (!monthDataMap.has(month)) {
             monthDataMap.set(month, { name: month });
           }
-          
+
           const monthData = monthDataMap.get(month)!;
           monthData[`${year} - Total Users`] = item.users;
           monthData[`${year} - New Users`] = item.newUsers;
         }
       });
-      
+
       // Convert map to array and sort by month order
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return Array.from(monthDataMap.values()).sort((a, b) => {
@@ -351,7 +352,7 @@ export default function Dashboard() {
         return months.indexOf(aName) - months.indexOf(bName);
       }) as Array<{ name: string; [key: string]: string | number }>;
     }
-    
+
     // Standard format for single year or other time ranges
     return userGrowthData.userGrowth.map(item => ({
       name: item.date,
@@ -362,27 +363,27 @@ export default function Dashboard() {
 
   const activeUsersChartData = useMemo(() => {
     if (!activeUsersData) return [];
-    
+
     // Handle multi-year monthly comparison
     if (activeUsersChart.timeRange === 'monthly' && activeUsersChart.selectedYears && activeUsersChart.selectedYears.length > 1) {
       const monthDataMap = new Map<string, Record<string, string | number>>();
-      
+
       activeUsersData.activeUsers.forEach(item => {
         const parts = item.date.split(' ');
         if (parts.length === 2) {
           const month = parts[0];
           const year = parts[1];
-          
+
           if (!monthDataMap.has(month)) {
             monthDataMap.set(month, { name: month });
           }
-          
+
           const monthData = monthDataMap.get(month)!;
           monthData[`${year} - Daily Active`] = item.dailyActive;
           monthData[`${year} - Monthly Active`] = item.monthlyActive;
         }
       });
-      
+
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return Array.from(monthDataMap.values()).sort((a, b) => {
         const aName = typeof a.name === 'string' ? a.name : '';
@@ -390,7 +391,7 @@ export default function Dashboard() {
         return months.indexOf(aName) - months.indexOf(bName);
       }) as Array<{ name: string; [key: string]: string | number }>;
     }
-    
+
     return activeUsersData.activeUsers.map(item => ({
       name: item.date,
       'Daily Active': item.dailyActive,
@@ -420,21 +421,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome to your Pinaypal admin panel. Manage your website
-            content from here.
-          </p>
-        </div>
-      </motion.div>
+      <PageHeader
+        page="dashboard"
+        heading="Dashboard"
+        subHeading="Welcome to your Pinaypal admin panel. Manage your website content from here."
+      />
 
       {/* Stats Cards */}
       <motion.div

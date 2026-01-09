@@ -36,18 +36,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import PageHeader from "@/components/common/PageHeader";
+import { genderList, statusList, tableConfig } from "@/api/mockData";
 
-// Table Configuration
-const tableConfig = [
-    { label: "Name", sortKey: "firstName" },
-    { label: "Status", sortKey: "accountCurrentStatus" },
-    { label: "Contact No.", sortKey: "phone" },
-    { label: "Email", sortKey: "email" },
-    { label: "Account Status", sortKey: "accountStatusName" },
-    { label: "Gender", sortKey: "gender" },
-    { label: "Paused", sortKey: "isAccountPaused" },
-    { label: "Actions", sortKey: null },
-];
 
 // Helper function to format gender
 const formatGender = (gender: 'm' | 'f' | 'o'): string => {
@@ -71,46 +62,46 @@ const getStatusBadgeVariant = (status: number, isPaused: boolean, isDeleted: boo
 const UsersList = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
-    
+
     // Filters and search
     const [searchText, setSearchText] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [genderFilter, setGenderFilter] = useState<'m' | 'f' | 'o' | "">("");
-    
+
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const pageSizeOptions = [10, 20, 50];
-    
+
     // Modal states
     const [deleteUser, setDeleteUser] = useState<UserListItem | null>(null);
     const [deleteItemType, setDeleteItemType] = useState(false);
-    
+
     // Sorting
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: '', direction: 'asc' });
-    
+
     // Build query params
     const queryParams = useMemo(() => {
         const params: any = {
             page: currentPage,
             limit: pageSize,
         };
-        
+
         if (searchText.trim()) {
             params.search = searchText.trim();
         }
-        
+
         if (statusFilter) {
             params.status = statusFilter;
         }
-        
+
         if (genderFilter) {
             params.gender = genderFilter;
         }
-        
+
         return params;
     }, [currentPage, pageSize, searchText, statusFilter, genderFilter]);
-    
+
     // Use the user management hook
     const {
         users,
@@ -123,48 +114,48 @@ const UsersList = () => {
         deleteUser: deleteUserMutation,
         isDeleting,
     } = useUserManagement(queryParams);
-    
+
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
     }, [searchText, statusFilter, genderFilter, pageSize]);
-    
+
     // Handle search with debounce
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchText(e.target.value);
     }, []);
-    
+
     // Handle status filter change
     const handleStatusFilterChange = useCallback((value: string) => {
         setStatusFilter(value);
     }, []);
-    
+
     // Handle gender filter change
     const handleGenderFilterChange = useCallback((value: string) => {
         setGenderFilter(value as 'm' | 'f' | 'o' | "");
     }, []);
-    
+
     // Handle view user - navigate to view page
     const handleViewUser = useCallback((user: UserListItem) => {
         navigate(`/admin/users/${user.id}`);
     }, [navigate]);
-    
+
     // Handle edit user - navigate to edit page
     const handleEditUser = useCallback((user: UserListItem) => {
         navigate(`/admin/users/${user.id}/edit`);
     }, [navigate]);
-    
+
     // Handle delete user
     const openDeleteDialog = useCallback((user: UserListItem) => {
         setDeleteUser(user);
         setDeleteItemType(true);
     }, []);
-    
+
     const closeDeleteDialog = useCallback(() => {
         setDeleteItemType(false);
         setDeleteUser(null);
     }, []);
-    
+
     const handleDeleteUser = useCallback(() => {
         if (deleteUser) {
             deleteUserMutation(
@@ -177,7 +168,7 @@ const UsersList = () => {
             );
         }
     }, [deleteUser, deleteUserMutation, closeDeleteDialog]);
-    
+
     // Handle toggle pause
     const handleTogglePause = useCallback((user: UserListItem) => {
         togglePause(user.id, {
@@ -189,24 +180,24 @@ const UsersList = () => {
             },
         });
     }, [togglePause, toast]);
-    
+
     // Pagination helpers
     const handlePageChange = useCallback((page: number) => {
         if (pagination && page >= 1 && page <= pagination.totalPages && page !== currentPage) {
             setCurrentPage(page);
         }
     }, [currentPage, pagination]);
-    
+
     const handlePageSizeChange = useCallback((size: number) => {
         setPageSize(size);
     }, []);
-    
+
     // Visible pages logic
     const visiblePages = useMemo(() => {
         if (!pagination) return [];
         const pages: (number | string)[] = [];
         const totalPages = pagination.totalPages;
-        
+
         if (totalPages <= 7) {
             for (let i = 1; i <= totalPages; i++) pages.push(i);
         } else {
@@ -220,43 +211,43 @@ const UsersList = () => {
         }
         return pages;
     }, [currentPage, pagination]);
-    
+
     // Apply client-side sorting (if needed, though API should handle it)
     const sortedUsers = useMemo(() => {
         if (!sortConfig.key) return users;
-        
+
         return [...users].sort((a, b) => {
             const aVal = (a as any)[sortConfig.key];
             const bVal = (b as any)[sortConfig.key];
-            
+
             if (aVal == null) return 1;
             if (bVal == null) return -1;
-            
+
             if (typeof aVal === 'string' && typeof bVal === 'string') {
                 return sortConfig.direction === 'asc'
                     ? aVal.localeCompare(bVal)
                     : bVal.localeCompare(aVal);
             }
-            
+
             return sortConfig.direction === 'asc'
                 ? aVal > bVal ? 1 : -1
                 : aVal < bVal ? 1 : -1;
         });
     }, [users, sortConfig]);
-    
+
     const handleSort = useCallback((key: string) => {
         setSortConfig(prev => ({
             key,
             direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
         }));
     }, []);
-    
+
     // Calculate pagination display values
     const startItem = pagination && pagination.total > 0 ? (currentPage - 1) * pageSize + 1 : 0;
     const endItem = pagination ? Math.min(currentPage * pageSize, pagination.total) : 0;
     const totalItems = pagination?.total || 0;
     const totalPages = pagination?.totalPages || 0;
-    
+
     // Show error state
     if (error) {
         return (
@@ -268,69 +259,48 @@ const UsersList = () => {
             </div>
         );
     }
-    
+
     return (
         <div className="space-y-6">
-            {/* Header & Search */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-                            System Users
-                        </h1>
-                        <p className="text-muted-foreground mt-2">
-                            Manage and view all system users
-                        </p>
-                    </div>
+            <PageHeader
+                page="systemuser"
+                heading="System Users"
+                subHeading="Manage and view all system users."
+            />
+
+            {/* Filters */}
+            <div className="flex gap-3 mb-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        className="pl-10"
+                        placeholder="Search by name, email, or phone..."
+                        value={searchText}
+                        onChange={handleSearchChange}
+                    />
                 </div>
-                
-                {/* Filters */}
-                <div className="flex gap-3 mb-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            className="pl-10"
-                            placeholder="Search by name, email, or phone..."
-                            value={searchText}
-                            onChange={handleSearchChange}
-                        />
-                    </div>
-                    <Select value={statusFilter || "all"} onValueChange={(value) => handleStatusFilterChange(value === "all" ? "" : value)}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="All Statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="paused">Paused</SelectItem>
-                            <SelectItem value="deleted">Deleted</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="mobile_verification_pending">Mobile Verification Pending</SelectItem>
-                            <SelectItem value="mobile_verified">Mobile Verified</SelectItem>
-                            <SelectItem value="basic_info_collected">Basic Info Collected</SelectItem>
-                            <SelectItem value="email_verified">Email Verified</SelectItem>
-                            <SelectItem value="face_verified">Face Verified</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={genderFilter || "all"} onValueChange={(value) => handleGenderFilterChange(value === "all" ? "" : value as 'm' | 'f' | 'o' | "")}>
-                        <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="All Genders" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genders</SelectItem>
-                            <SelectItem value="m">Male</SelectItem>
-                            <SelectItem value="f">Female</SelectItem>
-                            <SelectItem value="o">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </motion.div>
-            
+                <Select value={statusFilter || "all"} onValueChange={(value) => handleStatusFilterChange(value === "all" ? "" : value)}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {statusList?.map(list => (
+                            <SelectItem key={list?.value} value={list?.value}>{list?.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={genderFilter || "all"} onValueChange={(value) => handleGenderFilterChange(value === "all" ? "" : value as 'm' | 'f' | 'o' | "")}>
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="All Genders" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {genderList?.map(list => (
+                            <SelectItem key={list?.value} value={list?.value}>{list?.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
             {/* Table */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -348,7 +318,7 @@ const UsersList = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {tableConfig.map((col) =>
+                                {tableConfig?.map((col) =>
                                     col.sortKey ? (
                                         <SortableHeader
                                             key={col.sortKey}
@@ -449,7 +419,7 @@ const UsersList = () => {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={tableConfig.length} className="text-center py-12 text-muted-foreground">
+                                    <TableCell colSpan={tableConfig?.length} className="text-center py-12 text-muted-foreground">
                                         {searchText || statusFilter || genderFilter
                                             ? "No users match your filters."
                                             : "No users found."}
@@ -460,7 +430,7 @@ const UsersList = () => {
                     </Table>
                 )}
             </motion.div>
-            
+
             {/* Pagination */}
             {totalItems > 0 && !isLoading && (
                 <PaginationControls
@@ -476,7 +446,7 @@ const UsersList = () => {
                     onPageSizeChange={handlePageSizeChange}
                 />
             )}
-            
+
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal
                 isOpen={deleteItemType}

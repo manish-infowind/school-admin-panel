@@ -24,6 +24,7 @@ import { RetryHistoryModal } from '@/components/admin/face-verification/RetryHis
 import PaginationControls from '@/components/ui/paginationComp';
 import { useVerificationStatistics } from '@/api/hooks/useFaceVerification';
 import { format } from 'date-fns';
+import PageHeader from '@/components/common/PageHeader';
 
 export default function FaceVerifications() {
   const navigate = useNavigate();
@@ -141,26 +142,19 @@ export default function FaceVerifications() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        page="faceverify"
+        heading="Face Verifications"
+        subHeading="Manage and review face verification requests"
+        isLoading={isLoading}
+        fetchHandler={refetch}
+      />
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Face Verifications
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage and review face verification requests
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-
         {/* Statistics Cards */}
         {statistics && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
