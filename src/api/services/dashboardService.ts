@@ -86,6 +86,25 @@ export interface ActiveUsersData {
   monthlyActive: number;
 }
 
+export interface ActiveUsersMetadata {
+  totalRecords: number;
+  startDate: string;
+  endDate: string;
+  timeRange: string;
+  selectedYears?: number[];
+}
+
+export interface ActiveUsersResponse {
+  activeUsers: ActiveUsersData[];
+  metadata: ActiveUsersMetadata;
+}
+
+export interface UserGrowthSyncResponse {
+  date: string;
+  synced: boolean;
+  externalServiceResponse?: any;
+}
+
 export interface ConversionData {
   metric: string;
   value: number;
@@ -218,6 +237,79 @@ export class DashboardService {
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.USER_GROWTH}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<UserGrowthResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get active users analytics data
+  static async getActiveUsers(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<ActiveUsersResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVE_USERS}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<ActiveUsersResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Sync user growth analytics data from external service
+  static async syncUserGrowth(date?: Date): Promise<ApiResponse<UserGrowthSyncResponse>> {
+    try {
+      let url = API_CONFIG.ENDPOINTS.DASHBOARD.USER_GROWTH_SYNC;
+      
+      // Add date parameter if provided
+      if (date) {
+        const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        url += `?date=${dateStr}`;
+      }
+
+      // Use extended timeout for sync API (2 minutes)
+      const response = await apiClient.get<UserGrowthSyncResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       
