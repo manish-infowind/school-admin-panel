@@ -1,13 +1,15 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Plus, RefreshCw, UserPlus } from "lucide-react";
 
 const PageHeader = (props) => {
     const {
         page,
         heading,
         subHeading,
+        fetchHandler,
+        isLoading,
+        openModal,
     } = props;
 
     return (
@@ -26,6 +28,35 @@ const PageHeader = (props) => {
                             {subHeading}
                         </p>
                     </div>
+
+                    {page?.toLowerCase() === "faceverify" && (
+                        <Button variant="outline" onClick={fetchHandler} disabled={isLoading}>
+                            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    )}
+
+                    {page?.toLowerCase() === "admin" && (
+                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Add Admin
+                        </Button>
+                    )}
+
+                    {page?.toLowerCase() === "permissions" && (
+                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Permission
+                        </Button>
+                    )}
+
+                    {page?.toLowerCase() === "roles" && (
+                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Role
+                        </Button>
+                    )}
+
                 </div>
             </motion.div>
         </>

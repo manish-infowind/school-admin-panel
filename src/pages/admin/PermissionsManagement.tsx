@@ -16,18 +16,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Key,
-  Plus,
   Search,
   Edit,
   Trash2,
-  Shield,
   Loader2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/api/hooks/usePermissions";
@@ -35,6 +31,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/redux/store/store";
 import { canManagePermissions } from "@/lib/permissions";
 import { Permission, CreatePermissionRequest } from "@/api/types";
+import PageHeader from "@/components/common/PageHeader";
 
 export default function PermissionsManagement() {
   const { toast } = useToast();
@@ -178,6 +175,11 @@ export default function PermissionsManagement() {
     });
   };
 
+  // Open Permission modal
+  const openPermissionModal = () => {
+    setIsCreateDialogOpen(true);
+  };
+
   if (!canRead) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -194,119 +196,104 @@ export default function PermissionsManagement() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Permissions Management
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage system permissions
-            </p>
-          </div>
-          {canCreate && (
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-brand-green hover:bg-brand-green/90 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Permission
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Permission</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="permissionName">Permission Name</Label>
-                    <Input
-                      id="permissionName"
-                      placeholder="e.g., manage_users, view_reports"
-                      value={formData.permissionName}
+      <PageHeader
+        page="permissions"
+        heading="Permissions Management"
+        subHeading="Manage system permissions."
+        openModal={openPermissionModal}
+      />
+
+      {canCreate && (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Permission</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="permissionName">Permission Name</Label>
+                <Input
+                  id="permissionName"
+                  placeholder="e.g., manage_users, view_reports"
+                  value={formData.permissionName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, permissionName: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use lowercase with underscores (e.g., manage_users, view_reports)
+                </p>
+              </div>
+              <div>
+                <Label>Allowed Actions (Optional)</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select which CRUD operations are allowed. Leave all checked for all actions.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedActions.create}
                       onChange={(e) =>
-                        setFormData({ ...formData, permissionName: e.target.value })
+                        setSelectedActions({ ...selectedActions, create: e.target.checked })
                       }
+                      className="rounded"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Use lowercase with underscores (e.g., manage_users, view_reports)
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Allowed Actions (Optional)</Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Select which CRUD operations are allowed. Leave all checked for all actions.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedActions.create}
-                          onChange={(e) =>
-                            setSelectedActions({ ...selectedActions, create: e.target.checked })
-                          }
-                          className="rounded"
-                        />
-                        <span>Create</span>
-                      </label>
-                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedActions.read}
-                          onChange={(e) =>
-                            setSelectedActions({ ...selectedActions, read: e.target.checked })
-                          }
-                          className="rounded"
-                        />
-                        <span>Read</span>
-                      </label>
-                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedActions.update}
-                          onChange={(e) =>
-                            setSelectedActions({ ...selectedActions, update: e.target.checked })
-                          }
-                          className="rounded"
-                        />
-                        <span>Update</span>
-                      </label>
-                      <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedActions.delete}
-                          onChange={(e) =>
-                            setSelectedActions({ ...selectedActions, delete: e.target.checked })
-                          }
-                          className="rounded"
-                        />
-                        <span>Delete</span>
-                      </label>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleCreatePermission}
-                    disabled={isCreatingPermission}
-                    className="w-full bg-brand-green hover:bg-brand-green/90"
-                  >
-                    {isCreatingPermission ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Permission"
-                    )}
-                  </Button>
+                    <span>Create</span>
+                  </label>
+                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedActions.read}
+                      onChange={(e) =>
+                        setSelectedActions({ ...selectedActions, read: e.target.checked })
+                      }
+                      className="rounded"
+                    />
+                    <span>Read</span>
+                  </label>
+                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedActions.update}
+                      onChange={(e) =>
+                        setSelectedActions({ ...selectedActions, update: e.target.checked })
+                      }
+                      className="rounded"
+                    />
+                    <span>Update</span>
+                  </label>
+                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedActions.delete}
+                      onChange={(e) =>
+                        setSelectedActions({ ...selectedActions, delete: e.target.checked })
+                      }
+                      className="rounded"
+                    />
+                    <span>Delete</span>
+                  </label>
                 </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </motion.div>
+              </div>
+              <Button
+                onClick={handleCreatePermission}
+                disabled={isCreatingPermission}
+                className="w-full bg-brand-green hover:bg-brand-green/90"
+              >
+                {isCreatingPermission ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Permission"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Card>
         <CardHeader>
@@ -513,7 +500,7 @@ export default function PermissionsManagement() {
               Are you sure you want to delete the permission <strong>{permissionToDelete?.permissionName}</strong>?
             </p>
             <p className="text-xs text-muted-foreground">
-              <strong>Note:</strong> This permission cannot be deleted if it is assigned to any user or role. 
+              <strong>Note:</strong> This permission cannot be deleted if it is assigned to any user or role.
               You must first remove the permission from all users and roles.
             </p>
             <div className="flex justify-end gap-2">

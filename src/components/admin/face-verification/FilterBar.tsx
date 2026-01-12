@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { VerificationStatus, ComputedStatus } from '@/api/types';
 import { Search, X } from 'lucide-react';
+import { faceStatusList } from '@/api/mockData';
 
 interface FilterBarProps {
   search: string;
@@ -73,10 +74,9 @@ export function FilterBar({
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="Success">Success</SelectItem>
-                <SelectItem value="Failed">Failed</SelectItem>
-                <SelectItem value="Processing">Processing</SelectItem>
+                {faceStatusList?.map(list => (
+                  <SelectItem key={list.value} value={list.value}>{list.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

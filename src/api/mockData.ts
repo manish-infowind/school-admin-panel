@@ -1,8 +1,8 @@
-import { 
-  User, 
-  AdminUser, 
-  Enquiry, 
-  Campaign, 
+import {
+  User,
+  AdminUser,
+  Enquiry,
+  Campaign,
   CampaignStats,
   AboutUs,
   SiteSettings,
@@ -84,49 +84,49 @@ export const mockProducts: Array<{
   createdAt: string;
   updatedAt: string;
 }> = [
-  {
-    _id: '1',
-    name: 'Product 1',
-    category: 'Category A',
-    status: 'active',
-    shortDescription: 'Short description for Product 1',
-    fullDescription: 'This is a full description for Product 1. It includes all the details about the product.',
-    features: ['Feature 1', 'Feature 2', 'Feature 3'],
-    images: ['/placeholder.svg'],
-    isPublished: true,
-    lastModified: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: '2',
-    name: 'Product 2',
-    category: 'Category B',
-    status: 'active',
-    shortDescription: 'Short description for Product 2',
-    fullDescription: 'This is a full description for Product 2. It includes all the details about the product.',
-    features: ['Feature A', 'Feature B'],
-    images: ['/placeholder.svg'],
-    isPublished: true,
-    lastModified: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    _id: '3',
-    name: 'Product 3',
-    category: 'Category A',
-    status: 'inactive',
-    shortDescription: 'Short description for Product 3',
-    fullDescription: 'This is a full description for Product 3. It includes all the details about the product.',
-    features: ['Feature X', 'Feature Y', 'Feature Z'],
-    images: ['/placeholder.svg'],
-    isPublished: false,
-    lastModified: new Date(Date.now() - 172800000).toISOString(),
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-];
+    {
+      _id: '1',
+      name: 'Product 1',
+      category: 'Category A',
+      status: 'active',
+      shortDescription: 'Short description for Product 1',
+      fullDescription: 'This is a full description for Product 1. It includes all the details about the product.',
+      features: ['Feature 1', 'Feature 2', 'Feature 3'],
+      images: ['/placeholder.svg'],
+      isPublished: true,
+      lastModified: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      _id: '2',
+      name: 'Product 2',
+      category: 'Category B',
+      status: 'active',
+      shortDescription: 'Short description for Product 2',
+      fullDescription: 'This is a full description for Product 2. It includes all the details about the product.',
+      features: ['Feature A', 'Feature B'],
+      images: ['/placeholder.svg'],
+      isPublished: true,
+      lastModified: new Date(Date.now() - 86400000).toISOString(),
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      _id: '3',
+      name: 'Product 3',
+      category: 'Category A',
+      status: 'inactive',
+      shortDescription: 'Short description for Product 3',
+      fullDescription: 'This is a full description for Product 3. It includes all the details about the product.',
+      features: ['Feature X', 'Feature Y', 'Feature Z'],
+      images: ['/placeholder.svg'],
+      isPublished: false,
+      lastModified: new Date(Date.now() - 172800000).toISOString(),
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+      updatedAt: new Date(Date.now() - 172800000).toISOString(),
+    },
+  ];
 
 // Mock Enquiries
 export const mockEnquiries: Enquiry[] = [
@@ -487,34 +487,34 @@ export const mockFAQs: Array<{
   createdAt: string;
   updatedAt: string;
 }> = [
-  {
-    _id: '1',
-    question: 'What is your return policy?',
-    answer: 'We offer a 30-day return policy on all products.',
-    status: 'Published',
-    isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: '2',
-    question: 'How do I track my order?',
-    answer: 'You can track your order using the tracking number provided in your confirmation email.',
-    status: 'Published',
-    isPublished: true,
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    _id: '3',
-    question: 'What payment methods do you accept?',
-    answer: 'We accept all major credit cards, PayPal, and bank transfers.',
-    status: 'Published',
-    isPublished: true,
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-];
+    {
+      _id: '1',
+      question: 'What is your return policy?',
+      answer: 'We offer a 30-day return policy on all products.',
+      status: 'Published',
+      isPublished: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      _id: '2',
+      question: 'How do I track my order?',
+      answer: 'You can track your order using the tracking number provided in your confirmation email.',
+      status: 'Published',
+      isPublished: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      _id: '3',
+      question: 'What payment methods do you accept?',
+      answer: 'We accept all major credit cards, PayPal, and bank transfers.',
+      status: 'Published',
+      isPublished: true,
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+      updatedAt: new Date(Date.now() - 172800000).toISOString(),
+    },
+  ];
 
 // Helper function to simulate delay
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -528,7 +528,7 @@ export const paginate = <T>(array: T[], page: number = 1, limit: number = 10) =>
   const endIndex = startIndex + limit;
   const paginatedData = array.slice(startIndex, endIndex);
   const totalPages = Math.ceil(array.length / limit);
-  
+
   return {
     data: paginatedData,
     pagination: {
@@ -550,7 +550,7 @@ export const filterArray = <T>(array: T[], filters: Record<string, any>) => {
       if (filterValue === undefined || filterValue === null || filterValue === '') {
         return true;
       }
-      
+
       const itemValue = (item as any)[key];
       if (typeof filterValue === 'string') {
         return String(itemValue).toLowerCase().includes(filterValue.toLowerCase());
@@ -562,26 +562,77 @@ export const filterArray = <T>(array: T[], filters: Record<string, any>) => {
 
 // Mock Status Status
 export const allStatus = [
-    { name: "All Status", value: "all" },
-    { name: "Rejected", value: "reject" },
-    { name: "Resolved", value: "resolved" },
-    { name: "Closed", value: "closed" },
+  { name: "All Status", value: "all" },
+  { name: "Rejected", value: "reject" },
+  { name: "Resolved", value: "resolved" },
+  { name: "Closed", value: "closed" },
 ];
 
 // Mock Category Status
 export const allCategories = [
-    { name: "All Categories", value: "all" },
-    { name: "Casual dating", value: "Casual dating" },
-    { name: "Serious relationship", value: "Serious relationship" },
-    { name: "Marriage", value: "Marriage" },
-    { name: "Friendship", value: "Friendship" },
-    { name: "Partnership", value: "Partnership" },
-    { name: "Other", value: "Other" },
+  { name: "All Categories", value: "all" },
+  { name: "Casual dating", value: "Casual dating" },
+  { name: "Serious relationship", value: "Serious relationship" },
+  { name: "Marriage", value: "Marriage" },
+  { name: "Friendship", value: "Friendship" },
+  { name: "Partnership", value: "Partnership" },
+  { name: "Other", value: "Other" },
 ];
 
 // Mock Old/New Status
 export const oldNewQue = [
-    { name: "Newest First", value: "desc" },
-    { name: "Oldest First", value: "asc" },
+  { name: "Newest First", value: "desc" },
+  { name: "Oldest First", value: "asc" },
 ];
 
+export const statusList = [
+  { name: "All Statuses", value: "all" },
+  { name: "Active", value: "active" },
+  { name: "Paused", value: "paused" },
+  { name: "Deleted", value: "deleted" },
+  { name: "Pending", value: "pending" },
+  { name: "Mobile Verification Pending", value: "mobile_verification_pending" },
+  { name: "Mobile Verified", value: "mobile_verified" },
+  { name: "Basic Info Collected", value: "basic_info_collected" },
+  { name: "Email Verified", value: "email_verified" },
+  { name: "Face Verified", value: "face_verified" },
+  { name: "Completed", value: "completed" },
+];
+
+export const genderList = [
+  { name: "All Genders", value: "all" },
+  { name: "Male", value: "m" },
+  { name: "Female", value: "f" },
+  { name: "Other", value: "o" },
+];
+
+// Table Configuration
+export const tableConfig = [
+  { label: "Name", sortKey: "firstName" },
+  { label: "Status", sortKey: "accountCurrentStatus" },
+  { label: "Contact No.", sortKey: "phone" },
+  { label: "Email", sortKey: "email" },
+  { label: "Account Status", sortKey: "accountStatusName" },
+  { label: "Gender", sortKey: "gender" },
+  { label: "Paused", sortKey: "isAccountPaused" },
+  { label: "Actions", sortKey: null },
+];
+
+export const faceStatusList = [
+  { name: "All statuses", value: "all" },
+  { name: "Success", value: "Success" },
+  { name: "Failed", value: "Failed" },
+  { name: "Processing", value: "Processing" },
+];
+
+export const roleList = [
+  { name: "All Roles", value: "all" },
+  { name: "Admin", value: "admin" },
+  { name: "Super Admin", value: "super_admin" },
+];
+
+export const activeList = [
+  { name: "All Status", value: "all" },
+  { name: "Active", value: "active" },
+  { name: "Inactive", value: "inactive" },
+];
