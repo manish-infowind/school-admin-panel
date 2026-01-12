@@ -369,10 +369,10 @@ const UsersList = () => {
                                                 {user.email || 'N/A'}
                                             </div>
                                         </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-2">
                                                 {user.accountStatusDescription || user.accountStatusName}
-                                            </Badge>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             {formatGender(user.gender)}

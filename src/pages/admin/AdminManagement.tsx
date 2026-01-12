@@ -169,6 +169,58 @@ export default function AdminManagement() {
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
+
+  // Initial states clear after the popup modal closed (Freeze screen issue fix)
+  useEffect(() => {
+    const anyModalOpen =
+      isCreateModalOpen ||
+      isEditModalOpen ||
+      isDeleteModalOpen ||
+      isViewModalOpen ||
+      isPasswordModalOpen;
+
+    if (!anyModalOpen) {
+      cleanupModalArtifacts();
+    }
+  }, [isCreateModalOpen, isEditModalOpen, isDeleteModalOpen, isViewModalOpen, isPasswordModalOpen]);
+
+  const cleanupModalArtifacts = () => {
+    try {
+      // restore scrolling and pointer events
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.pointerEvents = "";
+
+      // Remove inert attribute if set by some modal implementations
+      document.querySelectorAll('[inert]').forEach(n => n.removeAttribute('inert'));
+
+      // Clear aria-hidden on body children (Radix sets this)
+      Array.from(document.body.children).forEach((child) => {
+        if ((child as HTMLElement).getAttribute && (child as HTMLElement).getAttribute('aria-hidden') === 'true') {
+          (child as HTMLElement).removeAttribute('aria-hidden');
+        }
+      });
+
+      // Remove common overlay/portal elements appended to body
+      const overlays = document.querySelectorAll(
+        '[data-radix-dialog-overlay], [data-radix-portal], .radix-portal, .__dialog-overlay, .dialog-backdrop, .modal-backdrop, .overlay, .backdrop'
+      );
+      overlays.forEach(n => {
+        if (n.parentElement === document.body) n.remove();
+      });
+
+      // Blur active element and focus app root
+      (document.activeElement as HTMLElement)?.blur?.();
+      const maybeRoot = document.getElementById('root') || document.querySelector('#app') || document.body;
+      if (maybeRoot && maybeRoot instanceof HTMLElement) {
+        maybeRoot.tabIndex = -1;
+        maybeRoot.focus();
+      }
+    } catch (e) {
+      // ignore in SSR or restricted env
+    }
+  };
+
   // Handle search and filter changes with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -546,6 +598,38 @@ export default function AdminManagement() {
     setIsCreateModalOpen(true);
   };
 
+  // Close Modal and Reset All States
+  const closeAdminModal = () => {
+    setIsCreateModalOpen(false);
+    setIsEditModalOpen(false);
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      role: "admin",
+      phone: "",
+      countryCode: "+1",
+      location: "",
+      bio: "",
+      permissions: [],
+      isActive: true,
+    });
+    setSelectedRoleId(null);
+    setSelectedPermissionIds([]);
+    setPasswordErrors({
+      hasUppercase: false,
+      hasNumber: false,
+      hasSpecialChar: false,
+      hasMinLength: false,
+    });
+
+    // extra cleanup to ensure no leftover modal artifacts (focus lock / overlays)
+    cleanupModalArtifacts();
+    setSelectedAdmin(null);
+  };
+
   // If user doesn't have permission, show access denied
   if (!canAccess) {
     return (
@@ -574,7 +658,7 @@ export default function AdminManagement() {
         openModal={openAdminModal}
       />
 
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+      <Dialog open={isCreateModalOpen} onOpenChange={closeAdminModal}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">Add New Admin</DialogTitle>
@@ -796,7 +880,7 @@ export default function AdminManagement() {
             <div className="flex gap-3 justify-end pt-4 border-t">
               <Button
                 variant="outline"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={closeAdminModal}
                 disabled={isCreating}
                 className="px-6"
               >
@@ -1110,493 +1194,359 @@ export default function AdminManagement() {
       </motion.div>
 
       {/* Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Edit Admin</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* Basic Information Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">First Name *</label>
-                  <Input
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="Enter first name"
-                    className="h-10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Last Name *</label>
-                  <Input
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Enter last name"
-                    className="h-10"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Information Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-countryCode">Country Code *</Label>
-                  <Input
-                    id="edit-countryCode"
-                    value={formData.countryCode}
-                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                    placeholder="+1"
-                    className="h-10"
-                  />
-                  <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-phone">Phone *</Label>
-                  <Input
-                    id="edit-phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="Enter phone number"
-                    className="h-10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-location">Location</Label>
-                  <Input
-                    id="edit-location"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Enter location"
-                    className="h-10"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Bio</label>
-                <Input
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Enter bio"
-                  className="h-10"
-                />
-              </div>
-            </div>
-
-            {/* Role & Permissions Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                Role & Permissions <span className="text-red-500">*</span>
-              </h3>
-              <Alert>
-                <AlertDescription>
-                  You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Role Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="edit-role">Assign Role (Optional)</Label>
-                  <select
-                    id="edit-role"
-                    value={editSelectedRoleId || ""}
-                    onChange={(e) => setEditSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
-                    disabled={isLoadingRoles}
-                  >
-                    <option value="">
-                      {isLoadingRoles ? "Loading roles..." : "Select a role..."}
-                    </option>
-                    {roles && roles.length > 0 ? (
-                      roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.roleName} {role.description ? `- ${role.description}` : ''}
-                        </option>
-                      ))
-                    ) : (
-                      !isLoadingRoles && <option value="" disabled>No roles available</option>
-                    )}
-                  </select>
-                  {adminRoles?.roles && adminRoles.roles.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Current roles: {adminRoles.roles.map(r => r.roleName).join(', ')}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Select a role to assign all permissions from that role
-                  </p>
-                </div>
-
-                {/* Individual Permissions */}
-                <div className="space-y-2">
-                  <Label>Assign Individual Permissions (Optional)</Label>
-                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
-                    {isLoadingPermissions ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span className="text-sm text-muted-foreground">Loading permissions...</span>
-                      </div>
-                    ) : permissions && permissions.length > 0 ? (
-                      permissions.map((permission) => (
-                        <label
-                          key={permission.id}
-                          className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={editSelectedPermissionIds.includes(permission.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEditSelectedPermissionIds([...editSelectedPermissionIds, permission.id]);
-                              } else {
-                                setEditSelectedPermissionIds(editSelectedPermissionIds.filter(id => id !== permission.id));
-                              }
-                            }}
-                            className="rounded border-gray-300"
-                          />
-                          <span className="text-sm font-medium">{permission.permissionName}</span>
-                          {permission.allowedActions && permission.allowedActions.length > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {permission.allowedActions.join(", ")}
-                            </Badge>
-                          )}
-                        </label>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
-                    )}
+      <Dialog open={isEditModalOpen} onOpenChange={closeAdminModal}>
+        {isEditModalOpen && (
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">Edit Admin</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Basic Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">First Name *</label>
+                    <Input
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Enter first name"
+                      className="h-10"
+                    />
                   </div>
-                  {adminPermissions?.permissions && adminPermissions.permissions.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Current permissions: {adminPermissions.permissions.map(p => p.permissionName).join(', ')}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Select individual permissions to assign directly to the admin
-                  </p>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Last Name *</label>
+                    <Input
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Enter last name"
+                      className="h-10"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Validation Message */}
-              {!editSelectedRoleId && editSelectedPermissionIds.length === 0 && (
-                <Alert variant="destructive">
+              {/* Contact Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-countryCode">Country Code *</Label>
+                    <Input
+                      id="edit-countryCode"
+                      value={formData.countryCode}
+                      onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                      placeholder="+1"
+                      className="h-10"
+                    />
+                    <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone *</Label>
+                    <Input
+                      id="edit-phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Enter phone number"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-location">Location</Label>
+                    <Input
+                      id="edit-location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="Enter location"
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Bio</label>
+                  <Input
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    placeholder="Enter bio"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+
+              {/* Role & Permissions Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                  Role & Permissions <span className="text-red-500">*</span>
+                </h3>
+                <Alert>
                   <AlertDescription>
-                    Please assign at least one role or individual permission.
+                    You must assign at least one <strong>Role</strong> OR <strong>Individual Permission</strong> to the admin.
                   </AlertDescription>
                 </Alert>
-              )}
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 justify-end pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsEditModalOpen(false)}
-                disabled={isUpdating}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEditAdmin}
-                disabled={isUpdating}
-                className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
-              >
-                {isUpdating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  "Update Admin"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Role Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Assign Role (Optional)</Label>
+                    <select
+                      id="edit-role"
+                      value={editSelectedRoleId || ""}
+                      onChange={(e) => setEditSelectedRoleId(e.target.value ? Number(e.target.value) : null)}
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background h-10"
+                      disabled={isLoadingRoles}
+                    >
+                      <option value="">
+                        {isLoadingRoles ? "Loading roles..." : "Select a role..."}
+                      </option>
+                      {roles && roles.length > 0 ? (
+                        roles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.roleName} {role.description ? `- ${role.description}` : ''}
+                          </option>
+                        ))
+                      ) : (
+                        !isLoadingRoles && <option value="" disabled>No roles available</option>
+                      )}
+                    </select>
+                    {adminRoles?.roles && adminRoles.roles.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Current roles: {adminRoles.roles.map(r => r.roleName).join(', ')}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Select a role to assign all permissions from that role
+                    </p>
+                  </div>
+
+                  {/* Individual Permissions */}
+                  <div className="space-y-2">
+                    <Label>Assign Individual Permissions (Optional)</Label>
+                    <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                      {isLoadingPermissions ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-muted-foreground">Loading permissions...</span>
+                        </div>
+                      ) : permissions && permissions.length > 0 ? (
+                        permissions.map((permission) => (
+                          <label
+                            key={permission.id}
+                            className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editSelectedPermissionIds.includes(permission.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditSelectedPermissionIds([...editSelectedPermissionIds, permission.id]);
+                                } else {
+                                  setEditSelectedPermissionIds(editSelectedPermissionIds.filter(id => id !== permission.id));
+                                }
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="text-sm font-medium">{permission.permissionName}</span>
+                            {permission.allowedActions && permission.allowedActions.length > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {permission.allowedActions.join(", ")}
+                              </Badge>
+                            )}
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">No permissions available</p>
+                      )}
+                    </div>
+                    {adminPermissions?.permissions && adminPermissions.permissions.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Current permissions: {adminPermissions.permissions.map(p => p.permissionName).join(', ')}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Select individual permissions to assign directly to the admin
+                    </p>
+                  </div>
+                </div>
+
+                {/* Validation Message */}
+                {!editSelectedRoleId && editSelectedPermissionIds.length === 0 && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      Please assign at least one role or individual permission.
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </Button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={closeAdminModal}
+                  disabled={isUpdating}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEditAdmin}
+                  disabled={isUpdating}
+                  className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Admin"
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
+          </DialogContent>
+        )}
       </Dialog>
 
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
-              Delete Admin
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center">
-                <Trash2 className="h-5 w-5 text-red-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">
-                  Are you sure you want to delete this admin?
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  This action cannot be undone. The admin account for{" "}
-                  <span className="font-medium text-gray-900">
-                    {selectedAdmin?.firstName} {selectedAdmin?.lastName}
-                  </span>{" "}
-                  will be permanently removed.
-                </p>
-              </div>
-            </div>
-
-            {selectedAdmin && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">
-                    {selectedAdmin.firstName} {selectedAdmin.lastName}
-                  </p>
-                  <p className="text-gray-500 mt-1">
-                    {selectedAdmin.email}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Created {formatDate(selectedAdmin.createdAt)}
+        {isDeleteModalOpen && (
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Delete Admin
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">
+                    Are you sure you want to delete this admin?
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    This action cannot be undone. The admin account for{" "}
+                    <span className="font-medium text-gray-900">
+                      {selectedAdmin?.firstName} {selectedAdmin?.lastName}
+                    </span>{" "}
+                    will be permanently removed.
                   </p>
                 </div>
               </div>
-            )}
 
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteAdmin}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Admin
-                  </>
-                )}
-              </Button>
+              {selectedAdmin && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm">
+                    <p className="font-medium text-gray-900">
+                      {selectedAdmin.firstName} {selectedAdmin.lastName}
+                    </p>
+                    <p className="text-gray-500 mt-1">
+                      {selectedAdmin.email}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Created {formatDate(selectedAdmin.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAdmin}
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Admin
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
+          </DialogContent>
+        )}
       </Dialog>
 
       {/* Change Password Modal */}
       <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Change Admin Password
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* Admin Info */}
-            {selectedAdmin && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-blue-900">{selectedAdmin.firstName} {selectedAdmin.lastName}</p>
-                    <p className="text-sm text-blue-700">{selectedAdmin.email}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Password Form */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">New Password *</label>
-                <Input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  placeholder="Enter new password"
-                  className="h-10"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Confirm Password *</label>
-                <Input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  placeholder="Confirm new password"
-                  className="h-10"
-                />
-              </div>
-            </div>
-
-            {/* Security Notice */}
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center mt-0.5">
-                  <span className="text-yellow-600 text-xs font-bold">!</span>
-                </div>
-                <div className="text-sm">
-                  <p className="font-medium text-yellow-900">Security Notice</p>
-                  <p className="text-yellow-700 mt-1">
-                    The admin will be notified of this password change. Make sure to use a strong password.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 justify-end pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsPasswordModalOpen(false)}
-                disabled={isChangingPassword}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleChangePassword}
-                disabled={isChangingPassword}
-                className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
-              >
-                {isChangingPassword ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Changing...
-                  </>
-                ) : (
-                  "Change Password"
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Details Modal */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Admin Details
-            </DialogTitle>
-          </DialogHeader>
-          {selectedAdmin && (
+        {isPasswordModalOpen && (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Change Admin Password
+              </DialogTitle>
+            </DialogHeader>
             <div className="space-y-6">
-              {/* Admin Header */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-16 h-16 bg-brand-green/20 rounded-full flex items-center justify-center">
-                  <Users className="h-8 w-8 text-brand-green" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{selectedAdmin.firstName} {selectedAdmin.lastName}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    @{selectedAdmin.username || selectedAdmin.email.split('@')[0]}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedAdmin.email}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {getRoleBadge(selectedAdmin.role)}
-                  {getStatusBadge(selectedAdmin.isActive)}
-                </div>
-              </div>
-
-              {/* Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
-                  <div className="space-y-3">
-                    {selectedAdmin.phone && (
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <Phone className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Phone</p>
-                          <p className="text-sm text-gray-600">{selectedAdmin.phone}</p>
-                        </div>
-                      </div>
-                    )}
-                    {selectedAdmin.location && (
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <MapPin className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Location</p>
-                          <p className="text-sm text-gray-600">{selectedAdmin.location}</p>
-                        </div>
-                      </div>
-                    )}
-                    {selectedAdmin.bio && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm font-medium text-gray-900 mb-1">Bio</p>
-                        <p className="text-sm text-gray-600">{selectedAdmin.bio}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Account Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Account Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Calendar className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Created</p>
-                        <p className="text-sm text-gray-600">{formatDate(selectedAdmin.createdAt)}</p>
-                      </div>
+              {/* Admin Info */}
+              {selectedAdmin && (
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-blue-600" />
                     </div>
-                    {selectedAdmin.lastLogin && (
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <Calendar className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Last Login</p>
-                          <p className="text-sm text-gray-600">{formatDate(selectedAdmin.lastLogin)}</p>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Lock className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">2FA Status</p>
-                        <p className="text-sm text-gray-600">
-                          {selectedAdmin.twoFactorEnabled ? 'Enabled' : 'Disabled'}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="font-medium text-blue-900">{selectedAdmin.firstName} {selectedAdmin.lastName}</p>
+                      <p className="text-sm text-blue-700">{selectedAdmin.email}</p>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Permissions */}
+              {/* Password Form */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Permissions</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {selectedAdmin.permissions.map((permission) => (
-                    <div key={permission} className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-green-800 capitalize">{permission}</span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">New Password *</label>
+                  <Input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    placeholder="Enter new password"
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Confirm Password *</label>
+                  <Input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+
+              {/* Security Notice */}
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center mt-0.5">
+                    <span className="text-yellow-600 text-xs font-bold">!</span>
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-yellow-900">Security Notice</p>
+                    <p className="text-yellow-700 mt-1">
+                      The admin will be notified of this password change. Make sure to use a strong password.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1604,25 +1554,176 @@ export default function AdminManagement() {
               <div className="flex gap-3 justify-end pt-4 border-t">
                 <Button
                   variant="outline"
-                  onClick={() => setIsViewModalOpen(false)}
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  disabled={isChangingPassword}
                   className="px-6"
                 >
-                  Close
+                  Cancel
                 </Button>
                 <Button
-                  onClick={() => {
-                    setIsViewModalOpen(false);
-                    openEditModal(selectedAdmin);
-                  }}
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword}
                   className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Admin
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Changing...
+                    </>
+                  ) : (
+                    "Change Password"
+                  )}
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* View Details Modal */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        {isViewModalOpen && (
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Admin Details
+              </DialogTitle>
+            </DialogHeader>
+            {selectedAdmin && (
+              <div className="space-y-6">
+                {/* Admin Header */}
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-16 h-16 bg-brand-green/20 rounded-full flex items-center justify-center">
+                    <Users className="h-8 w-8 text-brand-green" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold">{selectedAdmin.firstName} {selectedAdmin.lastName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      @{selectedAdmin.username || selectedAdmin.email.split('@')[0]}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedAdmin.email}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {getRoleBadge(selectedAdmin.role)}
+                    {getStatusBadge(selectedAdmin.isActive)}
+                  </div>
+                </div>
+
+                {/* Information Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contact Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
+                    <div className="space-y-3">
+                      {selectedAdmin.phone && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Phone className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Phone</p>
+                            <p className="text-sm text-gray-600">{selectedAdmin.phone}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedAdmin.location && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <MapPin className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Location</p>
+                            <p className="text-sm text-gray-600">{selectedAdmin.location}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedAdmin.bio && (
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm font-medium text-gray-900 mb-1">Bio</p>
+                          <p className="text-sm text-gray-600">{selectedAdmin.bio}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Account Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Account Information</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Calendar className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Created</p>
+                          <p className="text-sm text-gray-600">{formatDate(selectedAdmin.createdAt)}</p>
+                        </div>
+                      </div>
+                      {selectedAdmin.lastLogin && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Calendar className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Last Login</p>
+                            <p className="text-sm text-gray-600">{formatDate(selectedAdmin.lastLogin)}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Lock className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">2FA Status</p>
+                          <p className="text-sm text-gray-600">
+                            {selectedAdmin.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Permissions */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
+                    Permissions
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedAdmin.permissions.map((permission) => (
+                      <div
+                        key={permission}
+                        className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg"
+                      >
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+
+                        <span className="text-sm font-medium text-green-800 capitalize break-words min-w-0">
+                          {permission}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-end pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsViewModalOpen(false)}
+                    className="px-6"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsViewModalOpen(false);
+                      openEditModal(selectedAdmin);
+                    }}
+                    className="bg-brand-green hover:bg-brand-green/90 text-white px-6"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Admin
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   );

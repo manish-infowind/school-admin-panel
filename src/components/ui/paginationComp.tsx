@@ -50,7 +50,7 @@ const PaginationControls = React.memo(
               <Button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -70,7 +70,7 @@ const PaginationControls = React.memo(
                     className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 w-9
               ${currentPage === page
                         ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                        : 'border border-input text-foreground bg-background hover:bg-accent hover:text-accent-foreground'
                       }`}
                   >
                     {page}
@@ -81,7 +81,7 @@ const PaginationControls = React.memo(
               <Button
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
+                className="inline-flex items-center justify-center rounded-md text-sm text-foreground font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
