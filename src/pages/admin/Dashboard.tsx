@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   TrendingUp,
   Eye,
   Edit3,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -38,6 +40,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [products, setProducts] = useState(productStore.getProducts());
+  const [syncing, setSyncing] = useState(false);
   // Separate state for each chart
   const [userGrowthChart, setUserGrowthChart] = useState<ChartConfig>(createChartConfig());
   const [activeUsersChart, setActiveUsersChart] = useState<ChartConfig>(createChartConfig());
@@ -45,8 +48,9 @@ export default function Dashboard() {
 
   // Use custom hook for chart data
   // Use the new dedicated User Growth API for user growth chart
-  const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, true);
-  const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart);
+  const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, 'userGrowth');
+  // Use the new dedicated Active Users API for active users chart
+  const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart, 'activeUsers');
   const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart);
 
   useEffect(() => {
@@ -55,6 +59,47 @@ export default function Dashboard() {
     });
     return unsubscribe;
   }, []);
+
+  // Handle sync user growth data
+  const handleSyncUserGrowth = async () => {
+    try {
+      setSyncing(true);
+      const response = await DashboardService.syncUserGrowth();
+      
+      if (response.success && response.data) {
+        toast({
+          title: "Sync Successful",
+          description: `User growth analytics synced successfully for ${response.data.date}`,
+        });
+        
+        // Force refresh user growth data by updating the chart config
+        // This will trigger the useChartData hook to refetch
+        setUserGrowthChart(prev => ({
+          ...prev,
+          // Update dateRange to trigger refresh
+          dateRange: {
+            from: prev.dateRange.from,
+            to: new Date(), // Update to current date to trigger refresh
+          },
+        }));
+      } else {
+        toast({
+          title: "Sync Failed",
+          description: response.message || "Failed to sync user growth analytics",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error syncing user growth:', error);
+      toast({
+        title: "Sync Error",
+        description: error.message || "An error occurred while syncing data",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -425,14 +470,34 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome to your Pinaypal admin panel. Manage your website
-            content from here.
-          </p>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Welcome to your Pinaypal admin panel. Manage your website
+              content from here.
+            </p>
+          </div>
+          <Button
+            onClick={handleSyncUserGrowth}
+            disabled={syncing || userGrowthLoading}
+            className="flex items-center gap-2"
+            variant="outline"
+          >
+            {syncing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Syncing Data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Sync User Growth
+              </>
+            )}
+          </Button>
         </div>
       </motion.div>
 

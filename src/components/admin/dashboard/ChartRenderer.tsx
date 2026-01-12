@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
 
@@ -22,7 +22,29 @@ interface ChartRendererProps {
 export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData }: ChartRendererProps) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
-  // Early return if no data
+  // Calculate if we need dual Y-axis (when values have very different scales)
+  // This must be called before any early returns to follow Rules of Hooks
+  const needsDualAxis = useMemo(() => {
+    if (dataKeys.length < 2 || !data || data.length === 0) return false;
+    
+    // Get max values for each data key
+    const maxValues = dataKeys.map(key => {
+      const values = data.map(item => {
+        const val = item[key];
+        return typeof val === 'number' ? val : Number(val) || 0;
+      });
+      return Math.max(...values, 0);
+    });
+    
+    // If the ratio between max values is greater than 10, use dual axis
+    const maxMax = Math.max(...maxValues);
+    const minMax = Math.min(...maxValues.filter(v => v > 0));
+    if (minMax === 0) return false;
+    
+    return maxMax / minMax > 10;
+  }, [data, dataKeys]);
+  
+  // Early return if no data (after all hooks)
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -32,8 +54,59 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
       </div>
     );
   }
-  
+
   if (chartType === 'bar') {
+    if (needsDualAxis && dataKeys.length === 2) {
+      // Use dual Y-axis for bar chart when values have very different scales
+      return (
+        <ResponsiveContainer width="100%" height={height}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis 
+              dataKey="name" 
+              angle={-45}
+              textAnchor="end"
+              height={100}
+              interval={0}
+              tick={{ fontSize: 11 }}
+              stroke="#6b7280"
+            />
+            <YAxis 
+              yAxisId="left"
+              stroke={CHART_COLORS[0]}
+              label={{ value: dataKeys[0], angle: -90, position: 'insideLeft' }}
+            />
+            <YAxis 
+              yAxisId="right"
+              orientation="right"
+              stroke={CHART_COLORS[1]}
+              label={{ value: dataKeys[1], angle: 90, position: 'insideRight' }}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px'
+              }}
+            />
+            <Legend />
+            <Bar 
+              yAxisId="left"
+              dataKey={dataKeys[0]} 
+              fill={CHART_COLORS[0]} 
+              radius={[4, 4, 0, 0]} 
+            />
+            <Bar 
+              yAxisId="right"
+              dataKey={dataKeys[1]} 
+              fill={CHART_COLORS[1]} 
+              radius={[4, 4, 0, 0]} 
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+    
     return (
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data}>
@@ -70,6 +143,63 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
   }
 
   if (chartType === 'line') {
+    if (needsDualAxis && dataKeys.length === 2) {
+      // Use dual Y-axis for line chart when values have very different scales
+      return (
+        <ResponsiveContainer width="100%" height={height}>
+          <RechartsLineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis 
+              dataKey="name" 
+              angle={-45}
+              textAnchor="end"
+              height={100}
+              interval={0}
+              tick={{ fontSize: 11 }}
+              stroke="#6b7280"
+            />
+            <YAxis 
+              yAxisId="left"
+              stroke={CHART_COLORS[0]}
+              label={{ value: dataKeys[0], angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+            />
+            <YAxis 
+              yAxisId="right"
+              orientation="right"
+              stroke={CHART_COLORS[1]}
+              label={{ value: dataKeys[1], angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px'
+              }}
+            />
+            <Legend />
+            <Line 
+              yAxisId="left"
+              type="monotone"
+              dataKey={dataKeys[0]} 
+              stroke={CHART_COLORS[0]}
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              yAxisId="right"
+              type="monotone"
+              dataKey={dataKeys[1]} 
+              stroke={CHART_COLORS[1]}
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      );
+    }
+    
     return (
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLineChart data={data}>
