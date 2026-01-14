@@ -654,7 +654,7 @@ export default function AdminManagement() {
       <PageHeader
         page="admin"
         heading="Admin Management"
-        subHeading="Manage admin accounts, permissions, and access controls."
+        subHeading="Manage admin accounts, permissions, and access controls"
         openModal={openAdminModal}
       />
 

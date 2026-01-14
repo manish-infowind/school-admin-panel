@@ -2,14 +2,15 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw } from 'lucide-react';
 import { usePendingVerifications, useApproveOrRejectVerification } from '@/api/hooks/useFaceVerification';
 import { FilterBar } from '@/components/admin/face-verification/FilterBar';
 import { VerificationCard } from '@/components/admin/face-verification/VerificationCard';
 import { ApprovalModal } from '@/components/admin/face-verification/ApprovalModal';
 import PaginationControls from '@/components/ui/paginationComp';
 import { FaceVerification, ApprovalData } from '@/api/types';
+import RetryPage from '@/components/common/RetryPage';
+import PageHeader from '@/components/common/PageHeader';
+import PageLoader from '@/components/common/PageLoader';
 
 export default function PendingVerifications() {
   const navigate = useNavigate();
@@ -104,36 +105,29 @@ export default function PendingVerifications() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-destructive mb-4">Error loading pending verifications</p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
-      </div>
+      <RetryPage
+        message="Failed to load pending verifications details"
+        btnName="Retry"
+        onRetry={refetch}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        page="pendingverify"
+        heading="Pending Verifications Queue"
+        subHeading="Review and approve pending face verification requests"
+        isLoading={isLoading}
+        fetchHandler={refetch}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Pending Verifications Queue
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Review and approve pending face verification requests
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
 
         {/* Filters */}
         <FilterBar
@@ -156,9 +150,7 @@ export default function PendingVerifications() {
 
         {/* Verifications List */}
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <PageLoader pagename="pending verifications" />
         ) : verifications.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">

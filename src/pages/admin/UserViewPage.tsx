@@ -28,6 +28,8 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
+import PageLoader from "@/components/common/PageLoader";
+import RetryPage from "@/components/common/RetryPage";
 
 // Helper function to format gender
 const formatGender = (gender: 'm' | 'f' | 'o'): string => {
@@ -67,30 +69,28 @@ const UserViewPage = () => {
 
     const { data: userResponse, isLoading, error } = useUserManagement().useUserDetails(userId);
 
+    const backToUserHandler = () => {
+        navigate('/admin/users');
+    };
+
     // Extract user data from API response
     const user = userResponse?.data;
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading user details...</p>
-                </div>
-            </div>
+            <PageLoader pagename="user" />
         );
-    }
+    };
 
     if (error || !user) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <p className="text-destructive mb-4">Failed to load user details</p>
-                    <Button onClick={() => navigate('/admin/users')}>Back to Users</Button>
-                </div>
-            </div>
+            <RetryPage
+                message="Failed to load user details"
+                btnName="Back to Users"
+                onRetry={backToUserHandler}
+            />
         );
-    }
+    };
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -245,278 +245,276 @@ const UserViewPage = () => {
 
                 <Separator />
 
-                {/* Profile Information */}
-                {user.profile && (
-                    <>
-                        <div className="space-y-4 p-6 border rounded-lg">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <User className="h-5 w-5" />
-                                Profile Information
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {user.profile.height && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Height</p>
-                                        <p className="font-medium">{user.profile.height} cm</p>
-                                    </div>
-                                )}
-                                {user.profile.education && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                            <GraduationCap className="h-3 w-3" />
-                                            Education
-                                        </p>
-                                        <p className="font-medium">{user.profile.education}</p>
-                                    </div>
-                                )}
-                                {user.profile.relationshipGoal && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                            <Target className="h-3 w-3" />
-                                            Relationship Goal
-                                        </p>
-                                        <p className="font-medium">{user.profile.relationshipGoal}</p>
-                                    </div>
-                                )}
-                                {user.profile.voiceUrl && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                            <Mic className="h-3 w-3" />
-                                            Voice Recording
-                                        </p>
-                                        <audio controls className="w-full mt-1">
-                                            <source src={user.profile.voiceUrl} type="audio/mpeg" />
-                                        </audio>
-                                    </div>
-                                )}
-                                {user.profile.bio && (
-                                    <div className="md:col-span-2">
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                            <FileText className="h-3 w-3" />
-                                            Bio
-                                        </p>
-                                        <p className="font-medium mt-1">{user.profile.bio}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <Separator />
-                    </>
-                )}
-
-                {/* Address Information */}
-                {user.address && (
-                    <>
-                        <div className="space-y-4 p-6 border rounded-lg">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Address Information
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {user.address.cityName && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">City</p>
-                                        <p className="font-medium">{user.address.cityName}</p>
-                                    </div>
-                                )}
-                                {user.address.location && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Location</p>
-                                        <p className="font-medium">{user.address.location}</p>
-                                    </div>
-                                )}
-                                {user.address.lat && user.address.long && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Coordinates</p>
-                                        <p className="font-medium">
-                                            {String(user.address.lat)}, {String(user.address.long)}
-                                        </p>
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Verified</p>
-                                    <Badge variant={user.address.isVerified ? 'default' : 'secondary'}>
-                                        {user.address.isVerified ? 'Yes' : 'No'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                        <Separator />
-                    </>
-                )}
-
-                {/* Interactions */}
-                {user.interactions && (
-                    <>
-                        <div className="space-y-4 p-6 border rounded-lg">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <Heart className="h-5 w-5" />
-                                Interactions
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground">Received Likes</p>
-                                    <p className="text-2xl font-bold">{user.interactions.receivedLikes}</p>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground">Given Likes</p>
-                                    <p className="text-2xl font-bold">{user.interactions.givenLikes}</p>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                        <Star className="h-3 w-3" />
-                                        Received Super Likes
-                                    </p>
-                                    <p className="text-2xl font-bold">{user.interactions.receivedSuperLikes}</p>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                        <Star className="h-3 w-3" />
-                                        Given Super Likes
-                                    </p>
-                                    <p className="text-2xl font-bold">{user.interactions.givenSuperLikes}</p>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground">Passes</p>
-                                    <p className="text-2xl font-bold">{user.interactions.passes}</p>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                    <p className="text-sm text-muted-foreground">Blocks</p>
-                                    <p className="text-2xl font-bold">{user.interactions.blocks}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <Separator />
-                    </>
-                )}
-
-                {/* Profile Images Carousel */}
-                {user.profileImages && user.profileImages.length > 0 && (
-                    <>
-                        <div className="space-y-4 p-6 border rounded-lg">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <ImageIcon className="h-5 w-5" />
-                                Profile Images ({user.profileImages.length})
-                            </h4>
-                            <div className="relative w-full">
-                                <Carousel className="w-full max-w-2xl mx-auto">
-                                    <CarouselContent className="-ml-2 md:-ml-4">
-                                        {user.profileImages.map((image, index) => (
-                                            <CarouselItem key={index} className="pl-2 md:pl-4">
-                                                <div className="relative aspect-square rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
-                                                    <img
-                                                        src={image}
-                                                        alt={`Profile ${index + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Image+Not+Found';
-                                                        }}
-                                                    />
-                                                    <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                                                        {index + 1} / {user.profileImages.length}
-                                                    </div>
-                                                </div>
-                                            </CarouselItem>
-                                        ))}
-                                    </CarouselContent>
-                                    {user.profileImages.length > 1 && (
-                                        <>
-                                            <CarouselPrevious className="left-0" />
-                                            <CarouselNext className="right-0" />
-                                        </>
+                {/* Profile, Address and Profile Image section  */}
+                <div className="flex flex-col md:grid grid-cols-3 gap-4">
+                    <div className="space-y-4 col-span-2">
+                        {/* Profile Information */}
+                        {user.profile && (
+                            <div className="space-y-4 p-6 border rounded-lg h-[calc(50%-0.5rem)]">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <User className="h-5 w-5" />
+                                    Profile Information
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {user.profile.height && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Height</p>
+                                            <p className="font-medium">{user.profile.height} cm</p>
+                                        </div>
                                     )}
-                                </Carousel>
-                            </div>
-                        </div>
-                        <Separator />
-                    </>
-                )}
-
-                {/* First Plan / Primary Plan */}
-                {user.firstPlan && (
-                    <>
-                        <div className="space-y-4 p-6 border rounded-lg">
-                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                <Shield className="h-5 w-5" />
-                                Primary Plan
-                            </h4>
-                            <div className="p-4 border-2 border-primary rounded-lg space-y-2 bg-primary/5">
-                                <div className="flex items-center justify-between">
-                                    <p className="font-semibold text-lg">{user.firstPlan.planName}</p>
-                                    <Badge variant={user.firstPlan.status === 'active' ? 'default' : 'secondary'}>
-                                        {user.firstPlan.status}
-                                    </Badge>
+                                    {user.profile.education && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                                <GraduationCap className="h-3 w-3" />
+                                                Education
+                                            </p>
+                                            <p className="font-medium">{user.profile.education}</p>
+                                        </div>
+                                    )}
+                                    {user.profile.relationshipGoal && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                                <Target className="h-3 w-3" />
+                                                Relationship Goal
+                                            </p>
+                                            <p className="font-medium">{user.profile.relationshipGoal}</p>
+                                        </div>
+                                    )}
+                                    {user.profile.voiceUrl && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                                <Mic className="h-3 w-3" />
+                                                Voice Recording
+                                            </p>
+                                            <audio controls className="w-full mt-1">
+                                                <source src={user.profile.voiceUrl} type="audio/mpeg" />
+                                            </audio>
+                                        </div>
+                                    )}
+                                    {user.profile.bio && (
+                                        <div className="md:col-span-2">
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                                <FileText className="h-3 w-3" />
+                                                Bio
+                                            </p>
+                                            <p className="font-medium mt-1">{user.profile.bio}</p>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
+                            </div>
+                        )}
+
+                        {/* Address Information */}
+                        {user.address && (
+                            <div className="space-y-4 p-6 border rounded-lg h-[calc(50%-0.5rem)]">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <MapPin className="h-5 w-5" />
+                                    Address Information
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {user.address.cityName && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">City</p>
+                                            <p className="font-medium">{user.address.cityName}</p>
+                                        </div>
+                                    )}
+                                    {user.address.location && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Location</p>
+                                            <p className="font-medium">{user.address.location}</p>
+                                        </div>
+                                    )}
+                                    {user.address.lat && user.address.long && (
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Coordinates</p>
+                                            <p className="font-medium">
+                                                {String(user.address.lat)}, {String(user.address.long)}
+                                            </p>
+                                        </div>
+                                    )}
                                     <div>
-                                        <p className="text-muted-foreground">Price</p>
-                                        <p className="font-medium">${user.firstPlan.planPrice}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Duration</p>
-                                        <p className="font-medium">{user.firstPlan.planDuration}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Start Date</p>
-                                        <p className="font-medium">
-                                            {new Date(user.firstPlan.startDate).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">End Date</p>
-                                        <p className="font-medium">
-                                            {new Date(user.firstPlan.endDate).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Auto Renew</p>
-                                        <Badge variant={user.firstPlan.autoRenew ? 'default' : 'secondary'}>
-                                            {user.firstPlan.autoRenew ? 'Yes' : 'No'}
+                                        <p className="text-sm text-muted-foreground">Verified</p>
+                                        <Badge variant={user.address.isVerified ? 'default' : 'secondary'}>
+                                            {user.address.isVerified ? 'Yes' : 'No'}
                                         </Badge>
                                     </div>
                                 </div>
-                                {user.firstPlan.planFeatures && user.firstPlan.planFeatures.length > 0 && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground mb-2">Features</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {user.firstPlan.planFeatures.map((feature, idx) => {
-                                                const featureObj = typeof feature === 'string' 
-                                                    ? { label: feature, limit: undefined, period: undefined }
-                                                    : (feature as any);
-                                                
-                                                const featureLabel = featureObj.label || 'Unknown Feature';
-                                                let featureText = featureLabel;
-                                                
-                                                if (featureObj.limit !== undefined && featureObj.limit !== null) {
-                                                    if (featureObj.limit === -1) {
-                                                        featureText += ' (Unlimited)';
-                                                    } else if (featureObj.limit > 0) {
-                                                        featureText += ` (${featureObj.limit}`;
-                                                        if (featureObj.period) {
-                                                            featureText += `/${featureObj.period}`;
-                                                        }
-                                                        featureText += ')';
-                                                    }
-                                                }
-                                                
-                                                return (
-                                                    <Badge 
-                                                        key={idx} 
-                                                        variant={featureObj.accessible === false ? 'secondary' : 'outline'} 
-                                                        className="text-xs"
-                                                    >
-                                                        {featureText}
-                                                    </Badge>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Profile Images Carousel */}
+                    <div className="space-y-4">
+                        {user.profileImages && user.profileImages.length > 0 && (
+                            <div className="space-y-4 p-6 border rounded-lg">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                    <ImageIcon className="h-5 w-5" />
+                                    Profile Images ({user.profileImages.length})
+                                </h4>
+                                <div className="relative w-full">
+                                    <Carousel className="w-full max-w-2xl mx-auto">
+                                        <CarouselContent className="-ml-2 md:-ml-4">
+                                            {user.profileImages.map((image, index) => (
+                                                <CarouselItem key={index} className="pl-2 md:pl-4">
+                                                    <div className="relative aspect-square rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
+                                                        <img
+                                                            src={image}
+                                                            alt={`Profile ${index + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Image+Not+Found';
+                                                            }}
+                                                        />
+                                                        <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                                            {index + 1} / {user.profileImages.length}
+                                                        </div>
+                                                    </div>
+                                                </CarouselItem>
+                                            ))}
+                                        </CarouselContent>
+                                        {user.profileImages.length > 1 && (
+                                            <>
+                                                <CarouselPrevious className="left-0" />
+                                                <CarouselNext className="right-0" />
+                                            </>
+                                        )}
+                                    </Carousel>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Interactions */}
+                {user.interactions && (
+                    <div className="space-y-4 p-6 border rounded-lg">
+                        <h4 className="font-semibold text-lg flex items-center gap-2">
+                            <Heart className="h-5 w-5" />
+                            Interactions
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Received Likes</p>
+                                <p className="text-2xl font-bold">{user.interactions.receivedLikes}</p>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Given Likes</p>
+                                <p className="text-2xl font-bold">{user.interactions.givenLikes}</p>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                    <Star className="h-3 w-3" />
+                                    Received Super Likes
+                                </p>
+                                <p className="text-2xl font-bold">{user.interactions.receivedSuperLikes}</p>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                    <Star className="h-3 w-3" />
+                                    Given Super Likes
+                                </p>
+                                <p className="text-2xl font-bold">{user.interactions.givenSuperLikes}</p>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Passes</p>
+                                <p className="text-2xl font-bold">{user.interactions.passes}</p>
+                            </div>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Blocks</p>
+                                <p className="text-2xl font-bold">{user.interactions.blocks}</p>
                             </div>
                         </div>
-                        <Separator />
-                    </>
+                    </div>
                 )}
+
+                <Separator />
+
+                {/* First Plan / Primary Plan */}
+                {user.firstPlan && (
+                    <div className="space-y-4 p-6 border rounded-lg">
+                        <h4 className="font-semibold text-lg flex items-center gap-2">
+                            <Shield className="h-5 w-5" />
+                            Primary Plan
+                        </h4>
+                        <div className="p-4 border-2 border-primary rounded-lg space-y-2 bg-primary/5">
+                            <div className="flex items-center justify-between">
+                                <p className="font-semibold text-lg">{user.firstPlan.planName}</p>
+                                <Badge variant={user.firstPlan.status === 'active' ? 'default' : 'secondary'}>
+                                    {user.firstPlan.status}
+                                </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <p className="text-muted-foreground">Price</p>
+                                    <p className="font-medium">${user.firstPlan.planPrice}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Duration</p>
+                                    <p className="font-medium">{user.firstPlan.planDuration}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Start Date</p>
+                                    <p className="font-medium">
+                                        {new Date(user.firstPlan.startDate).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">End Date</p>
+                                    <p className="font-medium">
+                                        {new Date(user.firstPlan.endDate).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Auto Renew</p>
+                                    <Badge variant={user.firstPlan.autoRenew ? 'default' : 'secondary'}>
+                                        {user.firstPlan.autoRenew ? 'Yes' : 'No'}
+                                    </Badge>
+                                </div>
+                            </div>
+                            {user.firstPlan.planFeatures && user.firstPlan.planFeatures.length > 0 && (
+                                <div>
+                                    <p className="text-sm text-muted-foreground mb-2">Features</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {user.firstPlan.planFeatures.map((feature, idx) => {
+                                            const featureObj = typeof feature === 'string'
+                                                ? { label: feature, limit: undefined, period: undefined }
+                                                : (feature as any);
+
+                                            const featureLabel = featureObj.label || 'Unknown Feature';
+                                            let featureText = featureLabel;
+
+                                            if (featureObj.limit !== undefined && featureObj.limit !== null) {
+                                                if (featureObj.limit === -1) {
+                                                    featureText += ' (Unlimited)';
+                                                } else if (featureObj.limit > 0) {
+                                                    featureText += ` (${featureObj.limit}`;
+                                                    if (featureObj.period) {
+                                                        featureText += `/${featureObj.period}`;
+                                                    }
+                                                    featureText += ')';
+                                                }
+                                            }
+
+                                            return (
+                                                <Badge
+                                                    key={idx}
+                                                    variant={featureObj.accessible === false ? 'secondary' : 'outline'}
+                                                    className="text-xs"
+                                                >
+                                                    {featureText}
+                                                </Badge>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <Separator />
 
                 {/* Subscriptions */}
                 {user.subscriptions && user.subscriptions.length > 0 && (
@@ -570,13 +568,13 @@ const UserViewPage = () => {
                                             <p className="text-sm text-muted-foreground">Features</p>
                                             <div className="flex flex-wrap gap-1 mt-1">
                                                 {subscription.planFeatures.map((feature, idx) => {
-                                                    const featureObj = typeof feature === 'string' 
+                                                    const featureObj = typeof feature === 'string'
                                                         ? { label: feature, limit: undefined, period: undefined }
                                                         : (feature as any);
-                                                    
+
                                                     const featureLabel = featureObj.label || 'Unknown Feature';
                                                     let featureText = featureLabel;
-                                                    
+
                                                     if (featureObj.limit !== undefined && featureObj.limit !== null) {
                                                         if (featureObj.limit === -1) {
                                                             featureText += ' (Unlimited)';
@@ -588,11 +586,11 @@ const UserViewPage = () => {
                                                             featureText += ')';
                                                         }
                                                     }
-                                                    
+
                                                     return (
-                                                        <Badge 
-                                                            key={idx} 
-                                                            variant={featureObj.accessible === false ? 'secondary' : 'outline'} 
+                                                        <Badge
+                                                            key={idx}
+                                                            variant={featureObj.accessible === false ? 'secondary' : 'outline'}
                                                             className="text-xs"
                                                         >
                                                             {featureText}

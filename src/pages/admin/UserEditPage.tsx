@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import { useUserManagement } from "@/api/hooks/useUserManagement";
 import { UpdateUserRequest } from "@/api/types";
+import RetryPage from "@/components/common/RetryPage";
+import PageLoader from "@/components/common/PageLoader";
 
 const UserEditPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -24,12 +26,12 @@ const UserEditPage = () => {
 
     const { useUserDetails, updateUser, isUpdating } = useUserManagement();
     const { data: userResponse, isLoading: isLoadingUser } = useUserDetails(userId);
-    
+
     // Extract user data from API response
     const user = userResponse?.data;
 
     const [formData, setFormData] = useState<UpdateUserRequest>({});
-    
+
     const isSaving = isUpdating;
 
     useEffect(() => {
@@ -90,23 +92,17 @@ const UserEditPage = () => {
 
     if (isLoadingUser) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading user details...</p>
-                </div>
-            </div>
+            <PageLoader pagename="user" />
         );
     }
 
     if (!user) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <p className="text-destructive mb-4">User not found</p>
-                    <Button onClick={() => navigate('/admin/users')}>Back to Users</Button>
-                </div>
-            </div>
+            <RetryPage
+                message="Failed to load user details"
+                btnName="Back to Users"
+                onRetry={handleCancel}
+            />
         );
     }
 

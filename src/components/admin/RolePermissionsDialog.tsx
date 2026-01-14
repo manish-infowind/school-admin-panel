@@ -14,6 +14,7 @@ import { usePermissions } from "@/api/hooks/usePermissions";
 import { useRoles, useRolePermissions, roleKeys } from "@/api/hooks/useRoles";
 import { Permission, AssignPermissionsToRoleRequest } from "@/api/types";
 import { useQueryClient } from "@tanstack/react-query";
+import PageLoader from "../common/PageLoader";
 
 interface PermissionState {
   permissionName: string;
@@ -210,12 +211,10 @@ export function RolePermissionsDialog({
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
+          <PageLoader pagename="permissions" />
         ) : (
           <div className="space-y-4">
-            <ScrollArea className="h-[500px] pr-4">
+            <ScrollArea className="pr-4">
               <div className="space-y-3">
                 {permissionStates.map((state) => (
                   <div

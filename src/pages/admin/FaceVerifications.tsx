@@ -12,10 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, RefreshCw, Eye, CheckCircle2, XCircle, History } from 'lucide-react';
+import { Eye, CheckCircle2, XCircle, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useFaceVerifications, useApproveOrRejectVerification } from '@/api/hooks/useFaceVerification';
-import { VerificationStatus, ComputedStatus, FaceVerification, ApprovalData } from '@/api/types';
+import { ComputedStatus, FaceVerification, ApprovalData } from '@/api/types';
 import { FilterBar } from '@/components/admin/face-verification/FilterBar';
 import { StatusBadge } from '@/components/admin/face-verification/StatusBadge';
 import { ScoreIndicator } from '@/components/admin/face-verification/ScoreIndicator';
@@ -25,6 +25,9 @@ import PaginationControls from '@/components/ui/paginationComp';
 import { useVerificationStatistics } from '@/api/hooks/useFaceVerification';
 import { format } from 'date-fns';
 import PageHeader from '@/components/common/PageHeader';
+import PageLoader from '@/components/common/PageLoader';
+import { faceVerifyList } from '@/api/mockData';
+import RetryPage from '@/components/common/RetryPage';
 
 export default function FaceVerifications() {
   const navigate = useNavigate();
@@ -131,12 +134,11 @@ export default function FaceVerifications() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-destructive mb-4">Error loading verifications</p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
-      </div>
+      <RetryPage
+        message="Failed to load verifications details"
+        btnName="Retry"
+        onRetry={refetch}
+      />
     );
   }
 
@@ -149,7 +151,7 @@ export default function FaceVerifications() {
         isLoading={isLoading}
         fetchHandler={refetch}
       />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -218,9 +220,7 @@ export default function FaceVerifications() {
 
         {/* Verifications Table */}
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <PageLoader pagename="face -verification" />
         ) : verifications.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -233,14 +233,9 @@ export default function FaceVerifications() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Retry Count</TableHead>
-                    <TableHead>Overall Score</TableHead>
-                    <TableHead>Confidence</TableHead>
-                    <TableHead>Created Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {faceVerifyList?.map((column) => (
+                      <TableHead key={column} className={column?.toLowerCase() === "actions" ? "text-right" : ""}>{column}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
