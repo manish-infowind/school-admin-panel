@@ -1,22 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Users,
   TrendingUp,
   Eye,
   Edit3,
-  Loader2,
-  RefreshCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { productStore } from "@/lib/productStore";
-import { DashboardService, DashboardData, RecentActivity } from "@/api/services/dashboardService";
+import { DashboardService, DashboardData } from "@/api/services/dashboardService";
 import { useToast } from "@/hooks/use-toast";
 import { ChartCard } from "@/components/admin/dashboard/ChartCard";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 import { useChartData } from "@/hooks/useChartData";
 import PageHeader from "@/components/common/PageHeader";
+import PageLoader from "@/components/common/PageLoader";
 
 // Helper function to create initial chart config
 const createChartConfig = (): ChartConfig => {
@@ -38,10 +36,12 @@ const createChartConfig = (): ChartConfig => {
 
 export default function Dashboard() {
   const { toast } = useToast();
+
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [products, setProducts] = useState(productStore.getProducts());
   const [syncing, setSyncing] = useState(false);
+
   // Separate state for each chart
   const [userGrowthChart, setUserGrowthChart] = useState<ChartConfig>(createChartConfig());
   const [activeUsersChart, setActiveUsersChart] = useState<ChartConfig>(createChartConfig());
@@ -66,13 +66,13 @@ export default function Dashboard() {
     try {
       setSyncing(true);
       const response = await DashboardService.syncUserGrowth();
-      
+
       if (response.success && response.data) {
         toast({
           title: "Sync Successful",
           description: `User growth analytics synced successfully for ${response.data.date}`,
         });
-        
+
         // Force refresh user growth data by updating the chart config
         // This will trigger the useChartData hook to refetch
         setUserGrowthChart(prev => ({
@@ -106,7 +106,6 @@ export default function Dashboard() {
     const loadDashboardData = async () => {
       try {
         const response = await DashboardService.getDashboard();
-
         if (response.success && response.data) {
           setDashboardData(response.data);
         } else {
@@ -455,12 +454,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading dashboard data...</p>
-        </div>
-      </div>
+      <PageLoader pagename="dashboard" />
     );
   }
 
@@ -469,7 +463,7 @@ export default function Dashboard() {
       <PageHeader
         page="dashboard"
         heading="Dashboard"
-        subHeading="Welcome to your Pinaypal admin panel. Manage your website content from here."
+        subHeading="Welcome to your Pinaypal admin panel. Manage your website content from here"
       />
 
       {/* Stats Cards */}

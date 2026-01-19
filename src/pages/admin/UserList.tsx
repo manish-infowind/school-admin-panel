@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
     User,
@@ -38,6 +37,8 @@ import {
 } from "@/components/ui/select";
 import PageHeader from "@/components/common/PageHeader";
 import { genderList, statusList, tableConfig } from "@/api/mockData";
+import PageLoader from "@/components/common/PageLoader";
+import RetryPage from "@/components/common/RetryPage";
 
 
 // Helper function to format gender
@@ -251,12 +252,11 @@ const UsersList = () => {
     // Show error state
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                    <p className="text-destructive mb-4">Error loading users</p>
-                    <Button onClick={() => refetch()}>Retry</Button>
-                </div>
-            </div>
+             <RetryPage
+                message="Failed to load users details"
+                btnName="Retry"
+                onRetry={refetch}
+            />
         );
     }
 
@@ -265,7 +265,7 @@ const UsersList = () => {
             <PageHeader
                 page="systemuser"
                 heading="System Users"
-                subHeading="Manage and view all system users."
+                subHeading="Manage and view all system users"
             />
 
             {/* Filters */}
@@ -308,12 +308,7 @@ const UsersList = () => {
                 transition={{ duration: 0.5, delay: 0.1 }}
             >
                 {isLoading ? (
-                    <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green mx-auto mb-4"></div>
-                            <p className="text-muted-foreground">Loading users...</p>
-                        </div>
-                    </div>
+                    <PageLoader pagename="users" />
                 ) : (
                     <Table>
                         <TableHeader>

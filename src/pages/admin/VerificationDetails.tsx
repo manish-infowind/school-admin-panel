@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Clock, User, Mail, Phone, History, UserCheck, UserX } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, User, Mail, Phone, History } from 'lucide-react';
 import { useVerificationDetails, useApproveOrRejectVerification } from '@/api/hooks/useFaceVerification';
 import { StatusBadge } from '@/components/admin/face-verification/StatusBadge';
 import { ScoreIndicator } from '@/components/admin/face-verification/ScoreIndicator';
@@ -16,6 +16,9 @@ import { ManualVerificationModal } from '@/components/admin/face-verification/Ma
 import { format } from 'date-fns';
 import { ApprovalData, RetryAttempt } from '@/api/types';
 import { cn } from '@/lib/utils';
+import RetryPage from '@/components/common/RetryPage';
+import PageHeader from '@/components/common/PageHeader';
+import PageLoader from '@/components/common/PageLoader';
 
 export default function VerificationDetails() {
   const { id } = useParams<{ id: string }>();
@@ -42,7 +45,7 @@ export default function VerificationDetails() {
   }, [verification]);
 
   // Get the currently selected attempt or use main verification data
-  const currentAttempt: RetryAttempt | null = 
+  const currentAttempt: RetryAttempt | null =
     selectedAttemptIndex !== null && verification?.retryAttempts
       ? verification.retryAttempts[selectedAttemptIndex]
       : null;
@@ -84,86 +87,53 @@ export default function VerificationDetails() {
     }
   }, [verification, approveOrRejectMutation]);
 
+  const handleCancel = () => {
+    navigate('/admin/face-verifications');
+  };
+
+  const manualVerificationModal = useCallback(() => {
+    setIsManualVerificationModalOpen(true);
+  }, []);
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <PageLoader pagename="face verification" />
     );
   }
 
   if (error || !verification) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-destructive mb-4">Verification not found</p>
-          <Button onClick={() => navigate('/admin/face-verifications')}>
-            Back to List
-          </Button>
-        </div>
-      </div>
+      <RetryPage
+        message="Failed to load verification details"
+        btnName="Back to List"
+        onRetry={handleCancel}
+      />
     );
   }
 
-  const user = verification.user;
-  const userInitials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+  const user = verification?.user;
+  const userInitials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`?.toUpperCase();
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <PageHeader
+        page="flaggedusers"
+        heading={`Verification Details #${verification?.id}`}
+        subHeading={`Request ID: ${verification?.requestId}
+        ${verification?.verificationGroupId ? ` | Group ID: ${verification?.verificationGroupId}` : ''}${verification?.retryCount > 1 ? ` | Retry Count: ${verification?.retryCount} attempts` : ''}`}
+        isLoading={isLoading}
+        fetchHandler={refetch}
+        handleBack={handleCancel}
+        verification={verification}
+        manualVerificationModal={manualVerificationModal}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/admin/face-verifications')}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-                Verification Details #{verification.id}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Request ID: {verification.requestId}
-                {verification.verificationGroupId && (
-                  <> | Group ID: {verification.verificationGroupId}</>
-                )}
-                {verification.retryCount > 1 && (
-                  <> | Retry Count: {verification.retryCount} attempts</>
-                )}
-              </p>
-            </div>
-          </div>
-          {/* Manual Verification Actions */}
-          <div className="flex items-center gap-2">
-            {!verification.user.isFaceVerified && (
-              <Button
-                variant="default"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => setIsManualVerificationModalOpen(true)}
-              >
-                <UserCheck className="h-4 w-4 mr-2" />
-                Verify Manually
-              </Button>
-            )}
-            {verification.user.isFaceVerified && (
-              <Button
-                variant="destructive"
-                onClick={() => setIsManualVerificationModalOpen(true)}
-              >
-                <UserX className="h-4 w-4 mr-2" />
-                De-verify Manually
-              </Button>
-            )}
-          </div>
-        </div>
-
         {/* Retry Attempts Selector */}
         {verification.retryAttempts && verification.retryAttempts.length > 1 && (
           <Card className="mb-6">

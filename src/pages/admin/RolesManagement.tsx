@@ -37,11 +37,15 @@ import { RolePermissionsDialog } from "@/components/admin/RolePermissionsDialog"
 import { RoleDetailsDialog } from "@/components/admin/RoleDetailsDialog";
 import { RoleEditDialog } from "@/components/admin/RoleEditDialog";
 import PageHeader from "@/components/common/PageHeader";
+import PageLoader from "@/components/common/PageLoader";
+import BlockPage from "@/components/common/BlockPage";
 
 export default function RolesManagement() {
   const { toast } = useToast();
+
   const loginState = useSelector((state: RootState) => state.auth.loginState);
   const { roles, isLoadingRoles, createRole, isCreatingRole, deleteRole, isDeletingRole } = useRoles();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
@@ -66,6 +70,7 @@ export default function RolesManagement() {
     role.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Create Role API Handlers
   const handleCreateRole = async () => {
     if (!formData.roleName.trim()) {
       toast({
@@ -78,12 +83,12 @@ export default function RolesManagement() {
 
     createRole(formData, {
       onSuccess: () => {
-        setIsCreateDialogOpen(false);
-        setFormData({ roleName: "", description: "" });
+        closeRoleModal();
       },
     });
   };
 
+  // Delete Role API Handlers
   const handleDeleteRole = () => {
     if (!roleToDelete) return;
 
@@ -95,22 +100,57 @@ export default function RolesManagement() {
     });
   };
 
-  // Open Roles modal
-  const openPermissionModal = () => {
+
+  // Open Create Roles modal - Header button
+  const openRoleModal = () => {
     setIsCreateDialogOpen(true);
   };
 
+  const closeRoleModal = () => {
+    setIsCreateDialogOpen(false);
+    setFormData({ roleName: "", description: "" });
+  };
+
+
+  // Role Details Dialog handlers
+  const openRoleDetailsModal = (role) => {
+    setSelectedRole(role);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const closeRoleDetailsModal = () => {
+    setSelectedRole(null);
+    setIsDetailsDialogOpen(false);
+  };
+
+
+  // Edit Role Dialog handlers
+  const openRoleEditModal = () => {
+    setIsDetailsDialogOpen(false);
+    setIsEditDialogOpen(true);
+  };
+
+  const closeRoleEditModal = () => {
+    setIsEditDialogOpen(false);
+    setSelectedRole(null);
+  };
+
+
+  // Role Permissions Dialog handlers
+  const openPermissionModal = (role) => {
+    setSelectedRole(role);
+    setIsPermissionsDialogOpen(true);
+  };
+
+  const closePermissionModal = () => {
+    setSelectedRole(null);
+    setIsPermissionsDialogOpen(false);
+  };
+
+
   if (!canRead) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You don't have permission to view roles.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <BlockPage message="You don't have permission to view roles." />
     );
   }
 
@@ -119,12 +159,127 @@ export default function RolesManagement() {
       <PageHeader
         page="roles"
         heading="Roles Management"
-        subHeading="Manage user roles and their permissions."
-        openModal={openPermissionModal}
+        subHeading="Manage user roles and their permissions"
+        openModal={openRoleModal}
       />
 
+      <Card>
+        {/* Search section */}
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>All Roles</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search roles..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardHeader>
+
+        {/* List of Roles */}
+        <CardContent>
+          {isLoadingRoles ? (
+            <PageLoader pagename="roles" />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Role Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRoles?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <div className="flex flex-col items-center">
+                          <UserCog className="h-12 w-12 mb-4" />
+                          <p>No roles found</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRoles?.map((role) => (
+                      <TableRow
+                        key={role.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => { openRoleDetailsModal(role) }}
+                      >
+                        <TableCell className="font-medium">{role.roleName}</TableCell>
+                        <TableCell>{role.description || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant={role.isActive ? "secondary" : "outline"}>
+                            {role.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{role.id}</TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
+                            {canUpdate && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openPermissionModal(role);
+                                  }}
+                                >
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  Permissions
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRole(role);
+                                    setIsEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                              </>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRoleToDelete(role);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                disabled={isDeletingRole}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Role Dialog */}
       {canCreate && (
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={closeRoleModal}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Role</DialogTitle>
@@ -174,152 +329,26 @@ export default function RolesManagement() {
         </Dialog>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Roles</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search roles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoadingRoles ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>ID</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRoles.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        <div className="flex flex-col items-center">
-                          <UserCog className="h-12 w-12 mb-4" />
-                          <p>No roles found</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredRoles.map((role) => (
-                      <TableRow
-                        key={role.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => {
-                          setSelectedRole(role);
-                          setIsDetailsDialogOpen(true);
-                        }}
-                      >
-                        <TableCell className="font-medium">{role.roleName}</TableCell>
-                        <TableCell>{role.description || '-'}</TableCell>
-                        <TableCell>
-                          {role.isActive !== false ? (
-                            <Badge variant="secondary">Active</Badge>
-                          ) : (
-                            <Badge variant="outline">Inactive</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{role.id}</TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end gap-2">
-                            {canUpdate && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRole(role);
-                                    setIsPermissionsDialogOpen(true);
-                                  }}
-                                >
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  Permissions
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRole(role);
-                                    setIsEditDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </Button>
-                              </>
-                            )}
-                            {canDelete && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRoleToDelete(role);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                                disabled={isDeletingRole}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Role Details Dialog */}
       {selectedRole && (
         <RoleDetailsDialog
           role={selectedRole}
           isOpen={isDetailsDialogOpen}
-          onClose={() => {
-            setIsDetailsDialogOpen(false);
-            setSelectedRole(null);
-          }}
-          onEdit={(role) => {
-            setSelectedRole(role);
-            setIsEditDialogOpen(true);
-          }}
+          onClose={closeRoleDetailsModal}
+          onEdit={openRoleEditModal}
         />
       )}
 
-      {/* Role Edit Dialog */}
+
+      {/* Edit Role Dialog */}
       {selectedRole && (
         <RoleEditDialog
           role={selectedRole}
           isOpen={isEditDialogOpen}
-          onClose={() => {
-            setIsEditDialogOpen(false);
-            setSelectedRole(null);
-          }}
+          onClose={closeRoleEditModal}
         />
       )}
+
 
       {/* Role Permissions Dialog */}
       {selectedRole && (
@@ -327,10 +356,7 @@ export default function RolesManagement() {
           roleId={selectedRole.id}
           roleName={selectedRole.roleName}
           isOpen={isPermissionsDialogOpen}
-          onClose={() => {
-            setIsPermissionsDialogOpen(false);
-            setSelectedRole(null);
-          }}
+          onClose={closePermissionModal}
         />
       )}
 

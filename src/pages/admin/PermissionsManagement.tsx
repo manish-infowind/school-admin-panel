@@ -32,6 +32,7 @@ import type { RootState } from "@/redux/store/store";
 import { canManagePermissions } from "@/lib/permissions";
 import { Permission, CreatePermissionRequest } from "@/api/types";
 import PageHeader from "@/components/common/PageHeader";
+import BlockPage from "@/components/common/BlockPage";
 
 export default function PermissionsManagement() {
   const { toast } = useToast();
@@ -182,15 +183,7 @@ export default function PermissionsManagement() {
 
   if (!canRead) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You don't have permission to view permissions.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+       <BlockPage message="You don't have permission to view permissions." />
     );
   }
 
@@ -199,7 +192,7 @@ export default function PermissionsManagement() {
       <PageHeader
         page="permissions"
         heading="Permissions Management"
-        subHeading="Manage system permissions."
+        subHeading="Manage system permissions"
         openModal={openPermissionModal}
       />
 

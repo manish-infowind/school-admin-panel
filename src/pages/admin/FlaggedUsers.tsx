@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, AlertTriangle, User, RotateCcw } from 'lucide-react';
+import { Loader2, AlertTriangle, User, RotateCcw } from 'lucide-react';
 import { useFlaggedUsers, useTriggerReverification } from '@/api/hooks/useFaceVerification';
 import { FlaggedUser } from '@/api/types';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import RetryPage from '@/components/common/RetryPage';
+import PageHeader from '@/components/common/PageHeader';
+import PageLoader from '@/components/common/PageLoader';
 
 export default function FlaggedUsers() {
   const navigate = useNavigate();
@@ -101,37 +104,29 @@ export default function FlaggedUsers() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-destructive mb-4">Error loading flagged users</p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
-      </div>
+      <RetryPage
+        message="Failed to load flagged users details"
+        btnName="Retry"
+        onRetry={refetch}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        page="flaggedusers"
+        heading="Flagged Users"
+        subHeading="Users with multiple failed face verification attempts"
+        isLoading={isLoading}
+        fetchHandler={refetch}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
-              Flagged Users
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Users with multiple failed face verification attempts
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-
         {/* Filter */}
         <Card className="mb-6">
           <CardContent className="p-4">
@@ -157,9 +152,7 @@ export default function FlaggedUsers() {
 
         {/* Flagged Users List */}
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <PageLoader pagename="flaged user" />
         ) : flaggedUsers.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">

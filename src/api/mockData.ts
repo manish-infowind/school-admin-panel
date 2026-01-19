@@ -636,3 +636,14 @@ export const activeList = [
   { name: "Active", value: "active" },
   { name: "Inactive", value: "inactive" },
 ];
+
+export const faceVerifyList = [
+  "ID", 
+  "User",
+  "Status",
+  "Retry Count",
+  "Overall Score",
+  "Confidence",
+  "Created Date",
+  "Actions",
+];

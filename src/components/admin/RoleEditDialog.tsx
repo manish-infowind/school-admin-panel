@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRoles, useRolePermissions, roleKeys } from "@/api/hooks/useRoles";
 import { Role, UpdateRoleRequest } from "@/api/types";
 import { RolePermissionsDialog } from "./RolePermissionsDialog";
+import PermissionCards from "../common/PermissionCards";
 
 interface RoleEditDialogProps {
   role: Role | null;
@@ -177,51 +177,7 @@ export function RoleEditDialog({
                 </div>
 
                 {/* Current Permissions Preview */}
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3">Current Permissions</h3>
-                  {rolePermissions?.permissions && rolePermissions.permissions.length > 0 ? (
-                    <div className="space-y-2">
-                      {rolePermissions.permissions.map((perm: any) => (
-                        <div
-                          key={perm.id || perm.permissionName}
-                          className="border rounded-lg p-3 space-y-1"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-brand-green" />
-                            <span className="font-medium text-sm">{perm.permissionName}</span>
-                          </div>
-                          <div className="ml-6 text-xs text-muted-foreground">
-                            <span className="font-medium">Granted Actions:</span>{" "}
-                            {perm.roleAllowedActions === null ||
-                            (Array.isArray(perm.roleAllowedActions) &&
-                              perm.roleAllowedActions.length === 0)
-                              ? "All Actions"
-                              : perm.roleAllowedActions
-                                  ?.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1))
-                                  .join(", ") || "All Actions"}
-                          </div>
-                          <div className="ml-6 flex flex-wrap gap-1 mt-1">
-                            {(perm.roleAllowedActions === null ||
-                            (Array.isArray(perm.roleAllowedActions) &&
-                              perm.roleAllowedActions.length === 0)
-                              ? perm.permissionAllowedActions || ["create", "read", "update", "delete"]
-                              : perm.roleAllowedActions || []
-                            ).map((action: string) => (
-                              <Badge key={action} variant="outline" className="text-xs">
-                                {action.charAt(0).toUpperCase() + action.slice(1)}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No permissions assigned</p>
-                    </div>
-                  )}
-                </div>
+                <PermissionCards role={role} keyName="edit" />
               </div>
             </TabsContent>
           </Tabs>
