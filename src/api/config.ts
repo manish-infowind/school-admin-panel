@@ -106,6 +106,16 @@ export const API_CONFIG = {
       FILTER_OPTIONS: '/enquiries/filter-options',
       EXPORT: '/enquiries/export',
     },
+    REPORTS: {
+      LIST: '/reports',
+      CREATE: '/reports',
+      UPDATE: '/reports/:id',
+      DELETE: '/reports/:id',
+      DETAILS: '/reports/:id',
+      STATS: '/reports/stats/overview',
+      FILTER_OPTIONS: '/reports/filter-options',
+      EXPORT: '/reports/export',
+    },
     CONTACT: {
       SUBMIT: '/contact',
     },
