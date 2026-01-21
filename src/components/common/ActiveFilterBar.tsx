@@ -94,6 +94,16 @@ const ActiveFilterBar = (props) => {
                                     Category: {filterValues?.category}
                                 </Badge>
                             )}
+                            {filterValues?.severity !== "all" && filterValues?.severity && (
+                                <Badge variant="outline" className="text-xs">
+                                    Severity: {filterValues?.severity}
+                                </Badge>
+                            )}
+                            {filterValues?.parentCategory !== "all" && filterValues?.parentCategory && (
+                                <Badge variant="outline" className="text-xs">
+                                    Parent: {filterValues?.parentCategory}
+                                </Badge>
+                            )}
 
                             {dateRange?.startDate && (
                                 <Badge variant="outline" className="text-xs">
@@ -113,7 +123,7 @@ const ActiveFilterBar = (props) => {
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                         <Input
-                            placeholder="Search enquiries by name, email, or subject..."
+                            placeholder="Search reports by reason, description, or ID..."
                             name="searchTerm"
                             value={filterValues?.searchTerm}
                             onChange={activeFilterHandler}
@@ -127,9 +137,27 @@ const ActiveFilterBar = (props) => {
                             onChange={activeFilterHandler}
                             className="px-3 py-2 border border-border rounded-md bg-background text-sm"
                         >
-                            {allStatus.map(name => (
-                                <option key={name?.name} value={name?.value}>{name?.name}</option>
-                            ))}
+                            <option value="all">All Status</option>
+                            <option value="new">New</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                            <option value="dismissed">Dismissed</option>
+                        </select>
+
+                        <select
+                            name="severity"
+                            value={filterValues?.severity || "all"}
+                            onChange={activeFilterHandler}
+                            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                        >
+                            <option value="all">All Severity</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
                         </select>
 
                         <select
@@ -138,10 +166,25 @@ const ActiveFilterBar = (props) => {
                             onChange={activeFilterHandler}
                             className="px-3 py-2 border border-border rounded-md bg-background text-sm"
                         >
+                            <option value="all">All Categories</option>
                             {allCategories.map(name => (
                                 <option key={name?.name} value={name?.value}>{name?.name}</option>
                             ))}
                         </select>
+
+                        {filterValues?.parentCategory !== undefined && (
+                            <select
+                                name="parentCategory"
+                                value={filterValues?.parentCategory || "all"}
+                                onChange={activeFilterHandler}
+                                className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                            >
+                                <option value="all">All Parent Categories</option>
+                                <option value="System">System</option>
+                                <option value="Payment">Payment</option>
+                                <option value="Account">Account</option>
+                            </select>
+                        )}
 
                         <select
                             name="sortOrder"

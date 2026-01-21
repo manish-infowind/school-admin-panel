@@ -26,6 +26,7 @@ import PendingVerifications from "./pages/admin/PendingVerifications";
 import VerificationDetails from "./pages/admin/VerificationDetails";
 import FlaggedUsers from "./pages/admin/FlaggedUsers";
 import Report from "./pages/admin/Report";
+import ReportDetailsPage from "./pages/admin/ReportDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -205,6 +206,16 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <Report />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/:id"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ReportDetailsPage />
                 </AdminLayout>
               </ProtectedRoute>
             }

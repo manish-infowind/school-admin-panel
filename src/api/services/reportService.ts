@@ -1,91 +1,37 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
 import { ApiResponse, QueryParams } from '../types';
+import {
+  Report,
+  ReportListResponse,
+  CreateReportRequest,
+  UpdateReportRequest,
+  ReportStats,
+  ReportFilterOptions,
+  ReportSeverity,
+  ReportStatus,
+} from './reportTypes';
 
-// Report interfaces
-export interface ReportCategory {
-  name: string;
-  parent?: string;
-}
-
-export interface Report {
-  id: string;
-  category: ReportCategory;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  reason: string;
-  status: 'new' | 'in-progress' | 'resolved' | 'closed';
-  createdAt: string;
-  updatedAt?: string;
-  description?: string;
-  reportedBy?: string;
-  assignedTo?: string;
-  notes?: string;
-}
-
-export interface ReportListResponse {
-  reports: Report[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-}
-
-export interface CreateReportRequest {
-  category: {
-    name: string;
-    parent?: string;
-  };
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  reason: string;
-  description?: string;
-  reportedBy?: string;
-}
-
-export interface UpdateReportRequest {
-  category?: {
-    name: string;
-    parent?: string;
-  };
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-  reason?: string;
-  status?: 'new' | 'in-progress' | 'resolved' | 'closed';
-  description?: string;
-  assignedTo?: string;
-  notes?: string;
-}
-
-export interface ReportStats {
-  total: number;
-  byStatus: {
-    new: number;
-    'in-progress': number;
-    resolved: number;
-    closed: number;
-  };
-  bySeverity: {
-    low: number;
-    medium: number;
-    high: number;
-    critical: number;
-  };
-  byCategory: Record<string, number>;
-}
-
-export interface ReportFilterOptions {
-  statuses: string[];
-  severities: string[];
-  categories: Array<{
-    name: string;
-    parent?: string;
-  }>;
-}
+// Re-export types for convenience
+export type {
+  Report,
+  ReportListResponse,
+  CreateReportRequest,
+  UpdateReportRequest,
+  ReportStats,
+  ReportFilterOptions,
+  ReportCategory,
+  ReportSubCategory,
+  ReportUser,
+  ReportSeverity,
+  ReportStatus,
+  ReportType,
+  CategoryDescription,
+  CategoryDetails,
+} from './reportTypes';
 
 export interface ReportQueryParams extends QueryParams {
-  severity?: 'low' | 'medium' | 'high' | 'critical';
+  severity?: ReportSeverity;
   category?: string;
   parentCategory?: string;
 }
