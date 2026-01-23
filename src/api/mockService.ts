@@ -20,8 +20,9 @@ import {
   filterArray,
 } from './mockData';
 
-// Check if we should use mock data (backend is down)
-const USE_MOCK_DATA = true; // Set to true to use mocks for profile endpoints (API not available yet)
+// Check if we should use mock data.
+// Default: false (use real backend). Enable by setting VITE_USE_MOCK_DATA=true in `.env`.
+const USE_MOCK_DATA = (import.meta.env.VITE_USE_MOCK_DATA ?? 'false') === 'true';
 
 export const shouldUseMockData = (): boolean => {
   return USE_MOCK_DATA;
@@ -61,19 +62,18 @@ export const getMockResponse = async <T>(
     '/admins/',
   ];
   
-  // Don't skip if it's a user/profile endpoint - keep mock for testing
+  // Don't skip if it's an admin-profile endpoint - keep mock for testing
   // Check if it's a profile endpoint (with or without query params)
-  const isUserProfileEndpoint = normalizedEndpoint.includes('/users/profile') || 
-                                 normalizedEndpoint.includes('/user/profile') ||
-                                 normalizedEndpoint === '/users/profile' ||
-                                 normalizedEndpoint.startsWith('/users/profile');
+  const isAdminProfileEndpoint = normalizedEndpoint.includes('/admin-profile') || 
+                                  normalizedEndpoint === '/admin-profile' ||
+                                  normalizedEndpoint.startsWith('/admin-profile');
   
-  const shouldSkip = !isUserProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
+  const shouldSkip = !isAdminProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
     normalizedEndpoint.includes(skipEndpoint) || endpoint.includes(skipEndpoint)
   );
   
   if (shouldSkip) {
-    return null; // Force real API call for roles, permissions, and admin management (but not user/profile)
+    return null; // Force real API call for roles, permissions, and admin management (but not admin-profile)
   }
 
   // Simulate network delay
@@ -176,8 +176,8 @@ export const getMockResponse = async <T>(
     };
   }
 
-  // Users/Profile endpoints
-  if (normalizedEndpoint === API_CONFIG.ENDPOINTS.USERS.PROFILE) {
+  // Admin Profile endpoints
+  if (normalizedEndpoint === API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE) {
     if (method === 'GET') {
       return {
         success: true,

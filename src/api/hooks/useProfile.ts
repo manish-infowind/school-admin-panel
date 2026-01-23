@@ -52,7 +52,7 @@ export interface UseProfileReturn {
 export function useProfile(): UseProfileReturn {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true so component shows loading state
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -99,7 +99,16 @@ export function useProfile(): UseProfileReturn {
       const response = await profileService.updateProfile(data);
       
       if (response.success && response.data) {
-        setProfile(response.data);
+        // Merge the updated data with existing profile to preserve fields like role, joinDate, etc.
+        setProfile(prevProfile => {
+          if (prevProfile) {
+            return {
+              ...prevProfile,
+              ...response.data,
+            };
+          }
+          return response.data;
+        });
         toast({
           title: "Success",
           description: response.message || "Profile updated successfully",

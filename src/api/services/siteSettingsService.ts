@@ -30,9 +30,16 @@ export class SiteSettingsService {
   // Update site settings
   static async updateSettings(settings: Partial<SiteSettings>): Promise<ApiResponse<SiteSettings>> {
     try {
+      // Ensure siteDescription and businessHours are strings (not null) before sending
+      const normalizedSettings = {
+        ...settings,
+        siteDescription: settings.siteDescription ?? '',
+        businessHours: settings.businessHours ?? '',
+      };
+      
       const response = await apiClient.put<SiteSettings>(
         API_CONFIG.ENDPOINTS.SITE_SETTINGS.UPDATE,
-        settings
+        normalizedSettings
       );
       return response;
     } catch (error) {

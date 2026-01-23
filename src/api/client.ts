@@ -66,15 +66,23 @@ class ApiClient {
                 originalRequest.headers['Authorization'] = `Bearer ${this.getAuthToken()}`;
                 return this.axiosInstance.request(originalRequest);
               } else {
-                // Refresh failed, clear tokens and redirect to login
+                // Refresh failed, clear tokens
+                // Don't redirect here - let ProtectedRoute handle client-side navigation
                 this.clearAuthTokens();
-                window.location.href = '/';
+                // Dispatch custom event for components that need to handle logout
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('auth:logout'));
+                }
                 return Promise.reject(error);
               }
             } catch (refreshError) {
-              // Refresh failed, clear tokens and redirect to login
+              // Refresh failed, clear tokens
+              // Don't redirect here - let ProtectedRoute handle client-side navigation
               this.clearAuthTokens();
-              window.location.href = '/';
+              // Dispatch custom event for components that need to handle logout
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+              }
               return Promise.reject(error);
             }
           }
@@ -213,14 +221,13 @@ class ApiClient {
     // Normalize endpoint for comparison (remove base URL and query params)
     const normalizedEndpoint = endpoint.replace(this.baseURL, '').split('?')[0];
     
-    // Don't skip if it's a user/profile endpoint - keep mock for testing
+    // Don't skip if it's an admin-profile endpoint - keep mock for testing
     // Check if it's a profile endpoint (with or without query params)
-    const isUserProfileEndpoint = normalizedEndpoint.includes('/users/profile') || 
-                                  normalizedEndpoint.includes('/user/profile') ||
-                                  normalizedEndpoint === '/users/profile' ||
-                                  normalizedEndpoint.startsWith('/users/profile');
+    const isAdminProfileEndpoint = normalizedEndpoint.includes('/admin-profile') || 
+                                  normalizedEndpoint === '/admin-profile' ||
+                                  normalizedEndpoint.startsWith('/admin-profile');
     
-    const shouldSkipMock = !isUserProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
+    const shouldSkipMock = !isAdminProfileEndpoint && skipMockEndpoints.some(skipEndpoint => 
       normalizedEndpoint.includes(skipEndpoint) || endpoint.includes(skipEndpoint)
     );
     

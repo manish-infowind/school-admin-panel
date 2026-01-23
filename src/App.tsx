@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { loginInfo } from "@/redux/features/authSlice";
+import { loginInfo, logout } from "@/redux/features/authSlice";
 import { AuthService } from "@/api/services/authService";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
@@ -43,6 +43,17 @@ const AuthInitializer = () => {
       // Restore user data to Redux if available
       dispatch(loginInfo(userData));
     }
+
+    // Listen for auth logout events from API client (when 401 errors occur)
+    const handleAuthLogout = () => {
+      dispatch(logout());
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
   }, [dispatch]);
 
   return null;

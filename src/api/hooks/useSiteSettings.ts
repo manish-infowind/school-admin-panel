@@ -50,8 +50,20 @@ export const useSiteSettings = () => {
       } else {
         throw new Error(response.message || 'Failed to update settings');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update settings';
+    } catch (err: any) {
+      // Handle validation errors from backend
+      let errorMessage = 'Failed to update settings';
+      
+      if (err?.response?.data?.errors || err?.data?.errors) {
+        const backendErrors = err?.response?.data?.errors || err?.data?.errors || [];
+        const errorMessages = backendErrors.map((error: any) => error.message).join(', ');
+        errorMessage = errorMessages || err?.response?.data?.message || err?.data?.message || errorMessage;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
       toast({
         title: "Error",
         description: errorMessage,
