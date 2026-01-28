@@ -42,11 +42,11 @@ export function ChartCard({
     >
       <Card className="shadow-lg">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Icon className={`h-5 w-5 ${iconColor}`} />
-              {title}
-            </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg mb-4">
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+            {title}
+          </CardTitle>
+          <div className="w-full">
             <ChartFilters
               config={config}
               onConfigChange={onConfigChange}
@@ -55,7 +55,7 @@ export function ChartCard({
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="h-[400px] relative">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md z-50">
@@ -74,6 +74,7 @@ export function ChartCard({
                 isMultiYearMonthly={config.timeRange === 'monthly' && config.selectedYears && config.selectedYears.length > 1 && config.chartType === 'pie'}
                 selectedYears={config.selectedYears}
                 originalData={originalData}
+                conversionType={title === "Conversion Insights Analytics" ? (config as any).conversionType : undefined}
               />
             </div>
           </div>

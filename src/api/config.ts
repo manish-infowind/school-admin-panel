@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  // Base URL for API calls - production server
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://18.169.19.110:8000/admin',
+  // Base URL for API calls - local development server
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/admin',
   
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -97,6 +97,7 @@ export const API_CONFIG = {
       USER_GROWTH: '/dashboard/analytics/user-growth',
       USER_GROWTH_SYNC: '/dashboard/analytics/user-growth/sync',
       ACTIVE_USERS: '/dashboard/analytics/active-users',
+      CONVERSIONS: '/dashboard/analytics/conversions',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

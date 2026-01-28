@@ -105,10 +105,38 @@ export interface UserGrowthSyncResponse {
   externalServiceResponse?: any;
 }
 
+// Conversion metric data point (matches API documentation)
+export interface ConversionDataPoint {
+  metric: string;      // e.g., "Jan 2024", "Week 1 (Jan 2024)", "Jan 01, 2024"
+  date: string;         // ISO 8601: "2024-01-15T00:00:00.000Z"
+  value: number;       // Numeric value for the conversion metric
+  percentage: number;  // Percentage share (0-100)
+}
+
+// Legacy interface for backward compatibility
 export interface ConversionData {
+  // For legacy data, metric may be a label like "Sign-ups"
+  // For new date-wise data, date can be provided and will be preferred on the X-axis
   metric: string;
   value: number;
   percentage: number;
+  date?: string;
+}
+
+// Metadata object for conversion analytics
+export interface ConversionMetadata {
+  timeRange: 'daily' | 'weekly' | 'monthly' | 'custom';
+  startDate: string;           // ISO 8601
+  endDate: string;             // ISO 8601
+  conversionType: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts';
+  selectedYears?: number[];     // Only for monthly timeRange
+  gender?: 'm' | 'f';          // Only for likes/gifts when filter applied
+}
+
+// Complete API response for conversion analytics
+export interface ConversionAnalyticsResponse {
+  conversions: ConversionDataPoint[];
+  metadata: ConversionMetadata;
 }
 
 export interface PerformanceMetrics {
@@ -204,6 +232,7 @@ export class DashboardService {
       years?: number[];
       startDate?: Date;
       endDate?: Date;
+      gender?: 'm' | 'f';
     }
   ): Promise<ApiResponse<UserGrowthResponse>> {
     try {
@@ -234,6 +263,11 @@ export class DashboardService {
         }
       }
 
+      // Gender filter (optional)
+      if (options.gender) {
+        params.append('gender', options.gender);
+      }
+
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.USER_GROWTH}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<UserGrowthResponse>(url, {
@@ -255,6 +289,7 @@ export class DashboardService {
       years?: number[];
       startDate?: Date;
       endDate?: Date;
+      gender?: 'm' | 'f';
     }
   ): Promise<ApiResponse<ActiveUsersResponse>> {
     try {
@@ -285,9 +320,73 @@ export class DashboardService {
         }
       }
 
+      // Gender filter (optional)
+      if (options.gender) {
+        params.append('gender', options.gender);
+      }
+
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVE_USERS}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<ActiveUsersResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get conversion analytics data
+  static async getConversions(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    conversionType: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+      gender?: 'm' | 'f';
+    }
+  ): Promise<ApiResponse<ConversionAnalyticsResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+        conversionType,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      // Gender filter (optional, only for likes and gifts)
+      if (options.gender && (conversionType === 'likes' || conversionType === 'gifts')) {
+        params.append('gender', options.gender);
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.CONVERSIONS}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<ConversionAnalyticsResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       
