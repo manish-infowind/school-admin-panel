@@ -93,6 +93,7 @@ export const API_CONFIG = {
     DASHBOARD: {
       MAIN: '/dashboard',
       STATS: '/dashboard/stats',
+      STATS_SUMMARY: '/dashboard/stats/summary',
       ACTIVITY: '/dashboard/activity',
       USER_GROWTH: '/dashboard/analytics/user-growth',
       USER_GROWTH_SYNC: '/dashboard/analytics/user-growth/sync',
