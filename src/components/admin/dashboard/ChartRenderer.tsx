@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ArrowLeft } from "lucide-react";
 
-const CHART_COLORS = ['#10b981', '#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+const CHART_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'];
 
 interface ChartData {
   name: string;
@@ -17,9 +17,10 @@ interface ChartRendererProps {
   isMultiYearMonthly?: boolean;
   selectedYears?: number[];
   originalData?: any; // Original analytics data for year breakdown
+  conversionType?: string; // For conversion insights chart
 }
 
-export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData }: ChartRendererProps) {
+export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData, conversionType }: ChartRendererProps) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
   // Calculate if we need dual Y-axis (when values have very different scales)
@@ -247,7 +248,8 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
     
     if (monthData) {
       selectedYears.forEach((year) => {
-        const key = `${year} - Total Users`;
+        // For conversion insights, use "value" key; for others use "Total Users"
+        const key = conversionType ? `${year} - value` : `${year} - Total Users`;
         const value = monthData[key];
         if (value !== undefined) {
           yearData.push({
@@ -278,7 +280,8 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
         let value = 0;
         if (isMultiYearMonthly && selectedYears) {
           selectedYears.forEach((year) => {
-            const key = `${year} - Total Users`;
+            // For conversion insights, use "value" key; for others use "Total Users"
+            const key = conversionType ? `${year} - value` : `${year} - Total Users`;
             const yearValue = item[key];
             if (yearValue !== undefined) {
               value += typeof yearValue === 'number' ? yearValue : Number(yearValue) || 0;

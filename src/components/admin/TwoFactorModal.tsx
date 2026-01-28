@@ -62,7 +62,8 @@ export function TwoFactorModal({
       const success = await onSetup2FA();
       if (success) {
         if (twoFactorEnabled) {
-          // For disabling 2FA, go to disable step
+          // For disabling 2FA, we should call disable2FA which will send OTP if needed
+          // But first, let's go to disable step to enter OTP
           setStep('disable');
           toast({
             title: "OTP Sent",
@@ -78,6 +79,12 @@ export function TwoFactorModal({
         }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to setup 2FA';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -204,7 +211,7 @@ export function TwoFactorModal({
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Disable Two-Factor Authentication</h3>
               <p className="text-sm text-gray-600 mt-2">
-                To disable 2FA, we need to verify your identity first.
+                To disable 2FA, we need to verify your identity first. An OTP will be sent to your email.
               </p>
             </div>
             <div className="bg-red-50 p-4 rounded-lg">
@@ -218,11 +225,15 @@ export function TwoFactorModal({
                 Cancel
               </Button>
               <Button 
-                onClick={handleSetup2FA}
-                disabled={settingUp2FA}
+                onClick={async () => {
+                  // Use setup2FA to request OTP for disabling 2FA
+                  // The backend setup2FA endpoint should send OTP for both enable and disable flows
+                  await handleSetup2FA();
+                }}
+                disabled={settingUp2FA || disabling2FA}
                 variant="destructive"
               >
-                {settingUp2FA ? (
+                {(settingUp2FA || disabling2FA) ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Requesting OTP...

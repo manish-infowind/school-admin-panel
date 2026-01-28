@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Save,
   Globe,
@@ -15,6 +16,7 @@ import {
   Instagram,
   MapPin,
   Building,
+  AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -57,23 +59,88 @@ export default function Settings() {
     updateSettings,
     initializeSettings,
   } = useSiteSettings();
+  const { toast } = useToast();
   
   const [settings, setSettings] = useState<SiteSettings>(initialSettings);
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Update local settings when API settings load
   useEffect(() => {
     if (apiSettings) {
-      setSettings(apiSettings);
+      // Ensure siteDescription and businessHours are strings, not null
+      setSettings({
+        ...apiSettings,
+        siteDescription: apiSettings.siteDescription ?? '',
+        businessHours: apiSettings.businessHours ?? '',
+      });
     }
   }, [apiSettings]);
 
+  // Validate form fields
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validate siteDescription - must be a string (not null/undefined)
+    if (settings.siteDescription === null || settings.siteDescription === undefined) {
+      errors.siteDescription = 'Site description is required and must be a string';
+    }
+
+    // Validate businessHours - must be a string (not null/undefined)
+    if (settings.businessHours === null || settings.businessHours === undefined) {
+      errors.businessHours = 'Business hours is required and must be a string';
+    } else if (settings.businessHours && !settings.businessHours.includes(' - ')) {
+      // If it's a single time, suggest using range format
+      errors.businessHours = 'Please select both start and end times';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    // Clear previous validation errors
+    setValidationErrors({});
+
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setSaving(true);
-      await updateSettings(settings);
-    } catch (error) {
-      // Error handling is done in the hook
+      
+      // Ensure siteDescription and businessHours are strings (not null) before sending
+      const settingsToSend: Partial<SiteSettings> = {
+        ...settings,
+        siteDescription: settings.siteDescription ?? '',
+        businessHours: settings.businessHours ?? '',
+      };
+
+      await updateSettings(settingsToSend);
+    } catch (error: any) {
+      // Handle backend validation errors
+      if (error?.response?.data?.errors || error?.data?.errors) {
+        const backendErrors = error?.response?.data?.errors || error?.data?.errors || [];
+        const fieldErrors: Record<string, string> = {};
+        
+        backendErrors.forEach((err: any) => {
+          if (err.path && err.path.length > 0) {
+            const fieldName = err.path[err.path.length - 1];
+            fieldErrors[fieldName] = err.message || 'Invalid input';
+          }
+        });
+        
+        setValidationErrors(fieldErrors);
+        
+        // Show toast with validation errors
+        const errorMessages = backendErrors.map((err: any) => err.message).join(', ');
+        toast({
+          title: "Validation Error",
+          description: errorMessages || "Please fix the validation errors",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -434,15 +501,30 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="siteDescription">Site Description</Label>
+                  <Label htmlFor="siteDescription">Site Description *</Label>
                   <Input
                     id="siteDescription"
-                    value={settings.siteDescription || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, siteDescription: e.target.value })
-                    }
+                    value={settings.siteDescription ?? ''}
+                    onChange={(e) => {
+                      setSettings({ ...settings, siteDescription: e.target.value });
+                      // Clear error when user starts typing
+                      if (validationErrors.siteDescription) {
+                        setValidationErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.siteDescription;
+                          return newErrors;
+                        });
+                      }
+                    }}
                     placeholder="Brief description of your business"
+                    className={validationErrors.siteDescription ? "border-red-500" : ""}
                   />
+                  {validationErrors.siteDescription && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {validationErrors.siteDescription}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
@@ -456,15 +538,30 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="businessHours">Business Hours</Label>
-                  <Input
-                    id="businessHours"
-                    value={settings.businessHours || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, businessHours: e.target.value })
-                    }
-                    placeholder="Mon-Fri 9AM-6PM"
+                  <Label htmlFor="businessHours">Business Hours *</Label>
+                  <TimePicker
+                    value={settings.businessHours ?? ''}
+                    onChange={(value) => {
+                      setSettings({ ...settings, businessHours: value });
+                      // Clear error when user selects time
+                      if (validationErrors.businessHours) {
+                        setValidationErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.businessHours;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    placeholder="Select business hours"
+                    isRange={true}
+                    className={validationErrors.businessHours ? "border-red-500" : ""}
                   />
+                  {validationErrors.businessHours && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {validationErrors.businessHours}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -93,8 +93,10 @@ export default function Profile() {
 
   // Load profile data when component mounts
   useEffect(() => {
+    // Always load profile on mount/reload
     loadProfile();
-  }, [loadProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to ensure it runs on every mount/reload
 
   // Update local state when profile data loads
   useEffect(() => {
@@ -236,12 +238,22 @@ export default function Profile() {
     );
   }
 
-  if (!profile) {
+  // Don't return early if loading - let the loading state handle it
+  if (!profile && !loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <p>No profile data available</p>
+        <Button onClick={loadProfile} className="ml-4">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
       </div>
     );
+  }
+
+  // Guard clause: Don't render if profile is not loaded yet
+  if (!profile) {
+    return null;
   }
 
   return (
@@ -345,7 +357,7 @@ export default function Profile() {
                             ? profile.firstName.charAt(0)
                             : profile.lastName
                               ? profile.lastName.charAt(0)
-                              : profile.email.charAt(0).toUpperCase()
+                              : profile.email?.charAt(0).toUpperCase() || 'U'
                       )}
                     </AvatarFallback>
                   </Avatar>
@@ -372,17 +384,19 @@ export default function Profile() {
                 <h3 className="text-xl font-semibold mt-4">
                   {profile.firstName || profile.lastName
                     ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
-                    : profile.email.split('@')[0] || 'User'
+                    : profile.email?.split('@')[0] || 'User'
                   }
                 </h3>
-                <p className="text-muted-foreground">{profile.email}</p>
-                <Badge
-                  variant="secondary"
-                  className="mt-2 bg-brand-green hover:bg-brand-green/90 text-white font-medium shadow-sm border-0"
-                >
-                  <Shield className="h-3 w-3 mr-1" />
-                  {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
-                </Badge>
+                <p className="text-muted-foreground">{profile.email || 'No email'}</p>
+                {profile.role && (
+                  <Badge
+                    variant="secondary"
+                    className="mt-2 bg-brand-green hover:bg-brand-green/90 text-white font-medium shadow-sm border-0"
+                  >
+                    <Shield className="h-3 w-3 mr-1" />
+                    {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+                  </Badge>
+                )}
               </div>
 
               <Separator />

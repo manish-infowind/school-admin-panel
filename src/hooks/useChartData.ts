@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse } from "@/api/services/dashboardService";
+import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse, ConversionAnalyticsResponse, ConversionDataPoint } from "@/api/services/dashboardService";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 
 // Generate mock analytics data based on date range
@@ -12,11 +12,7 @@ const generateMockAnalyticsData = (
 ): AnalyticsData => {
   const userGrowth = [];
   const activeUsers = [];
-  const conversions = [
-    { metric: 'Sign-ups', value: 1250, percentage: 45 },
-    { metric: 'Verifications', value: 980, percentage: 35 },
-    { metric: 'Active Sessions', value: 550, percentage: 20 },
-  ];
+  const conversions = [];
 
   // Handle monthly multi-year comparison
   if (timeRange === 'monthly' && selectedYears && selectedYears.length > 0) {
@@ -44,6 +40,14 @@ const generateMockAnalyticsData = (
           date: dateStr,
           dailyActive: Math.floor(Math.random() * 300) + 500 + (yearOffset * 100),
           monthlyActive: Math.floor(Math.random() * 200) + 1200 + (yearOffset * 150),
+        });
+
+        // Conversions per month/year (date-wise)
+        conversions.push({
+          metric: dateStr,
+          date: dateStr,
+          value: Math.floor(Math.random() * 400) + 200 + (yearOffset * 50),
+          percentage: Math.floor(Math.random() * 60) + 20,
         });
       });
     });
@@ -98,6 +102,14 @@ const generateMockAnalyticsData = (
       monthlyActive: Math.floor(Math.random() * 200) + 1200,
     });
 
+    // Conversions per date (date-wise)
+    conversions.push({
+      metric: dateStr,
+      date: dateStr,
+      value: Math.floor(Math.random() * 400) + 200,
+      percentage: Math.floor(Math.random() * 60) + 20,
+    });
+
     if (timeRange === 'daily' || (timeRange === 'custom' && diffDays <= 31)) {
       currentDate.setDate(currentDate.getDate() + 1);
     } else if (timeRange === 'weekly' || (timeRange === 'custom' && diffDays <= 90)) {
@@ -132,6 +144,7 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
       years?: number[];
       startDate?: Date;
       endDate?: Date;
+      gender?: 'm' | 'f';
     } = {};
 
     // Build options based on timeRange
@@ -149,6 +162,10 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
         options.startDate = chartConfig.dateRange.from;
         options.endDate = chartConfig.dateRange.to;
       }
+    }
+
+    if (chartConfig.gender && chartConfig.gender !== 'all') {
+      options.gender = chartConfig.gender;
     }
 
     const response = await DashboardService.getUserGrowth(chartConfig.timeRange, options);
@@ -237,6 +254,7 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       years?: number[];
       startDate?: Date;
       endDate?: Date;
+      gender?: 'm' | 'f';
     } = {};
 
     // Build options based on timeRange
@@ -254,6 +272,10 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
         options.startDate = chartConfig.dateRange.from;
         options.endDate = chartConfig.dateRange.to;
       }
+    }
+
+    if (chartConfig.gender && chartConfig.gender !== 'all') {
+      options.gender = chartConfig.gender;
     }
 
     const response = await DashboardService.getActiveUsers(chartConfig.timeRange, options);
@@ -302,6 +324,142 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       );
     }
   } catch (error) {
+    // Fallback to mock data on error
+    let calculatedStartDate: Date;
+    let calculatedEndDate: Date = new Date();
+    
+    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+      const minYear = Math.min(...chartConfig.selectedYears);
+      calculatedStartDate = new Date(minYear, 0, 1);
+      const maxYear = Math.max(...chartConfig.selectedYears);
+      calculatedEndDate = new Date(maxYear, 11, 31);
+    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+      calculatedStartDate = chartConfig.dateRange.from;
+      calculatedEndDate = chartConfig.dateRange.to;
+    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else {
+      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+    }
+    
+    return generateMockAnalyticsData(
+      calculatedStartDate, 
+      calculatedEndDate, 
+      chartConfig.timeRange,
+      chartConfig.selectedYears
+    );
+  }
+};
+
+// Load conversion analytics data using the new dedicated API
+const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
+  try {
+    // Validate conversion type is present
+    if (!chartConfig.conversionType) {
+      console.warn('Conversion type is required for conversion analytics');
+      return null;
+    }
+
+    const options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+      gender?: 'm' | 'f';
+    } = {};
+
+    // Build options based on timeRange
+    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
+      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        options.month = chartConfig.selectedMonth;
+        options.year = chartConfig.selectedYear;
+      }
+    } else if (chartConfig.timeRange === 'monthly') {
+      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        options.years = chartConfig.selectedYears;
+      }
+    } else if (chartConfig.timeRange === 'custom') {
+      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        options.startDate = chartConfig.dateRange.from;
+        options.endDate = chartConfig.dateRange.to;
+      }
+    }
+
+    // Gender filter (only for likes and gifts)
+    if (chartConfig.gender && chartConfig.gender !== 'all' && 
+        (chartConfig.conversionType === 'likes' || chartConfig.conversionType === 'gifts')) {
+      options.gender = chartConfig.gender;
+    }
+
+    const response = await DashboardService.getConversions(
+      chartConfig.timeRange,
+      chartConfig.conversionType,
+      options
+    );
+    
+    if (response.success && response.data) {
+      // Transform ConversionAnalyticsResponse to AnalyticsData format
+      // Sort by date to ensure chronological order (as per API documentation best practices)
+      const sortedConversions = [...response.data.conversions].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      // Map ConversionDataPoint to ConversionData format for compatibility
+      const conversions: AnalyticsData['conversions'] = sortedConversions.map(point => ({
+        metric: point.metric,
+        date: point.date,
+        value: point.value,
+        percentage: point.percentage,
+      }));
+
+      return {
+        userGrowth: [], // Will be loaded separately
+        activeUsers: [], // Will be loaded separately
+        conversions,
+        performance: {
+          averageResponseTime: 0,
+          uptime: 0,
+          errorRate: 0,
+          throughput: 0,
+        },
+      };
+    } else {
+      // Fallback to mock data
+      let calculatedStartDate: Date;
+      let calculatedEndDate: Date = new Date();
+      
+      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        const minYear = Math.min(...chartConfig.selectedYears);
+        calculatedStartDate = new Date(minYear, 0, 1);
+        const maxYear = Math.max(...chartConfig.selectedYears);
+        calculatedEndDate = new Date(maxYear, 11, 31);
+      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        calculatedStartDate = chartConfig.dateRange.from;
+        calculatedEndDate = chartConfig.dateRange.to;
+      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else {
+        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+      }
+      
+      return generateMockAnalyticsData(
+        calculatedStartDate, 
+        calculatedEndDate, 
+        chartConfig.timeRange,
+        chartConfig.selectedYears
+      );
+    }
+  } catch (error) {
+    console.error('Error loading conversion analytics:', error);
     // Fallback to mock data on error
     let calculatedStartDate: Date;
     let calculatedEndDate: Date = new Date();
@@ -448,7 +606,7 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
 
 export function useChartData(
   chartConfig: ChartConfig, 
-  apiType: 'userGrowth' | 'activeUsers' | 'default' = 'default'
+  apiType: 'userGrowth' | 'activeUsers' | 'conversions' | 'default' = 'default'
 ) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -471,6 +629,8 @@ export function useChartData(
       loadData = loadUserGrowthData;
     } else if (apiType === 'activeUsers') {
       loadData = loadActiveUsersData;
+    } else if (apiType === 'conversions') {
+      loadData = loadConversionsData;
     } else {
       loadData = loadChartData;
     }
@@ -519,6 +679,8 @@ export function useChartData(
     chartConfig.selectedYears?.join(','), // Include selected years in dependencies
     chartConfig.selectedMonth, // Include selected month for daily/weekly
     chartConfig.selectedYear, // Include selected year for daily/weekly
+    chartConfig.gender, // Include gender in dependencies
+    chartConfig.conversionType, // Include conversion type in dependencies
     apiType // Include this in dependencies
   ]);
 

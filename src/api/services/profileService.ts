@@ -137,8 +137,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`;
       
       const response = await apiClient.get(url);
       
@@ -180,8 +180,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`;
       
       const response = await apiClient.put(url, profileData);
       
@@ -219,18 +219,15 @@ class ProfileService {
   /**
    * Upload avatar
    */
-  async uploadAvatar(file: File): Promise<ApiResponse<{ avatar: string; avatarUrl: string }>> {
+  async uploadAvatar(file: File, userId?: string): Promise<ApiResponse<{ avatar: string; avatarUrl: string }>> {
     try {
-      const userId = this.getUserId();
+      const targetUserId = userId || this.getUserId();
       const formData = new FormData();
       formData.append('file', file);
-      if (userId) {
-        formData.append('userId', userId);
-      }
-
-      const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/avatar?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/avatar`;
+      
+      const url = targetUserId 
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_AVATAR}?userId=${targetUserId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_AVATAR}`;
 
       const response = await apiClient.post(url, formData, {
         headers: {
@@ -276,8 +273,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD}`;
       
       const response = await apiClient.put(url, passwordData);
       
@@ -320,8 +317,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/verify-otp?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/verify-otp`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_VERIFY_OTP}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_VERIFY_OTP}`;
       
       const response = await apiClient.post(url, otpData);
       
@@ -364,8 +361,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset-request?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset-request`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET_REQUEST}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET_REQUEST}`;
       
       const response = await apiClient.post(url, resetData);
       
@@ -404,8 +401,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE}/password/reset`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET}`;
       
       const response = await apiClient.post(url, resetData);
       
@@ -444,8 +441,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_SETUP}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_SETUP}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_SETUP}`;
       
       const response = await apiClient.post<void>(url);
       return response;
@@ -461,8 +458,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_ENABLE}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_ENABLE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_ENABLE}`;
       
       const response = await apiClient.post<void>(url, otpData);
       return response;
@@ -478,8 +475,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_2FA_DISABLE}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_DISABLE}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_DISABLE}`;
       
       const response = await apiClient.post<void>(url, otpData);
       return response;
@@ -495,8 +492,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?userId=${userId}&page=${page}&limit=${limit}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_ACTIVITY}?page=${page}&limit=${limit}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_ACTIVITY}?userId=${userId}&page=${page}&limit=${limit}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_ACTIVITY}?page=${page}&limit=${limit}`;
       
       const response = await apiClient.get(url);
       return response;
@@ -512,8 +509,8 @@ class ProfileService {
     try {
       const userId = this.getUserId();
       const url = userId 
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.USERS.PROFILE_PREFERENCES}`;
+        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PREFERENCES}?userId=${userId}`
+        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PREFERENCES}`;
       
       const response = await apiClient.put(url, preferences);
       return response;

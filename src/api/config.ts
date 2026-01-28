@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  // Base URL for API calls - production server
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.91:8000/admin',
+  // Base URL for API calls - local development server
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/admin',
   
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -52,17 +52,19 @@ export const API_CONFIG = {
       DELETE: '/users/:id',
       PAUSE: '/users/:id/pause',
       DETAILS: '/users/:id',
-      PROFILE: '/users/profile',
-      PROFILE_AVATAR: '/users/profile/avatar',
-      PROFILE_PASSWORD: '/users/profile/password',
-      PROFILE_PASSWORD_VERIFY_OTP: '/users/profile/password/verify-otp',
-      PROFILE_PASSWORD_RESET_REQUEST: '/users/profile/password/reset-request',
-      PROFILE_PASSWORD_RESET: '/users/profile/password/reset',
-      PROFILE_PREFERENCES: '/users/profile/preferences',
-      PROFILE_ACTIVITY: '/users/profile/activity',
-      PROFILE_2FA_SETUP: '/users/profile/2fa/setup',
-      PROFILE_2FA_ENABLE: '/users/profile/2fa/enable',
-      PROFILE_2FA_DISABLE: '/users/profile/2fa/disable',
+    },
+    ADMIN_PROFILE: {
+      PROFILE: '/admin-profile',
+      PROFILE_AVATAR: '/admin-profile/avatar',
+      PROFILE_PASSWORD: '/admin-profile/password',
+      PROFILE_PASSWORD_VERIFY_OTP: '/admin-profile/password/verify-otp',
+      PROFILE_PASSWORD_RESET_REQUEST: '/admin-profile/password/reset-request',
+      PROFILE_PASSWORD_RESET: '/admin-profile/password/reset',
+      PROFILE_PREFERENCES: '/admin-profile/preferences',
+      PROFILE_ACTIVITY: '/admin-profile/activity',
+      PROFILE_2FA_SETUP: '/admin-profile/2fa/setup',
+      PROFILE_2FA_ENABLE: '/admin-profile/2fa/enable',
+      PROFILE_2FA_DISABLE: '/admin-profile/2fa/disable',
     },
     PRODUCTS: {
       LIST: '/products',
@@ -95,6 +97,7 @@ export const API_CONFIG = {
       USER_GROWTH: '/dashboard/analytics/user-growth',
       USER_GROWTH_SYNC: '/dashboard/analytics/user-growth/sync',
       ACTIVE_USERS: '/dashboard/analytics/active-users',
+      CONVERSIONS: '/dashboard/analytics/conversions',
     },
     ENQUIRIES: {
       LIST: '/enquiries',
@@ -105,6 +108,16 @@ export const API_CONFIG = {
       STATS: '/enquiries/stats/overview',
       FILTER_OPTIONS: '/enquiries/filter-options',
       EXPORT: '/enquiries/export',
+    },
+    REPORTS: {
+      LIST: '/reports',
+      CREATE: '/reports',
+      UPDATE: '/reports/:id',
+      DELETE: '/reports/:id',
+      DETAILS: '/reports/:id',
+      STATS: '/reports/stats/overview',
+      FILTER_OPTIONS: '/reports/filter-options',
+      EXPORT: '/reports/export',
     },
     CONTACT: {
       SUBMIT: '/contact',

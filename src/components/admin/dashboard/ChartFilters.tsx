@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 export interface ChartConfig {
   chartType: 'bar' | 'pie' | 'line';
   timeRange: 'daily' | 'weekly' | 'monthly' | 'custom';
+  gender?: 'all' | 'm' | 'f';
+  conversionType?: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts';
   dateRange: {
     from: Date | undefined;
     to: Date | undefined;
@@ -388,8 +390,62 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     return false;
   };
 
+  // Check if this is the Conversion Insights chart
+  const isConversionInsights = title === "Conversion Insights Analytics";
+  const isGenderDisabledForConversion =
+    isConversionInsights &&
+    config.conversionType &&
+    ['message-before-match', 'subscription', 'matches'].includes(config.conversionType);
+
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap w-full">
+      {/* Conversion Type Filter - Only for Conversion Insights */}
+      {isConversionInsights && (
+        <Select
+          value={(config.conversionType || 'subscription')}
+          onValueChange={(value) =>
+            updateConfig({
+              conversionType: value as ChartConfig['conversionType'],
+              // When conversion type disables gender, force it back to 'all'
+              ...( ['message-before-match', 'subscription', 'matches'].includes(value)
+                ? { gender: 'all' as ChartConfig['gender'] }
+                : {}
+              ),
+            })
+          }
+        >
+          <SelectTrigger className="h-8 w-[180px] text-xs">
+            <SelectValue placeholder="Select Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="subscription">Subscription</SelectItem>
+            <SelectItem value="message-before-match">Message Before Match</SelectItem>
+            <SelectItem value="likes">Likes</SelectItem>
+            <SelectItem value="matches">Matches</SelectItem>
+            <SelectItem value="gifts">Gifts</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* Gender Filter */}
+      <Select
+        value={(config.gender || 'all')}
+        onValueChange={(value) => {
+          if (isGenderDisabledForConversion) return;
+          updateConfig({ gender: value as ChartConfig['gender'] });
+        }}
+        disabled={isGenderDisabledForConversion}
+      >
+        <SelectTrigger className="h-8 w-[120px] text-xs" disabled={isGenderDisabledForConversion}>
+          <SelectValue placeholder="Gender" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All</SelectItem>
+          <SelectItem value="m">Male</SelectItem>
+          <SelectItem value="f">Female</SelectItem>
+        </SelectContent>
+      </Select>
+
       {/* Daily: Month and Year Dropdowns */}
       {config.timeRange === 'daily' && (
         <div className="flex items-center gap-2">

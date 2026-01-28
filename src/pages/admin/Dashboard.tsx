@@ -22,6 +22,7 @@ const createChartConfig = (): ChartConfig => {
   return {
     chartType: 'bar',
     timeRange: 'monthly',
+    gender: 'all',
     dateRange: {
       from: (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })(),
       to: today,
@@ -45,14 +46,18 @@ export default function Dashboard() {
   // Separate state for each chart
   const [userGrowthChart, setUserGrowthChart] = useState<ChartConfig>(createChartConfig());
   const [activeUsersChart, setActiveUsersChart] = useState<ChartConfig>(createChartConfig());
-  const [conversionChart, setConversionChart] = useState<ChartConfig>(createChartConfig());
+  const [conversionChart, setConversionChart] = useState<ChartConfig>({
+    ...createChartConfig(),
+    conversionType: 'subscription', // Default conversion type
+  });
 
   // Use custom hook for chart data
   // Use the new dedicated User Growth API for user growth chart
   const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, 'userGrowth');
   // Use the new dedicated Active Users API for active users chart
   const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart, 'activeUsers');
-  const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart);
+  // Use the new dedicated Conversions API for conversion insights chart
+  const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart, 'conversions');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -445,12 +450,99 @@ export default function Dashboard() {
 
   const conversionChartData = useMemo(() => {
     if (!conversionData) return [];
-    return conversionData.conversions.map(item => ({
-      name: item.metric,
+
+    // For monthly multi-year comparison (bar, line, or pie), show grouped by month
+    // with months on the X-axis (Jan, Feb, ...) and one series per year.
+    if (
+      conversionChart.timeRange === 'monthly' &&
+      conversionChart.selectedYears &&
+      conversionChart.selectedYears.length > 1
+    ) {
+      const monthDataMap = new Map<string, { name: string; [key: string]: number }>();
+
+      const conversions = conversionData.conversions || [];
+
+      conversions.forEach((item) => {
+        const raw = item.date || item.metric;
+        if (!raw) return;
+
+        let monthLabel = '';
+        let yearNum: number | null = null;
+
+        // Try to parse as ISO/date string first
+        const parsed = new Date(raw);
+        if (!isNaN(parsed.getTime())) {
+          const monthShort = parsed.toLocaleString('default', { month: 'short' });
+          monthLabel = monthShort;
+          yearNum = parsed.getFullYear();
+        } else {
+          // Fallback for formats like "Jan 2024"
+          const parts = raw.split(' ');
+          if (parts.length >= 2) {
+            monthLabel = parts[0];
+            const parsedYear = Number(parts[1]);
+            if (!isNaN(parsedYear)) {
+              yearNum = parsedYear;
+            }
+          }
+        }
+
+        if (!monthLabel || yearNum === null) return;
+        if (
+          conversionChart.selectedYears &&
+          !conversionChart.selectedYears.includes(yearNum)
+        ) {
+          return;
+        }
+
+        const monthKey = monthLabel;
+        const yearKey = `${yearNum} - value`;
+
+        const existing = monthDataMap.get(monthKey) || { name: monthLabel };
+        const currentValue =
+          typeof existing[yearKey] === 'number'
+            ? (existing[yearKey] as number)
+            : Number(existing[yearKey]) || 0;
+
+        existing[yearKey] = currentValue + (item.value || 0);
+        monthDataMap.set(monthKey, existing);
+      });
+
+      const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aIndex = monthsOrder.indexOf(String(a.name));
+        const bIndex = monthsOrder.indexOf(String(b.name));
+        return aIndex - bIndex;
+      });
+    }
+
+    // Default: single series using value over date/metric
+    const items = conversionData.conversions || [];
+
+    // Sort by actual date (if available) so months are always in proper sequence
+    const withTime = items.map(item => {
+      const raw = item.date || item.metric;
+      const parsed = raw ? new Date(raw) : null;
+      const time = parsed && !isNaN(parsed.getTime()) ? parsed.getTime() : 0;
+      return { item, time };
+    });
+
+    withTime.sort((a, b) => a.time - b.time);
+
+    return withTime.map(({ item }) => ({
+      // Use metric for X-axis label (formatted label like "Jan 2024", "Week 1", etc.)
+      // date is used for sorting only (as per API documentation)
+      name: item.metric || item.date || '',
       value: item.value,
       percentage: item.percentage,
     }));
-  }, [conversionData]);
+  }, [
+    conversionData,
+    conversionChart.timeRange,
+    conversionChart.selectedYears,
+    conversionChart.chartType,
+  ]);
 
   if (loading) {
     return (
@@ -546,7 +638,11 @@ export default function Dashboard() {
           config={conversionChart}
           onConfigChange={setConversionChart}
           data={conversionChartData}
-          dataKeys={['value']}
+          dataKeys={
+            conversionChart.timeRange === 'monthly' && conversionChart.selectedYears && conversionChart.selectedYears.length > 1
+              ? conversionChart.selectedYears.map(year => `${year.toString()} - value`)
+              : ['value']
+          }
           delay={0.4}
           originalData={conversionData}
           loading={conversionLoading}
