@@ -392,6 +392,7 @@ export default function AdminManagement() {
       location: formData.location,
       bio: formData.bio,
       isActive: formData.isActive,
+      permissions: editSelectedPermissionIds,
     };
 
     // Update admin details first
