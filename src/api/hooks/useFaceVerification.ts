@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { FaceVerificationService } from '../services/faceVerificationService';
+import { userKeys } from './useUserManagement';
 import {
   FaceVerificationListParams,
   ApprovalData,
@@ -218,10 +219,13 @@ export const useManualVerification = () => {
           title: variables.data.isVerified ? 'User Verified' : 'User De-verified',
           description: response.data?.message || `User has been ${variables.data.isVerified ? 'verified' : 'de-verified'} successfully.`,
         });
-        // Invalidate relevant queries
+        // Invalidate relevant queries - both face verification and user details
         queryClient.invalidateQueries({ queryKey: faceVerificationKeys.lists() });
         queryClient.invalidateQueries({ queryKey: faceVerificationKeys.details() });
         queryClient.invalidateQueries({ queryKey: faceVerificationKeys.statistics() });
+        // Invalidate user details to update isFaceVerified flag
+        queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.userId) });
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       }
     },
     onError: (error: any) => {

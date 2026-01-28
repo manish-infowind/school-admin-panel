@@ -48,7 +48,7 @@ const UserEditPage = () => {
                 isPhoneVerified: user.isPhoneVerified,
                 isFaceVerified: user.isFaceVerified,
                 isAccountPaused: user.isAccountPaused,
-                accountCurrentStatus: user.accountCurrentStatus,
+                // accountCurrentStatus: user.accountCurrentStatus,
             });
         }
     }, [user]);
@@ -209,7 +209,7 @@ const UserEditPage = () => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <Label htmlFor="accountCurrentStatus">Account Status</Label>
                             <Select
                                 value={formData.accountCurrentStatus?.toString() || ''}
@@ -228,7 +228,7 @@ const UserEditPage = () => {
                                     <SelectItem value="5">Completed</SelectItem>
                                 </SelectContent>
                             </Select>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 

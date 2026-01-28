@@ -352,7 +352,7 @@ export interface UpdateAdminRequest {
   countryCode?: string; // Optional: e.g., "+1", "+91"
   location?: string;
   bio?: string;
-  permissions?: string[];
+  permissions?: number[];
   isActive?: boolean;
   // Note: roleId and permissionIds should be assigned separately after admin update
   // via POST /admin/roles/assign and POST /admin/permissions/assign
