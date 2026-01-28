@@ -105,6 +105,16 @@ export interface UserGrowthSyncResponse {
   externalServiceResponse?: any;
 }
 
+// Dashboard stats summary (static, unfiltered)
+export interface DashboardStatsSummary {
+  totalUsers: number;
+  dailyActiveUsers: number;
+  monthlyActiveUsers: number;
+  userGrowthThisMonth: number;  // Percentage (can be negative)
+  newUsersThisMonth: number;
+  lastUpdated: string;  // ISO 8601 date string
+}
+
 // Conversion metric data point (matches API documentation)
 export interface ConversionDataPoint {
   metric: string;      // e.g., "Jan 2024", "Week 1 (Jan 2024)", "Jan 01, 2024"
@@ -389,6 +399,19 @@ export class DashboardService {
       const response = await apiClient.get<ConversionAnalyticsResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get dashboard stats summary (static, unfiltered)
+  static async getDashboardStatsSummary(): Promise<ApiResponse<DashboardStatsSummary>> {
+    try {
+      const response = await apiClient.get<DashboardStatsSummary>(
+        API_CONFIG.ENDPOINTS.DASHBOARD.STATS_SUMMARY
+      );
       
       return response;
     } catch (error) {
