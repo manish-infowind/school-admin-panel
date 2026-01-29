@@ -27,6 +27,7 @@ import VerificationDetails from "./pages/admin/VerificationDetails";
 import FlaggedUsers from "./pages/admin/FlaggedUsers";
 import Report from "./pages/admin/Report";
 import ReportDetailsPage from "./pages/admin/ReportDetailsPage";
+import ActivityLogs from "./pages/admin/ActivityLogs";
 
 const queryClient = new QueryClient();
 
@@ -227,6 +228,16 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <ReportDetailsPage />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/activity-logs"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ActivityLogs />
                 </AdminLayout>
               </ProtectedRoute>
             }
