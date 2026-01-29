@@ -1,11 +1,20 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 import PageHeader from "@/components/common/PageHeader";
 import { useActivityLogs, useAdminUsers } from "@/api/hooks/useActivityLogs";
 import { ActivityLogQueryParams, HttpMethod, ActivityType } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Table,
   TableBody,
@@ -229,10 +238,26 @@ const ActivityLogs = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/admin">Dashboard</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Activity Logs</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <PageHeader
-        title="Activity Logs"
-        description="View and monitor admin activity logs across the system"
+        page="activityLogs"
+        heading="Activity Logs"
+        subHeading="View and monitor admin activity logs across the system"
       />
 
       {/* Filters */}
