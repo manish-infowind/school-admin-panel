@@ -177,6 +177,10 @@ export const API_CONFIG = {
       RETRY_HISTORY: '/face-verifications/group/:groupId/retries',
       MANUAL_VERIFICATION: '/face-verifications/users/:userId/manual-verification',
     },
+    ACTIVITY_LOGS: {
+      LIST: '/activity-logs',
+      USERS: '/activity-logs/users',
+    },
   },
 } as const;
 

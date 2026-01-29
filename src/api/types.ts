@@ -1263,3 +1263,90 @@ export interface ManualVerificationResponse {
   action: 'verified' | 'de-verified';
   message: string;
 }
+
+// Activity Logs Types
+export type ActivityType = 'create' | 'update' | 'delete' | 'view' | 'login' | 'logout' | 'other';
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
+
+export type ActivityLogSortField = 'timestamp' | 'admin_id';
+
+export type SortOrder = 'asc' | 'desc';
+
+export interface ActivityLog {
+  id: string;
+  adminId: string;
+  action: string;
+  entity?: string;
+  entityName?: string;
+  type: ActivityType;
+  details?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string; // ISO 8601 format
+  endpoint?: string;
+  httpMethod?: HttpMethod;
+  feature?: string;
+  statusCode?: number;
+  requestBody?: Record<string, any>;
+  responseTimeMs?: number;
+}
+
+export interface ActivityLogQueryParams {
+  page?: number;
+  limit?: number;
+  adminId?: string; // UUID
+  search?: string; // Search by admin user name (first name, last name, or email)
+  httpMethod?: HttpMethod;
+  startDate?: string; // ISO 8601 or YYYY-MM-DD
+  endDate?: string; // ISO 8601 or YYYY-MM-DD
+  sortBy?: ActivityLogSortField;
+  sortOrder?: SortOrder;
+}
+
+export interface AdminUser {
+  id: string; // UUID
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string; // firstName + lastName or email if name is empty
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+}
+
+export interface ActivityLogsResponse {
+  data: ActivityLog[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface FeaturesResponse {
+  features: string[];
+}
+
+export interface ActivityStats {
+  feature: string;
+  count: number;
+  avgResponseTime: number;
+}
+
+export interface ActivityStatsResponse {
+  stats: ActivityStats[];
+}
+
+export const FEATURES = {
+  USER_MANAGEMENT: 'user-management',
+  ADMIN_MANAGEMENT: 'admin-management',
+  ADMIN_ROLE: 'admin-role',
+  ADMIN_PERMISSION: 'admin-permission',
+  ADMIN_PROFILE: 'admin-profile',
+  ADMIN_SETTINGS: 'admin-settings',
+  REPORTS: 'reports',
+  FACE_VERIFICATION: 'face-verification',
+  DASHBOARD: 'dashboard',
+  DASHBOARD_ANALYTICS: 'dashboard-analytics',
+} as const;

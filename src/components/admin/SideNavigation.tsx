@@ -10,6 +10,7 @@ import {
   UserCheck,
   ScanFace,
   ClipboardPenLine,
+  History,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +21,8 @@ import {
   canAccessAdminManagement,
   canManageAdminUsers,
   canManageRoles,
-  canManagePermissions
+  canManagePermissions,
+  canAccessActivityLogs
 } from "@/lib/permissions";
 import React, { useState, useEffect } from "react";
 
@@ -46,6 +48,11 @@ const navigation = [
     href: "/admin/reports",
     icon: ClipboardPenLine,
   },
+  {
+    name: "Activity Logs",
+    href: "/admin/activity-logs",
+    icon: History,
+  },
 ];
 
 interface SideNavigationProps {
@@ -61,6 +68,9 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
 
   // Check if user has permission to access admin management
   const hasAdminAccess = canAccessAdminManagement(loginState as any);
+  
+  // Check if user has permission to access activity logs
+  const hasActivityLogsAccess = canAccessActivityLogs(loginState as any);
 
   // Admin Management sub-items with permission checks
   const adminManagementItems = [
@@ -112,47 +122,55 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       <ScrollArea className="flex-1">
         <div className="px-6 space-y-1 py-2">
           <div className="space-y-0.5">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <motion.div
-                  key={item.name}
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <Link
-                    to={item.href}
-                    onClick={() => window.innerWidth < 1024 && onClose()}
+            {navigation
+              .filter((item) => {
+                // Filter out Activity Logs if user doesn't have permission
+                if (item.href === "/admin/activity-logs") {
+                  return hasActivityLogsAccess;
+                }
+                return true;
+              })
+              .map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <motion.div
+                    key={item.name}
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn(
-                        "w-full justify-start gap-3 h-10 text-base",
-                        isActive &&
-                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
-                      )}
+                    <Link
+                      to={item.href}
+                      onClick={() => window.innerWidth < 1024 && onClose()}
                     >
-                      <item.icon className="h-5 w-5" />
-                      {item.name}
-                      {isActive && (
-                        <motion.div
-                          className="ml-auto"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 25,
-                          }}
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </motion.div>
-                      )}
-                    </Button>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                      <Button
+                        variant={isActive ? "secondary" : "ghost"}
+                        className={cn(
+                          "w-full justify-start gap-3 h-10 text-base",
+                          isActive &&
+                          "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                        )}
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {item.name}
+                        {isActive && (
+                          <motion.div
+                            className="ml-auto"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25,
+                            }}
+                          >
+                            <ChevronRight className="h-5 w-5" />
+                          </motion.div>
+                        )}
+                      </Button>
+                    </Link>
+                  </motion.div>
+                );
+              })}
 
             {/* Admin Management Section with Sub-items */}
             {hasAdminAccess && (
