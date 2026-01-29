@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
-import ActiveFilterBar from "@/components/common/ActiveFilterBar";
 import { useActivityLogs, useAdminUsers } from "@/api/hooks/useActivityLogs";
 import { ActivityLogQueryParams, HttpMethod, ActivityType } from "@/api/types";
 import { Button } from "@/components/ui/button";
@@ -351,20 +350,64 @@ const ActivityLogs = () => {
 
         {/* Active Filters Bar */}
         {hasActiveFilters && (
-          <ActiveFilterBar
-            filters={[
-              adminIdFilter && adminIdFilter !== "all" && { 
-                key: "adminId", 
-                label: `User: ${adminUsers.find(u => u.id === adminIdFilter)?.fullName || adminUsers.find(u => u.id === adminIdFilter)?.email || adminIdFilter}`, 
-                onRemove: () => setAdminIdFilter("all") 
-              },
-              httpMethodFilter && httpMethodFilter !== "all" && { key: "httpMethod", label: `Method: ${httpMethodFilter}`, onRemove: () => setHttpMethodFilter("all") },
-              debouncedSearchText.trim() && { key: "search", label: `Search: ${debouncedSearchText}`, onRemove: () => setSearchText("") },
-              startDate && { key: "startDate", label: `From: ${format(startDate, "MMM dd, yyyy")}`, onRemove: () => setStartDate(undefined) },
-              endDate && { key: "endDate", label: `To: ${format(endDate, "MMM dd, yyyy")}`, onRemove: () => setEndDate(undefined) },
-            ].filter(Boolean) as Array<{ key: string; label: string; onRemove: () => void }>}
-            onClearAll={clearAllFilters}
-          />
+          <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
+            <span className="text-sm font-medium text-muted-foreground">Active Filters:</span>
+            {adminIdFilter && adminIdFilter !== "all" && (
+              <Badge variant="secondary" className="gap-1">
+                User: {adminUsers.find(u => u.id === adminIdFilter)?.fullName || adminUsers.find(u => u.id === adminIdFilter)?.email || adminIdFilter}
+                <button
+                  onClick={() => setAdminIdFilter("all")}
+                  className="ml-1 hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {httpMethodFilter && httpMethodFilter !== "all" && (
+              <Badge variant="secondary" className="gap-1">
+                Method: {httpMethodFilter}
+                <button
+                  onClick={() => setHttpMethodFilter("all")}
+                  className="ml-1 hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {debouncedSearchText.trim() && (
+              <Badge variant="secondary" className="gap-1">
+                Search: {debouncedSearchText}
+                <button
+                  onClick={() => setSearchText("")}
+                  className="ml-1 hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {startDate && (
+              <Badge variant="secondary" className="gap-1">
+                From: {format(startDate, "MMM dd, yyyy")}
+                <button
+                  onClick={() => setStartDate(undefined)}
+                  className="ml-1 hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {endDate && (
+              <Badge variant="secondary" className="gap-1">
+                To: {format(endDate, "MMM dd, yyyy")}
+                <button
+                  onClick={() => setEndDate(undefined)}
+                  className="ml-1 hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+          </div>
         )}
       </div>
 
