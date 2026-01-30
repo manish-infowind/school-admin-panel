@@ -55,6 +55,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, XCircle } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import { activeList, roleList } from "@/api/mockData";
+import { formatCountryCode, formatPhoneNumber } from "@/validations/validations";
 
 export default function AdminManagement() {
   const loginState = useSelector((state: RootState) => state.auth.loginState);
@@ -293,7 +294,7 @@ export default function AdminManagement() {
           // Assign role if selected
           if (selectedRoleId) {
             assignRole(
-              { adminId, roleId: selectedRoleId },
+              { adminId, roleIds: [selectedRoleId] }, // Send as array to match API expectation
               {
                 onSuccess: () => {
                   toast({
@@ -405,7 +406,7 @@ export default function AdminManagement() {
           if (!hasRole) {
             // Assign new role (this will replace existing roles if backend doesn't support multiple)
             assignRole(
-              { adminId: selectedAdmin.id, roleId: editSelectedRoleId },
+              { adminId: selectedAdmin.id, roleIds: [editSelectedRoleId] }, // Send as array to match API expectation
               {
                 onError: (error: any) => {
                   toast({
@@ -553,17 +554,43 @@ export default function AdminManagement() {
     setIsPasswordModalOpen(true);
   };
 
-  // Get role badge
-  const getRoleBadge = (role: string) => {
-    return role === 'super_admin' ? (
+  // Handle country code input - uses validation function from validations file
+  const handleCountryCodeChange = (value: string) => {
+    const formatted = formatCountryCode(value);
+    setFormData({ ...formData, countryCode: formatted });
+  };
+
+  // Handle phone number input - uses validation function from validations file
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData({ ...formData, phone: formatted });
+  };
+
+  // Get role badge - now uses roleName from roles array
+  const getRoleBadge = (admin: AdminUser) => {
+    // Get role name from roles array, fallback to top-level role field if roles array is empty
+    const roleName = admin.roles && admin.roles.length > 0 
+      ? admin.roles[0].roleName 
+      : admin.role;
+    
+    // Format role name for display (capitalize first letter of each word)
+    const formattedRoleName = roleName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    // Determine badge variant based on role name
+    const isSuperAdmin = roleName === 'super_admin' || roleName.toLowerCase().includes('super');
+    
+    return isSuperAdmin ? (
       <Badge variant="destructive" className="bg-red-600">
         <Shield className="h-3 w-3 mr-1" />
-        Super Admin
+        {formattedRoleName}
       </Badge>
     ) : (
       <Badge variant="default" className="bg-blue-600">
         <ShieldCheck className="h-3 w-3 mr-1" />
-        Admin
+        {formattedRoleName}
       </Badge>
     );
   };
@@ -750,22 +777,27 @@ export default function AdminManagement() {
                   <Label htmlFor="countryCode">Country Code *</Label>
                   <Input
                     id="countryCode"
+                    type="text"
                     value={formData.countryCode}
-                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                    onChange={(e) => handleCountryCodeChange(e.target.value)}
                     placeholder="+1"
                     className="h-10"
+                    maxLength={10}
                   />
-                  <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                  <p className="text-xs text-muted-foreground">e.g., +1, +91, +44 (max 10 characters)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone *</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="Enter phone number"
                     className="h-10"
+                    maxLength={15}
                   />
+                  <p className="text-xs text-muted-foreground">Numbers only (max 15 digits)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
@@ -1071,7 +1103,7 @@ export default function AdminManagement() {
                             </TableCell>
                             <TableCell>{admin.email}</TableCell>
                             <TableCell>@{admin.username || admin.email.split('@')[0]}</TableCell>
-                            <TableCell>{getRoleBadge(admin.role)}</TableCell>
+                            <TableCell>{getRoleBadge(admin)}</TableCell>
                             <TableCell>{getStatusBadge(admin.isActive)}</TableCell>
                             <TableCell>{admin.phone || '-'}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
@@ -1235,22 +1267,27 @@ export default function AdminManagement() {
                     <Label htmlFor="edit-countryCode">Country Code *</Label>
                     <Input
                       id="edit-countryCode"
+                      type="text"
                       value={formData.countryCode}
-                      onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+                      onChange={(e) => handleCountryCodeChange(e.target.value)}
                       placeholder="+1"
                       className="h-10"
+                      maxLength={10}
                     />
-                    <p className="text-xs text-muted-foreground">e.g., +1, +91, +44</p>
+                    <p className="text-xs text-muted-foreground">e.g., +1, +91, +44 (max 10 characters)</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-phone">Phone *</Label>
                     <Input
                       id="edit-phone"
+                      type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       placeholder="Enter phone number"
                       className="h-10"
+                      maxLength={15}
                     />
+                    <p className="text-xs text-muted-foreground">Numbers only (max 15 digits)</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-location">Location</Label>
@@ -1608,7 +1645,7 @@ export default function AdminManagement() {
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {getRoleBadge(selectedAdmin.role)}
+                    {getRoleBadge(selectedAdmin)}
                     {getStatusBadge(selectedAdmin.isActive)}
                   </div>
                 </div>

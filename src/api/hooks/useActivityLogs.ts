@@ -18,8 +18,10 @@ export const useActivityLogs = (params?: ActivityLogQueryParams) => {
   } = useQuery({
     queryKey: activityLogKeys.list(params || {}),
     queryFn: () => ActivityLogsService.getActivityLogs(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Data is immediately stale, always fetch fresh
+    gcTime: 5 * 60 * 1000, // 5 minutes (keep in cache for 5 min but always refetch on mount)
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid unnecessary calls
   });
 
   // Extract logs and pagination from response
