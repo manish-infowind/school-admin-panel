@@ -207,7 +207,7 @@ export interface RolesListResponse {
 
 export interface AssignRoleRequest {
   adminId: string;
-  roleId: number;
+  roleIds: number[]; // Changed from roleId to roleIds (array) to match API expectation
 }
 
 export interface AssignRoleResponse {

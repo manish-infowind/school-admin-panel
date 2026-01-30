@@ -59,3 +59,47 @@ export const getInitials = (name: string) => {
     const lastChar = words[words.length - 1][0];
     return (firstChar + lastChar).toUpperCase();
 };
+
+// Format and validate country code input - only allows + followed by digits, max 10 characters
+export const formatCountryCode = (value: string): string => {
+    // If empty, return +
+    if (value === '') {
+        return '+';
+    }
+    
+    // Remove any characters that aren't + or digits
+    let cleaned = value.replace(/[^+\d]/g, '');
+    
+    // Ensure it starts with +
+    if (cleaned && !cleaned.startsWith('+')) {
+        // If user types a digit first, prepend +
+        cleaned = '+' + cleaned.replace(/\+/g, '');
+    }
+    
+    // After the +, only allow digits
+    if (cleaned.length > 1) {
+        const afterPlus = cleaned.substring(1);
+        const digitsOnly = afterPlus.replace(/\D/g, '');
+        cleaned = '+' + digitsOnly;
+    } else if (cleaned === '') {
+        cleaned = '+';
+    }
+    
+    // Limit to 10 characters (including the +)
+    if (cleaned.length > 10) {
+        cleaned = cleaned.substring(0, 10);
+    }
+    
+    return cleaned;
+};
+
+// Format and validate phone number input - only allows digits, max 15 characters
+export const formatPhoneNumber = (value: string): string => {
+    // Remove any non-digit characters
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 15 digits (international standard)
+    const limited = cleaned.substring(0, 15);
+    
+    return limited;
+};
