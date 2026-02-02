@@ -109,6 +109,7 @@ export default function Dashboard() {
 
 
   // Create stats cards from API data (independent from filters)
+
   const stats = statsSummary ? [
     {
       title: "Total Users",
@@ -138,6 +139,13 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: "bg-brand-green",
     },
+    {
+      title: "Swipe To Match Rate",
+      value: `${statsSummary.swipeToMatchRate.toFixed(2)}%`,
+      change: "Swipe to match rate this month",
+      icon: TrendingUp,
+      color: "bg-brand-green",
+    }
   ] : [];
 
   // Prepare chart data for each chart

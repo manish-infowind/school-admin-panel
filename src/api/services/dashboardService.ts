@@ -112,6 +112,7 @@ export interface DashboardStatsSummary {
   monthlyActiveUsers: number;
   userGrowthThisMonth: number;  // Percentage (can be negative)
   newUsersThisMonth: number;
+  swipeToMatchRate: number;  // Swipe to match rate (percentage)
   lastUpdated: string;  // ISO 8601 date string
 }
 
