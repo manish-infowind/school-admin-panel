@@ -193,10 +193,9 @@ export default function PermissionsManagement() {
         page="permissions"
         heading="Permissions Management"
         subHeading="Manage system permissions"
-        openModal={openPermissionModal}
       />
 
-      {canCreate && (
+      {/* {canCreate && (
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -286,7 +285,7 @@ export default function PermissionsManagement() {
             </div>
           </DialogContent>
         </Dialog>
-      )}
+      )} */}
 
       <Card>
         <CardHeader>
@@ -316,7 +315,7 @@ export default function PermissionsManagement() {
                     <TableHead>Permission Name</TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Allowed Actions</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {/* <TableHead className="text-right">Actions</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -347,38 +346,38 @@ export default function PermissionsManagement() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        {/* <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {canUpdate && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setPermissionToEdit(permission);
-                                  setIsEditDialogOpen(true);
-                                }}
-                                disabled={isUpdatingPermission}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            )}
-                            {canDelete && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  setPermissionToDelete(permission);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                                disabled={isDeletingPermission}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </Button>
+                            //   <Button
+                            //     variant="outline"
+                            //     size="sm"
+                            //     onClick={() => {
+                            //       setPermissionToEdit(permission);
+                            //       setIsEditDialogOpen(true);
+                            //     }}
+                            //     disabled={isUpdatingPermission}
+                            //   >
+                            //     <Edit className="h-4 w-4 mr-2" />
+                            //     Edit
+                            //   </Button>
+                            // )}
+                            // {canDelete && (
+                            //   <Button
+                            //     variant="destructive"
+                            //     size="sm"
+                            //     onClick={() => {
+                            //       setPermissionToDelete(permission);
+                            //       setIsDeleteDialogOpen(true);
+                            //     }}
+                            //     disabled={isDeletingPermission}
+                            //   >
+                            //     <Trash2 className="h-4 w-4 mr-2" />
+                            //     Delete
+                            //   </Button>
                             )}
                           </div>
-                        </TableCell>
+                        </TableCell> */}
                       </TableRow>
                     ))
                   )}
