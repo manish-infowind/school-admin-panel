@@ -23,6 +23,39 @@ interface ChartRendererProps {
 export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData, conversionType }: ChartRendererProps) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
+  // Custom tooltip formatter to add dollar signs to revenue metrics
+  const formatTooltipValue = (value: number, dataKey: string | undefined) => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return 'N/A';
+    }
+    // Check if this is a revenue metric that should have dollar signs
+    if (dataKey && (
+      dataKey.includes('Average Revenue Per User') || 
+      dataKey.includes('Average Revenue Per Paying User')
+    )) {
+      return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    // Default formatting for other metrics
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs">
+          <p className="font-semibold mb-2">{payload[0].payload.name}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }} className="mb-1">
+              {entry.name}: {formatTooltipValue(entry.value, entry.dataKey)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+  
   // Calculate if we need dual Y-axis (when values have very different scales)
   // This must be called before any early returns to follow Rules of Hooks
   const needsDualAxis = useMemo(() => {
@@ -84,6 +117,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
               label={{ value: dataKeys[1], angle: 90, position: 'insideRight' }}
             />
             <Tooltip 
+              content={<CustomTooltip />}
               contentStyle={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #e5e7eb',
@@ -123,6 +157,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
           />
           <YAxis stroke="#6b7280" />
           <Tooltip 
+            content={<CustomTooltip />}
             contentStyle={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -171,6 +206,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
               label={{ value: dataKeys[1], angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
             />
             <Tooltip 
+              content={<CustomTooltip />}
               contentStyle={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #e5e7eb',
@@ -216,6 +252,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
           />
           <YAxis stroke="#6b7280" />
           <Tooltip 
+            content={<CustomTooltip />}
             contentStyle={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -370,6 +407,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
             ))}
           </Pie>
           <Tooltip 
+            content={<CustomTooltip />}
             contentStyle={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
