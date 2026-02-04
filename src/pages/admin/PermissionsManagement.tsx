@@ -193,101 +193,9 @@ export default function PermissionsManagement() {
         page="permissions"
         heading="Permissions Management"
         subHeading="Manage system permissions"
-        openModal={openPermissionModal}
       />
-
-      {canCreate && (
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Permission</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="permissionName">Permission Name</Label>
-                <Input
-                  id="permissionName"
-                  placeholder="e.g., manage_users, view_reports"
-                  value={formData.permissionName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, permissionName: e.target.value })
-                  }
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Use lowercase with underscores (e.g., manage_users, view_reports)
-                </p>
-              </div>
-              <div>
-                <Label>Allowed Actions (Optional)</Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Select which CRUD operations are allowed. Leave all checked for all actions.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedActions.create}
-                      onChange={(e) =>
-                        setSelectedActions({ ...selectedActions, create: e.target.checked })
-                      }
-                      className="rounded"
-                    />
-                    <span>Create</span>
-                  </label>
-                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedActions.read}
-                      onChange={(e) =>
-                        setSelectedActions({ ...selectedActions, read: e.target.checked })
-                      }
-                      className="rounded"
-                    />
-                    <span>Read</span>
-                  </label>
-                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedActions.update}
-                      onChange={(e) =>
-                        setSelectedActions({ ...selectedActions, update: e.target.checked })
-                      }
-                      className="rounded"
-                    />
-                    <span>Update</span>
-                  </label>
-                  <label className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedActions.delete}
-                      onChange={(e) =>
-                        setSelectedActions({ ...selectedActions, delete: e.target.checked })
-                      }
-                      className="rounded"
-                    />
-                    <span>Delete</span>
-                  </label>
-                </div>
-              </div>
-              <Button
-                onClick={handleCreatePermission}
-                disabled={isCreatingPermission}
-                className="w-full bg-brand-green hover:bg-brand-green/90"
-              >
-                {isCreatingPermission ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Permission"
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
+      {/* comment-out the  create Permission button in PageHeader.tsx component file  */}
+      {/* comment-out/remove for now  the dialoge that opens when create permission opens*/}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -316,7 +224,6 @@ export default function PermissionsManagement() {
                     <TableHead>Permission Name</TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Allowed Actions</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -347,38 +254,7 @@ export default function PermissionsManagement() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            {canUpdate && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setPermissionToEdit(permission);
-                                  setIsEditDialogOpen(true);
-                                }}
-                                disabled={isUpdatingPermission}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            )}
-                            {canDelete && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  setPermissionToDelete(permission);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                                disabled={isDeletingPermission}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                        {/* comment-out/remove for now  the EDIT and delete buttton  */}
                       </TableRow>
                     ))
                   )}
