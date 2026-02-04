@@ -150,6 +150,33 @@ export interface ConversionAnalyticsResponse {
   metadata: ConversionMetadata;
 }
 
+// Revenue analytics data point
+export interface RevenueAnalyticsData {
+  date: string; // ISO 8601: "2024-12-31T18:30:00.000Z"
+  averageRevenuePerUser: number;
+  averageRevenuePerPayingUser: number;
+  freeToPaidRate: number;
+  churnRate: number;
+  averageLtv?: number; // Average Lifetime Value
+}
+
+// Metadata object for revenue analytics
+export interface RevenueAnalyticsMetadata {
+  totalRecords: number;
+  startDate: string; // ISO 8601
+  endDate: string; // ISO 8601
+  timeRange: string;
+  selectedYears?: number[];
+  yearlyAverageLtv?: Record<number, number>; // Yearly average LTV by year
+  monthlyAverageLtv?: Record<string, number>; // Monthly average LTV by month-year key
+}
+
+// Complete API response for revenue analytics
+export interface RevenueAnalyticsResponse {
+  revenueAnalytics: RevenueAnalyticsData[];
+  metadata: RevenueAnalyticsMetadata;
+}
+
 export interface PerformanceMetrics {
   averageResponseTime: number;
   uptime: number;
@@ -162,6 +189,7 @@ export interface AnalyticsData {
   activeUsers: ActiveUsersData[];
   conversions: ConversionData[];
   performance: PerformanceMetrics;
+  revenueAnalytics?: RevenueAnalyticsData[];
 }
 
 export interface DashboardData {
@@ -413,6 +441,63 @@ export class DashboardService {
       const response = await apiClient.get<DashboardStatsSummary>(
         API_CONFIG.ENDPOINTS.DASHBOARD.STATS_SUMMARY
       );
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get revenue analytics data
+  static async getRevenue(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+      gender?: 'm' | 'f';
+    }
+  ): Promise<ApiResponse<RevenueAnalyticsResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      // Gender filter (optional)
+      if (options.gender) {
+        params.append('gender', options.gender);
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.REVENUE}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<RevenueAnalyticsResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
       
       return response;
     } catch (error) {
