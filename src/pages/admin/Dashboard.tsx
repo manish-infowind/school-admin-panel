@@ -359,6 +359,9 @@ export default function Dashboard() {
         monthData[`${yearNum} - Average Revenue Per Paying User`] = item.averageRevenuePerPayingUser;
         monthData[`${yearNum} - Churn Rate`] = item.churnRate;
         monthData[`${yearNum} - Free to Paid Rate`] = item.freeToPaidRate;
+        if (item.averageLtv !== undefined) {
+          monthData[`${yearNum} - Inactive Users Life Time Value`] = item.averageLtv;
+        }
       });
 
       // Convert map to array and sort by month order
@@ -391,13 +394,19 @@ export default function Dashboard() {
         dateLabel = item.date;
       }
 
-      return {
+      const chartData: Record<string, string | number> = {
         name: dateLabel,
         'Average Revenue Per User': item.averageRevenuePerUser,
         'Average Revenue Per Paying User': item.averageRevenuePerPayingUser,
         'Churn Rate': item.churnRate,
         'Free to Paid Rate': item.freeToPaidRate,
       };
+      
+      if (item.averageLtv !== undefined) {
+        chartData['Inactive Users Life Time Value'] = item.averageLtv;
+      }
+      
+      return chartData;
     });
   }, [revenueData, revenueChart.timeRange, revenueChart.selectedYears]);
 
@@ -519,9 +528,10 @@ export default function Dashboard() {
                   `${year.toString()} - Average Revenue Per User`,
                   `${year.toString()} - Average Revenue Per Paying User`,
                   `${year.toString()} - Churn Rate`,
-                  `${year.toString()} - Free to Paid Rate`
+                  `${year.toString()} - Free to Paid Rate`,
+                  `${year.toString()} - Inactive Users Life Time Value`
                 ])
-              : ['Average Revenue Per User', 'Average Revenue Per Paying User', 'Churn Rate', 'Free to Paid Rate']
+              : ['Average Revenue Per User', 'Average Revenue Per Paying User', 'Churn Rate', 'Free to Paid Rate', 'Inactive Users Life Time Value']
           }
           delay={0.5}
           originalData={revenueData}

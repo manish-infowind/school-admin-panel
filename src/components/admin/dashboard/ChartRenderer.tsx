@@ -23,17 +23,26 @@ interface ChartRendererProps {
 export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData, conversionType }: ChartRendererProps) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
-  // Custom tooltip formatter to add dollar signs to revenue metrics
-  const formatTooltipValue = (value: number, dataKey: string | undefined) => {
+  // Custom tooltip formatter to add dollar signs to revenue metrics and percentage to rate metrics
+  const formatTooltipValue = (value: number, dataKey: string | undefined, name: string | undefined) => {
     if (value === undefined || value === null || isNaN(value)) {
       return 'N/A';
     }
     // Check if this is a revenue metric that should have dollar signs
-    if (dataKey && (
-      dataKey.includes('Average Revenue Per User') || 
-      dataKey.includes('Average Revenue Per Paying User')
+    const keyToCheck = dataKey || name || '';
+    if (keyToCheck && (
+      keyToCheck.includes('Average Revenue Per User') || 
+      keyToCheck.includes('Average Revenue Per Paying User') ||
+      keyToCheck.includes('Inactive Users Life Time Value')
     )) {
       return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    // Check if this is a rate metric that should have percentage symbol
+    if (keyToCheck && (
+      keyToCheck.includes('Churn Rate') || 
+      keyToCheck.includes('Free to Paid Rate')
+    )) {
+      return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
     }
     // Default formatting for other metrics
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -47,7 +56,7 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
           <p className="font-semibold mb-2">{payload[0].payload.name}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="mb-1">
-              {entry.name}: {formatTooltipValue(entry.value, entry.dataKey)}
+              {entry.name}: {formatTooltipValue(entry.value, entry.dataKey, entry.name)}
             </p>
           ))}
         </div>

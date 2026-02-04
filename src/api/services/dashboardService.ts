@@ -157,6 +157,7 @@ export interface RevenueAnalyticsData {
   averageRevenuePerPayingUser: number;
   freeToPaidRate: number;
   churnRate: number;
+  averageLtv?: number; // Average Lifetime Value
 }
 
 // Metadata object for revenue analytics
@@ -166,6 +167,8 @@ export interface RevenueAnalyticsMetadata {
   endDate: string; // ISO 8601
   timeRange: string;
   selectedYears?: number[];
+  yearlyAverageLtv?: Record<number, number>; // Yearly average LTV by year
+  monthlyAverageLtv?: Record<string, number>; // Monthly average LTV by month-year key
 }
 
 // Complete API response for revenue analytics
