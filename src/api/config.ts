@@ -99,6 +99,7 @@ export const API_CONFIG = {
       USER_GROWTH_SYNC: '/dashboard/analytics/user-growth/sync',
       ACTIVE_USERS: '/dashboard/analytics/active-users',
       CONVERSIONS: '/dashboard/analytics/conversions',
+      REVENUE: '/dashboard/analytics/revenue',
     },
     ENQUIRIES: {
       LIST: '/enquiries',
