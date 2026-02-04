@@ -86,14 +86,8 @@ const PageHeader = (props) => {
                             Add Admin
                         </Button>
                     )}
-
-                    {page?.toLowerCase() === "permissions" && (
-                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Permission
-                        </Button>
-                    )}
-
+                    {/* create permission button removed */}
+                    
                     {page?.toLowerCase() === "roles" && (
                         <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
                             <Plus className="h-4 w-4 mr-2" />
