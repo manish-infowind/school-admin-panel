@@ -51,7 +51,6 @@ export default function Dashboard() {
   });
   const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
   const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
-
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
   const { data: statsSummary, isLoading: statsLoading } = useDashboardStatsSummary();
@@ -236,7 +235,7 @@ export default function Dashboard() {
       'Monthly Active': item.monthlyActive,
     }));
   }, [activeUsersData, activeUsersChart.timeRange, activeUsersChart.selectedYears]);
-
+  // here i need to change to align the months in correct order
   const conversionChartData = useMemo(() => {
     if (!conversionData) return [];
 
@@ -252,31 +251,17 @@ export default function Dashboard() {
       const conversions = conversionData.conversions || [];
 
       conversions.forEach((item) => {
-        const raw = item.date || item.metric;
+        const raw = item.metric;
         if (!raw) return;
+        
+        const parts = raw.split(' ');
+        if(parts.length !==2 ) return;
 
-        let monthLabel = '';
-        let yearNum: number | null = null;
+        let monthLabel = parts[0];
+        let yearNum = Number(parts[1]);
 
-        // Try to parse as ISO/date string first
-        const parsed = new Date(raw);
-        if (!isNaN(parsed.getTime())) {
-          const monthShort = parsed.toLocaleString('default', { month: 'short' });
-          monthLabel = monthShort;
-          yearNum = parsed.getFullYear();
-        } else {
-          // Fallback for formats like "Jan 2024"
-          const parts = raw.split(' ');
-          if (parts.length >= 2) {
-            monthLabel = parts[0];
-            const parsedYear = Number(parts[1]);
-            if (!isNaN(parsedYear)) {
-              yearNum = parsedYear;
-            }
-          }
-        }
-
-        if (!monthLabel || yearNum === null) return;
+        if(isNaN(yearNum)) return;
+        //removed the ISO parsing of date when we already have months name comming in API response so I used that 
         if (
           conversionChart.selectedYears &&
           !conversionChart.selectedYears.includes(yearNum)
@@ -332,7 +317,6 @@ export default function Dashboard() {
     conversionChart.selectedYears,
     conversionChart.chartType,
   ]);
-
   const revenueChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
     if (!revenueData || !revenueData.revenueAnalytics) return [];
 
