@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   TrendingUp,
-  DollarSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -48,7 +47,6 @@ export default function Dashboard() {
     ...createChartConfig(),
     conversionType: 'subscription', // Default conversion type
   });
-  const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
 
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
@@ -60,8 +58,6 @@ export default function Dashboard() {
   const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart, 'activeUsers');
   // Use the new dedicated Conversions API for conversion insights chart
   const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart, 'conversions');
-  // Use the new dedicated Revenue API for revenue analytics chart
-  const { data: revenueData, loading: revenueLoading } = useChartData(revenueChart, 'revenue');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -232,7 +228,7 @@ export default function Dashboard() {
       'Monthly Active': item.monthlyActive,
     }));
   }, [activeUsersData, activeUsersChart.timeRange, activeUsersChart.selectedYears]);
-
+  // here i need to change to align the months in correct order
   const conversionChartData = useMemo(() => {
     if (!conversionData) return [];
 
@@ -248,31 +244,17 @@ export default function Dashboard() {
       const conversions = conversionData.conversions || [];
 
       conversions.forEach((item) => {
-        const raw = item.date || item.metric;
+        const raw = item.metric;
         if (!raw) return;
+        
+        const parts = raw.split(' ');
+        if(parts.length !==2 ) return;
 
-        let monthLabel = '';
-        let yearNum: number | null = null;
+        let monthLabel = parts[0];
+        let yearNum = Number(parts[1]);
 
-        // Try to parse as ISO/date string first
-        const parsed = new Date(raw);
-        if (!isNaN(parsed.getTime())) {
-          const monthShort = parsed.toLocaleString('default', { month: 'short' });
-          monthLabel = monthShort;
-          yearNum = parsed.getFullYear();
-        } else {
-          // Fallback for formats like "Jan 2024"
-          const parts = raw.split(' ');
-          if (parts.length >= 2) {
-            monthLabel = parts[0];
-            const parsedYear = Number(parts[1]);
-            if (!isNaN(parsedYear)) {
-              yearNum = parsedYear;
-            }
-          }
-        }
-
-        if (!monthLabel || yearNum === null) return;
+        if(isNaN(yearNum)) return;
+        //removed the ISO parsing of date when we already have months name comming in API response so I used that 
         if (
           conversionChart.selectedYears &&
           !conversionChart.selectedYears.includes(yearNum)
@@ -328,87 +310,6 @@ export default function Dashboard() {
     conversionChart.selectedYears,
     conversionChart.chartType,
   ]);
-
-  const revenueChartData = useMemo(() => {
-    if (!revenueData || !revenueData.revenueAnalytics) return [];
-
-    const revenueAnalytics = revenueData.revenueAnalytics;
-
-    // Handle multi-year monthly comparison
-    if (revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, Record<string, string | number>>();
-
-      revenueAnalytics.forEach(item => {
-        // Parse ISO date string
-        const parsed = new Date(item.date);
-        if (isNaN(parsed.getTime())) return;
-
-        const monthShort = parsed.toLocaleString('default', { month: 'short' });
-        const yearNum = parsed.getFullYear();
-
-        if (!revenueChart.selectedYears || !revenueChart.selectedYears.includes(yearNum)) {
-          return;
-        }
-
-        if (!monthDataMap.has(monthShort)) {
-          monthDataMap.set(monthShort, { name: monthShort });
-        }
-
-        const monthData = monthDataMap.get(monthShort)!;
-        monthData[`${yearNum} - Average Revenue Per User`] = item.averageRevenuePerUser;
-        monthData[`${yearNum} - Average Revenue Per Paying User`] = item.averageRevenuePerPayingUser;
-        monthData[`${yearNum} - Churn Rate`] = item.churnRate;
-        monthData[`${yearNum} - Free to Paid Rate`] = item.freeToPaidRate;
-        if (item.averageLtv !== undefined) {
-          monthData[`${yearNum} - Inactive Users Life Time Value`] = item.averageLtv;
-        }
-      });
-
-      // Convert map to array and sort by month order
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return Array.from(monthDataMap.values()).sort((a, b) => {
-        const aName = typeof a.name === 'string' ? a.name : '';
-        const bName = typeof b.name === 'string' ? b.name : '';
-        return months.indexOf(aName) - months.indexOf(bName);
-      }) as Array<{ name: string; [key: string]: string | number }>;
-    }
-
-    // Standard format for single year or other time ranges
-    return revenueAnalytics.map(item => {
-      // Format date for display
-      const parsed = new Date(item.date);
-      let dateLabel = '';
-      if (!isNaN(parsed.getTime())) {
-        if (revenueChart.timeRange === 'daily') {
-          dateLabel = parsed.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
-        } else if (revenueChart.timeRange === 'weekly') {
-          const weekStart = new Date(parsed);
-          weekStart.setDate(parsed.getDate() - parsed.getDay());
-          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
-          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
-        } else {
-          // Monthly format: "Jan 2024"
-          dateLabel = parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' });
-        }
-      } else {
-        dateLabel = item.date;
-      }
-
-      const chartData: Record<string, string | number> = {
-        name: dateLabel,
-        'Average Revenue Per User': item.averageRevenuePerUser,
-        'Average Revenue Per Paying User': item.averageRevenuePerPayingUser,
-        'Churn Rate': item.churnRate,
-        'Free to Paid Rate': item.freeToPaidRate,
-      };
-      
-      if (item.averageLtv !== undefined) {
-        chartData['Inactive Users Life Time Value'] = item.averageLtv;
-      }
-      
-      return chartData;
-    });
-  }, [revenueData, revenueChart.timeRange, revenueChart.selectedYears]);
 
   if (statsLoading) {
     return (
@@ -512,30 +413,6 @@ export default function Dashboard() {
           delay={0.4}
           originalData={conversionData}
           loading={conversionLoading}
-        />
-
-        {/* Monetization and Finance Analytics Chart */}
-        <ChartCard
-          title="Monetization and Finance Analytics"
-          icon={DollarSign}
-          iconColor="text-brand-green"
-          config={revenueChart}
-          onConfigChange={setRevenueChart}
-          data={revenueChartData}
-          dataKeys={
-            revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1
-              ? revenueChart.selectedYears.flatMap(year => [
-                  `${year.toString()} - Average Revenue Per User`,
-                  `${year.toString()} - Average Revenue Per Paying User`,
-                  `${year.toString()} - Churn Rate`,
-                  `${year.toString()} - Free to Paid Rate`,
-                  `${year.toString()} - Inactive Users Life Time Value`
-                ])
-              : ['Average Revenue Per User', 'Average Revenue Per Paying User', 'Churn Rate', 'Free to Paid Rate', 'Inactive Users Life Time Value']
-          }
-          delay={0.5}
-          originalData={revenueData}
-          loading={revenueLoading}
         />
       </div>
     </div>
