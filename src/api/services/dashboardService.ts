@@ -177,6 +177,30 @@ export interface RevenueAnalyticsResponse {
   metadata: RevenueAnalyticsMetadata;
 }
 
+// Conversation analytics data point
+export interface ConversationAnalyticsData {
+  date: string; // ISO 8601: "2024-12-31T18:30:00.000Z"
+  conversationInitiationRate: number; // Percentage (0-100)
+  messagesPerMatch: number; // Count
+  ghostingRate: number; // Count
+  swipeToMatchRate?: number; // Percentage (0-100)
+}
+
+// Metadata object for conversation analytics
+export interface ConversationAnalyticsMetadata {
+  totalRecords: number;
+  startDate: string; // ISO 8601
+  endDate: string; // ISO 8601
+  timeRange: string;
+  selectedYears?: number[];
+}
+
+// Complete API response for conversation analytics
+export interface ConversationAnalyticsResponse {
+  conversationAnalytics: ConversationAnalyticsData[];
+  metadata: ConversationAnalyticsMetadata;
+}
+
 export interface PerformanceMetrics {
   averageResponseTime: number;
   uptime: number;
@@ -190,6 +214,7 @@ export interface AnalyticsData {
   conversions: ConversionData[];
   performance: PerformanceMetrics;
   revenueAnalytics?: RevenueAnalyticsData[];
+  conversationAnalytics?: ConversationAnalyticsData[];
 }
 
 export interface DashboardData {
@@ -496,6 +521,57 @@ export class DashboardService {
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.REVENUE}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<RevenueAnalyticsResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get conversation analytics data
+  static async getConversationAnalytics(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<ConversationAnalyticsResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.CONVERSATION_ANALYTICS}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<ConversationAnalyticsResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       

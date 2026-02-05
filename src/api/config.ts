@@ -100,6 +100,7 @@ export const API_CONFIG = {
       ACTIVE_USERS: '/dashboard/analytics/active-users',
       CONVERSIONS: '/dashboard/analytics/conversions',
       REVENUE: '/dashboard/analytics/revenue',
+      CONVERSATION_ANALYTICS: '/dashboard/analytics/conversation-analytics',
     },
     ENQUIRIES: {
       LIST: '/enquiries',
