@@ -3,6 +3,7 @@ import {
   Users,
   TrendingUp,
   DollarSign,
+  MessageSquare,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -49,6 +50,7 @@ export default function Dashboard() {
     conversionType: 'subscription', // Default conversion type
   });
   const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
+  const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
 
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
@@ -62,6 +64,8 @@ export default function Dashboard() {
   const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart, 'conversions');
   // Use the new dedicated Revenue API for revenue analytics chart
   const { data: revenueData, loading: revenueLoading } = useChartData(revenueChart, 'revenue');
+  // Use the new dedicated Conversation Analytics API for conversation analytics chart
+  const { data: conversationData, loading: conversationLoading } = useChartData(conversationChart, 'conversationAnalytics');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -329,14 +333,14 @@ export default function Dashboard() {
     conversionChart.chartType,
   ]);
 
-  const revenueChartData = useMemo(() => {
+  const revenueChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
     if (!revenueData || !revenueData.revenueAnalytics) return [];
 
     const revenueAnalytics = revenueData.revenueAnalytics;
 
     // Handle multi-year monthly comparison
     if (revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, Record<string, string | number>>();
+      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
 
       revenueAnalytics.forEach(item => {
         // Parse ISO date string
@@ -379,8 +383,13 @@ export default function Dashboard() {
       const parsed = new Date(item.date);
       let dateLabel = '';
       if (!isNaN(parsed.getTime())) {
-        if (revenueChart.timeRange === 'daily') {
-          dateLabel = parsed.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+        if (revenueChart.timeRange === 'daily' || revenueChart.timeRange === 'custom') {
+          // For daily and custom ranges, show full date like "Jan 01, 2026"
+          dateLabel = parsed.toLocaleDateString('default', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+          });
         } else if (revenueChart.timeRange === 'weekly') {
           const weekStart = new Date(parsed);
           weekStart.setDate(parsed.getDate() - parsed.getDay());
@@ -394,7 +403,7 @@ export default function Dashboard() {
         dateLabel = item.date;
       }
 
-      const chartData: Record<string, string | number> = {
+      const chartData: { name: string; [key: string]: string | number } = {
         name: dateLabel,
         'Average Revenue Per User': item.averageRevenuePerUser,
         'Average Revenue Per Paying User': item.averageRevenuePerPayingUser,
@@ -409,6 +418,90 @@ export default function Dashboard() {
       return chartData;
     });
   }, [revenueData, revenueChart.timeRange, revenueChart.selectedYears]);
+
+  const conversationChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
+    if (!conversationData || !conversationData.conversationAnalytics) return [];
+
+    const conversationAnalytics = conversationData.conversationAnalytics;
+
+    // Handle multi-year monthly comparison
+    if (conversationChart.timeRange === 'monthly' && conversationChart.selectedYears && conversationChart.selectedYears.length > 1) {
+      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
+
+      conversationAnalytics.forEach(item => {
+        // Parse ISO date string
+        const parsed = new Date(item.date);
+        if (isNaN(parsed.getTime())) return;
+
+        const monthShort = parsed.toLocaleString('default', { month: 'short' });
+        const yearNum = parsed.getFullYear();
+
+        if (!conversationChart.selectedYears || !conversationChart.selectedYears.includes(yearNum)) {
+          return;
+        }
+
+        if (!monthDataMap.has(monthShort)) {
+          monthDataMap.set(monthShort, { name: monthShort });
+        }
+
+        const monthData = monthDataMap.get(monthShort)!;
+        monthData[`${yearNum} - Conversation Initiation Rate`] = item.conversationInitiationRate;
+        monthData[`${yearNum} - Messages Per Match`] = item.messagesPerMatch;
+        monthData[`${yearNum} - Ghosting Rate`] = item.ghostingRate;
+        if (item.swipeToMatchRate !== undefined) {
+          monthData[`${yearNum} - Swipe to Match Rate`] = item.swipeToMatchRate;
+        }
+      });
+
+      // Convert map to array and sort by month order
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      });
+    }
+
+    // Standard format for single year or other time ranges
+    return conversationAnalytics.map(item => {
+      // Format date for display
+      const parsed = new Date(item.date);
+      let dateLabel = '';
+      if (!isNaN(parsed.getTime())) {
+        if (conversationChart.timeRange === 'daily' || conversationChart.timeRange === 'custom') {
+          // For daily and custom ranges, show full date like "Jan 01, 2026"
+          dateLabel = parsed.toLocaleDateString('default', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+          });
+        } else if (conversationChart.timeRange === 'weekly') {
+          const weekStart = new Date(parsed);
+          weekStart.setDate(parsed.getDate() - parsed.getDay());
+          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
+          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
+        } else {
+          // Monthly format: "Jan 2024"
+          dateLabel = parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+        }
+      } else {
+        dateLabel = item.date;
+      }
+
+      const chartData: { name: string; [key: string]: string | number } = {
+        name: dateLabel,
+        'Conversation Initiation Rate': item.conversationInitiationRate,
+        'Messages Per Match': item.messagesPerMatch,
+        'Ghosting Rate': item.ghostingRate,
+      };
+      
+      if (item.swipeToMatchRate !== undefined) {
+        chartData['Swipe to Match Rate'] = item.swipeToMatchRate;
+      }
+      
+      return chartData;
+    });
+  }, [conversationData, conversationChart.timeRange, conversationChart.selectedYears]);
 
   if (statsLoading) {
     return (
@@ -536,6 +629,29 @@ export default function Dashboard() {
           delay={0.5}
           originalData={revenueData}
           loading={revenueLoading}
+        />
+
+        {/* Conversation Analytics Chart */}
+        <ChartCard
+          title="Conversation Analytics"
+          icon={MessageSquare}
+          iconColor="text-brand-blue"
+          config={conversationChart}
+          onConfigChange={setConversationChart}
+          data={conversationChartData}
+          dataKeys={
+            conversationChart.timeRange === 'monthly' && conversationChart.selectedYears && conversationChart.selectedYears.length > 1
+              ? conversationChart.selectedYears.flatMap(year => [
+                  `${year.toString()} - Conversation Initiation Rate`,
+                  `${year.toString()} - Messages Per Match`,
+                  `${year.toString()} - Ghosting Rate`,
+                  `${year.toString()} - Swipe to Match Rate`
+                ])
+              : ['Conversation Initiation Rate', 'Messages Per Match', 'Ghosting Rate', 'Swipe to Match Rate']
+          }
+          delay={0.6}
+          originalData={conversationData}
+          loading={conversationLoading}
         />
       </div>
     </div>

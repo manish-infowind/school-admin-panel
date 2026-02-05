@@ -40,7 +40,10 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
     // Check if this is a rate metric that should have percentage symbol
     if (keyToCheck && (
       keyToCheck.includes('Churn Rate') || 
-      keyToCheck.includes('Free to Paid Rate')
+      keyToCheck.includes('Free to Paid Rate') ||
+      keyToCheck.includes('Conversation Initiation Rate') ||
+      keyToCheck.includes('Ghosting Rate') ||
+      keyToCheck.includes('Swipe to Match Rate')
     )) {
       return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
     }
