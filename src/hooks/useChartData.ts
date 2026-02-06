@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse, ConversionAnalyticsResponse, ConversionDataPoint, RevenueAnalyticsResponse, ConversationAnalyticsResponse } from "@/api/services/dashboardService";
+import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse, ConversionAnalyticsResponse, ConversionDataPoint, RevenueAnalyticsResponse, ConversationAnalyticsResponse, AppStoreInstallStatsResponse } from "@/api/services/dashboardService";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 
 // Generate mock analytics data based on date range
@@ -720,6 +720,159 @@ const loadConversationAnalyticsData = async (chartConfig: ChartConfig): Promise<
   }
 };
 
+// Load app store install stats data using the new dedicated API
+const loadAppStoreInstallStatsData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
+  try {
+    const options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    } = {};
+
+    // Build options based on timeRange
+    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
+      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        options.month = chartConfig.selectedMonth;
+        options.year = chartConfig.selectedYear;
+      }
+    } else if (chartConfig.timeRange === 'monthly') {
+      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        options.years = chartConfig.selectedYears;
+      }
+    } else if (chartConfig.timeRange === 'custom') {
+      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        options.startDate = chartConfig.dateRange.from;
+        options.endDate = chartConfig.dateRange.to;
+      }
+    }
+
+    const response = await DashboardService.getAppStoreInstallStats(chartConfig.timeRange, options);
+    
+    if (response.success && response.data) {
+      // Handle different response structures
+      // The API returns: {installStats: Array, metadata: {}}
+      let appStoreInstallStatsArray: any[];
+      
+      if (Array.isArray(response.data)) {
+        // Response is an array directly
+        appStoreInstallStatsArray = response.data;
+      } else if (response.data.installStats && Array.isArray(response.data.installStats)) {
+        // Response has installStats property (actual API structure)
+        appStoreInstallStatsArray = response.data.installStats;
+      } else if (response.data.appStoreInstallStats && Array.isArray(response.data.appStoreInstallStats)) {
+        // Fallback: Response has appStoreInstallStats property
+        appStoreInstallStatsArray = response.data.appStoreInstallStats;
+      } else {
+        // Fallback: try to extract data from response.data
+        console.warn('Unexpected response structure for app store install stats:', response.data);
+        appStoreInstallStatsArray = [];
+      }
+      
+      // Filter out metadata object if present (metadata is not part of the data array)
+      const dataArray = appStoreInstallStatsArray.filter(item => item && item.date && typeof item.signupPercentage === 'number');
+      
+      // Transform AppStoreInstallStatsResponse to AnalyticsData format
+      // Sort by date to ensure chronological order
+      const sortedAppStoreInstallStats = [...dataArray].sort((a, b) => {
+        // Parse dates - handle both "Jan 21, 2026" and "Jan 2026" formats
+        const parseDate = (dateStr: string): number => {
+          // Try parsing as "Jan 21, 2026" format first
+          const parsed = new Date(dateStr);
+          if (!isNaN(parsed.getTime())) {
+            return parsed.getTime();
+          }
+          // Try parsing as "Jan 2026" format
+          const parts = dateStr.split(' ');
+          if (parts.length === 2) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthIndex = monthNames.indexOf(parts[0]);
+            const year = parseInt(parts[1]);
+            if (monthIndex !== -1 && !isNaN(year)) {
+              return new Date(year, monthIndex, 1).getTime();
+            }
+          }
+          return 0;
+        };
+        return parseDate(a.date) - parseDate(b.date);
+      });
+
+      return {
+        userGrowth: [], // Will be loaded separately
+        activeUsers: [], // Will be loaded separately
+        conversions: [], // Not used for app store install stats
+        appStoreInstallStats: sortedAppStoreInstallStats,
+        performance: {
+          averageResponseTime: 0,
+          uptime: 0,
+          errorRate: 0,
+          throughput: 0,
+        },
+      };
+    } else {
+      // Fallback to mock data
+      let calculatedStartDate: Date;
+      let calculatedEndDate: Date = new Date();
+      
+      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+        const minYear = Math.min(...chartConfig.selectedYears);
+        calculatedStartDate = new Date(minYear, 0, 1);
+        const maxYear = Math.max(...chartConfig.selectedYears);
+        calculatedEndDate = new Date(maxYear, 11, 31);
+      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+        calculatedStartDate = chartConfig.dateRange.from;
+        calculatedEndDate = chartConfig.dateRange.to;
+      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+      } else {
+        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+      }
+      
+      return generateMockAnalyticsData(
+        calculatedStartDate, 
+        calculatedEndDate, 
+        chartConfig.timeRange,
+        chartConfig.selectedYears
+      );
+    }
+  } catch (error) {
+    console.error('Error loading app store install stats:', error);
+    // Fallback to mock data on error
+    let calculatedStartDate: Date;
+    let calculatedEndDate: Date = new Date();
+    
+    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
+      const minYear = Math.min(...chartConfig.selectedYears);
+      calculatedStartDate = new Date(minYear, 0, 1);
+      const maxYear = Math.max(...chartConfig.selectedYears);
+      calculatedEndDate = new Date(maxYear, 11, 31);
+    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
+      calculatedStartDate = chartConfig.dateRange.from;
+      calculatedEndDate = chartConfig.dateRange.to;
+    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
+      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
+      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
+    } else {
+      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+    }
+    
+    return generateMockAnalyticsData(
+      calculatedStartDate, 
+      calculatedEndDate, 
+      chartConfig.timeRange,
+      chartConfig.selectedYears
+    );
+  }
+};
+
 const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
   try {
     let calculatedStartDate: Date | undefined;
@@ -835,7 +988,7 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
 
 export function useChartData(
   chartConfig: ChartConfig, 
-  apiType: 'userGrowth' | 'activeUsers' | 'conversions' | 'revenue' | 'conversationAnalytics' | 'default' = 'default'
+  apiType: 'userGrowth' | 'activeUsers' | 'conversions' | 'revenue' | 'conversationAnalytics' | 'appStoreInstallStats' | 'default' = 'default'
 ) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -864,6 +1017,8 @@ export function useChartData(
       loadData = loadRevenueData;
     } else if (apiType === 'conversationAnalytics') {
       loadData = loadConversationAnalyticsData;
+    } else if (apiType === 'appStoreInstallStats') {
+      loadData = loadAppStoreInstallStatsData;
     } else {
       loadData = loadChartData;
     }
