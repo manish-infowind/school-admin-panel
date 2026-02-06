@@ -326,13 +326,15 @@ export default function Dashboard() {
     if (revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1) {
       const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
 
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
       revenueAnalytics.forEach(item => {
-        // Parse ISO date string
+        // Parse ISO date string through UTC function 
         const parsed = new Date(item.date);
         if (isNaN(parsed.getTime())) return;
 
-        const monthShort = parsed.toLocaleString('default', { month: 'short' });
-        const yearNum = parsed.getFullYear();
+        const monthShort = months[parsed.getUTCMonth()];
+        const yearNum = parsed.getUTCFullYear();
 
         if (!revenueChart.selectedYears || !revenueChart.selectedYears.includes(yearNum)) {
           return;
@@ -353,7 +355,7 @@ export default function Dashboard() {
       });
 
       // Convert map to array and sort by month order
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      // const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return Array.from(monthDataMap.values()).sort((a, b) => {
         const aName = typeof a.name === 'string' ? a.name : '';
         const bName = typeof b.name === 'string' ? b.name : '';
@@ -411,14 +413,15 @@ export default function Dashboard() {
     // Handle multi-year monthly comparison
     if (conversationChart.timeRange === 'monthly' && conversationChart.selectedYears && conversationChart.selectedYears.length > 1) {
       const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
       conversationAnalytics.forEach(item => {
-        // Parse ISO date string
+        // Parse ISO date string through UTC function 
         const parsed = new Date(item.date);
         if (isNaN(parsed.getTime())) return;
 
-        const monthShort = parsed.toLocaleString('default', { month: 'short' });
-        const yearNum = parsed.getFullYear();
+        const monthShort = months[parsed.getUTCMonth()];
+        const yearNum = parsed.getUTCFullYear();
 
         if (!conversationChart.selectedYears || !conversationChart.selectedYears.includes(yearNum)) {
           return;
@@ -438,7 +441,7 @@ export default function Dashboard() {
       });
 
       // Convert map to array and sort by month order
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
       return Array.from(monthDataMap.values()).sort((a, b) => {
         const aName = typeof a.name === 'string' ? a.name : '';
         const bName = typeof b.name === 'string' ? b.name : '';
