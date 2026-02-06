@@ -101,6 +101,7 @@ export const API_CONFIG = {
       CONVERSIONS: '/dashboard/analytics/conversions',
       REVENUE: '/dashboard/analytics/revenue',
       CONVERSATION_ANALYTICS: '/dashboard/analytics/conversation-analytics',
+      APP_STORE_INSTALL_STATS: '/dashboard/analytics/app-store-install-stats',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

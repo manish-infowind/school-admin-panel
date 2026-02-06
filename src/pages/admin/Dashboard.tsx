@@ -51,6 +51,7 @@ export default function Dashboard() {
   });
   const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
   const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
+  const [appStoreInstallStatsChart, setAppStoreInstallStatsChart] = useState<ChartConfig>(createChartConfig());
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
   const { data: statsSummary, isLoading: statsLoading } = useDashboardStatsSummary();
@@ -65,6 +66,8 @@ export default function Dashboard() {
   const { data: revenueData, loading: revenueLoading } = useChartData(revenueChart, 'revenue');
   // Use the new dedicated Conversation Analytics API for conversation analytics chart
   const { data: conversationData, loading: conversationLoading } = useChartData(conversationChart, 'conversationAnalytics');
+  // Use the new dedicated App Store Install Stats API for install to signup ratio chart
+  const { data: appStoreInstallStatsData, loading: appStoreInstallStatsLoading } = useChartData(appStoreInstallStatsChart, 'appStoreInstallStats');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -490,6 +493,100 @@ export default function Dashboard() {
     });
   }, [conversationData, conversationChart.timeRange, conversationChart.selectedYears]);
 
+  const appStoreInstallStatsChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
+    if (!appStoreInstallStatsData || !appStoreInstallStatsData.appStoreInstallStats) return [];
+
+    const appStoreInstallStats = appStoreInstallStatsData.appStoreInstallStats;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Handle multi-year monthly comparison
+    if (appStoreInstallStatsChart.timeRange === 'monthly' && appStoreInstallStatsChart.selectedYears && appStoreInstallStatsChart.selectedYears.length > 1) {
+      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
+
+      appStoreInstallStats.forEach(item => {
+        // Parse date string - handle both "Jan 21, 2026" and "Jan 2026" formats
+        const parts = item.date.split(' ');
+        if (parts.length === 2) {
+          // Monthly format: "Jan 2026"
+          const month = parts[0];
+          const year = parseInt(parts[1]);
+
+          if (isNaN(year) || !appStoreInstallStatsChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          monthData[`${year} - Signup Percentage`] = item.signupPercentage;
+        } else if (parts.length === 3) {
+          // Daily format: "Jan 21, 2026" - extract month and year
+          const month = parts[0];
+          const year = parseInt(parts[2]);
+
+          if (isNaN(year) || !appStoreInstallStatsChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          // For daily data in monthly view, we might want to aggregate or use the latest value
+          // For now, we'll use the latest value for that month
+          const existingValue = monthData[`${year} - Signup Percentage`] as number | undefined;
+          if (existingValue === undefined || item.signupPercentage > existingValue) {
+            monthData[`${year} - Signup Percentage`] = item.signupPercentage;
+          }
+        }
+      });
+
+      // Convert map to array and sort by month order
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      });
+    }
+
+    // Standard format for single year or other time ranges
+    return appStoreInstallStats.map(item => {
+      // Use the date as-is from API (already formatted as "Jan 21, 2026" or "Jan 2026")
+      // For daily/weekly/custom, the date should already be in the correct format
+      let dateLabel = item.date;
+
+      // If we need to format it differently for display, parse and reformat
+      if (appStoreInstallStatsChart.timeRange === 'daily' || appStoreInstallStatsChart.timeRange === 'custom') {
+        // Try to parse and ensure consistent format
+        const parsed = new Date(item.date);
+        if (!isNaN(parsed.getTime())) {
+          dateLabel = parsed.toLocaleDateString('default', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+          });
+        }
+      } else if (appStoreInstallStatsChart.timeRange === 'weekly') {
+        const parsed = new Date(item.date);
+        if (!isNaN(parsed.getTime())) {
+          const weekStart = new Date(parsed);
+          weekStart.setDate(parsed.getDate() - parsed.getDay());
+          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
+          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
+        }
+      }
+      // For monthly, use the date as-is (should be "Jan 2026" format)
+
+      return {
+        name: dateLabel,
+        'Signup Percentage': item.signupPercentage,
+      };
+    });
+  }, [appStoreInstallStatsData, appStoreInstallStatsChart.timeRange, appStoreInstallStatsChart.selectedYears]);
+
   if (statsLoading) {
     return (
       <PageLoader pagename="dashboard" />
@@ -639,6 +736,24 @@ export default function Dashboard() {
           delay={0.6}
           originalData={conversationData}
           loading={conversationLoading}
+        />
+
+        {/* Install to Signup Ratio Chart */}
+        <ChartCard
+          title="Install to Signup Ratio"
+          icon={TrendingUp}
+          iconColor="text-brand-green"
+          config={appStoreInstallStatsChart}
+          onConfigChange={setAppStoreInstallStatsChart}
+          data={appStoreInstallStatsChartData}
+          dataKeys={
+            appStoreInstallStatsChart.timeRange === 'monthly' && appStoreInstallStatsChart.selectedYears && appStoreInstallStatsChart.selectedYears.length > 1
+              ? appStoreInstallStatsChart.selectedYears.map(year => `${year.toString()} - Signup Percentage`)
+              : ['Signup Percentage']
+          }
+          delay={0.7}
+          originalData={appStoreInstallStatsData}
+          loading={appStoreInstallStatsLoading}
         />
       </div>
     </div>

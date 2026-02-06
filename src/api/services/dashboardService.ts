@@ -201,6 +201,34 @@ export interface ConversationAnalyticsResponse {
   metadata: ConversationAnalyticsMetadata;
 }
 
+// App store install stats data point
+export interface AppStoreInstallStatsData {
+  date: string; // Format: "Jan 21, 2026" for daily, "Jan 2026" for monthly
+  iosInstalls?: number;
+  iosSignups?: number;
+  androidInstalls?: number;
+  androidSignups?: number;
+  totalInstalls?: number;
+  totalSignups?: number;
+  signupPercentage: number; // The field we need to extract
+}
+
+// Metadata object for app store install stats
+export interface AppStoreInstallStatsMetadata {
+  totalRecords: number;
+  startDate: string; // ISO 8601
+  endDate: string; // ISO 8601
+  timeRange: string;
+  selectedYears?: number[];
+}
+
+// Complete API response for app store install stats
+// The API returns: {installStats: Array, metadata: {}}
+export interface AppStoreInstallStatsResponse {
+  installStats: AppStoreInstallStatsData[];
+  metadata?: AppStoreInstallStatsMetadata;
+}
+
 export interface PerformanceMetrics {
   averageResponseTime: number;
   uptime: number;
@@ -215,6 +243,7 @@ export interface AnalyticsData {
   performance: PerformanceMetrics;
   revenueAnalytics?: RevenueAnalyticsData[];
   conversationAnalytics?: ConversationAnalyticsData[];
+  appStoreInstallStats?: AppStoreInstallStatsData[];
 }
 
 export interface DashboardData {
@@ -594,6 +623,57 @@ export class DashboardService {
 
       // Use extended timeout for sync API (2 minutes)
       const response = await apiClient.get<UserGrowthSyncResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get app store install stats analytics data
+  static async getAppStoreInstallStats(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<AppStoreInstallStatsResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.APP_STORE_INSTALL_STATS}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<AppStoreInstallStatsResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       
