@@ -36,6 +36,31 @@ const createChartConfig = (): ChartConfig => {
   };
 };
 
+// Helper function to format dates using UTC to avoid timezone shifts
+const formatDateUTC = (date: Date, format: 'daily' | 'weekly' | 'monthly'): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  if (format === 'daily') {
+    const day = date.getUTCDate().toString().padStart(2, '0');
+    const month = months[date.getUTCMonth()];
+    const year = date.getUTCFullYear();
+    return `${month} ${day}, ${year}`;
+  } else if (format === 'weekly') {
+    const month = months[date.getUTCMonth()];
+    const year = date.getUTCFullYear();
+    // Calculate week number: get the day of the month and divide by 7, rounding up
+    // Week 1 is days 1-7, Week 2 is days 8-14, etc.
+    const dayOfMonth = date.getUTCDate();
+    const weekNum = Math.ceil(dayOfMonth / 7);
+    return `Week ${weekNum} (${month} ${year})`;
+  } else {
+    // Monthly format
+    const month = months[date.getUTCMonth()];
+    const year = date.getUTCFullYear();
+    return `${month} ${year}`;
+  }
+};
+
 export default function Dashboard() {
   const { toast } = useToast();
 
@@ -368,25 +393,19 @@ export default function Dashboard() {
 
     // Standard format for single year or other time ranges
     return revenueAnalytics.map(item => {
-      // Format date for display
+      // Format date for display using UTC to avoid timezone shifts
       const parsed = new Date(item.date);
       let dateLabel = '';
       if (!isNaN(parsed.getTime())) {
         if (revenueChart.timeRange === 'daily' || revenueChart.timeRange === 'custom') {
-          // For daily and custom ranges, show full date like "Jan 01, 2026"
-          dateLabel = parsed.toLocaleDateString('default', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          });
+          // For daily and custom ranges, use UTC formatting to avoid timezone shifts
+          dateLabel = formatDateUTC(parsed, 'daily');
         } else if (revenueChart.timeRange === 'weekly') {
-          const weekStart = new Date(parsed);
-          weekStart.setDate(parsed.getDate() - parsed.getDay());
-          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
-          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
+          // For weekly, use UTC formatting
+          dateLabel = formatDateUTC(parsed, 'weekly');
         } else {
-          // Monthly format: "Jan 2024"
-          dateLabel = parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+          // Monthly format: "Jan 2024" - use UTC formatting
+          dateLabel = formatDateUTC(parsed, 'monthly');
         }
       } else {
         dateLabel = item.date;
@@ -454,25 +473,19 @@ export default function Dashboard() {
 
     // Standard format for single year or other time ranges
     return conversationAnalytics.map(item => {
-      // Format date for display
+      // Format date for display using UTC to avoid timezone shifts
       const parsed = new Date(item.date);
       let dateLabel = '';
       if (!isNaN(parsed.getTime())) {
         if (conversationChart.timeRange === 'daily' || conversationChart.timeRange === 'custom') {
-          // For daily and custom ranges, show full date like "Jan 01, 2026"
-          dateLabel = parsed.toLocaleDateString('default', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          });
+          // For daily and custom ranges, use UTC formatting to avoid timezone shifts
+          dateLabel = formatDateUTC(parsed, 'daily');
         } else if (conversationChart.timeRange === 'weekly') {
-          const weekStart = new Date(parsed);
-          weekStart.setDate(parsed.getDate() - parsed.getDay());
-          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
-          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
+          // For weekly, use UTC formatting
+          dateLabel = formatDateUTC(parsed, 'weekly');
         } else {
-          // Monthly format: "Jan 2024"
-          dateLabel = parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+          // Monthly format: "Jan 2024" - use UTC formatting
+          dateLabel = formatDateUTC(parsed, 'monthly');
         }
       } else {
         dateLabel = item.date;
@@ -560,22 +573,23 @@ export default function Dashboard() {
 
       // If we need to format it differently for display, parse and reformat
       if (appStoreInstallStatsChart.timeRange === 'daily' || appStoreInstallStatsChart.timeRange === 'custom') {
-        // Try to parse and ensure consistent format
+        // Try to parse and ensure consistent format using UTC to avoid timezone shifts
         const parsed = new Date(item.date);
         if (!isNaN(parsed.getTime())) {
-          dateLabel = parsed.toLocaleDateString('default', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          });
+          dateLabel = formatDateUTC(parsed, 'daily');
         }
       } else if (appStoreInstallStatsChart.timeRange === 'weekly') {
-        const parsed = new Date(item.date);
-        if (!isNaN(parsed.getTime())) {
-          const weekStart = new Date(parsed);
-          weekStart.setDate(parsed.getDate() - parsed.getDay());
-          const weekNum = Math.ceil((parsed.getDate() + new Date(parsed.getFullYear(), parsed.getMonth(), 0).getDate() - weekStart.getDate()) / 7);
-          dateLabel = `Week ${weekNum} (${parsed.toLocaleDateString('default', { month: 'short', year: 'numeric' })})`;
+        // Check if the date is already in "Week X (Month YYYY)" format from API
+        const weekPattern = /^Week \d+ \([A-Za-z]{3} \d{4}\)$/;
+        if (weekPattern.test(item.date)) {
+          // Use the date as-is if it's already in the correct format
+          dateLabel = item.date;
+        } else {
+          // Try to parse as a date and format it using UTC
+          const parsed = new Date(item.date);
+          if (!isNaN(parsed.getTime())) {
+            dateLabel = formatDateUTC(parsed, 'weekly');
+          }
         }
       }
       // For monthly, use the date as-is (should be "Jan 2026" format)
