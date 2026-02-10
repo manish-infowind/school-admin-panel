@@ -105,6 +105,7 @@ export const API_CONFIG = {
       REVENUE: '/dashboard/analytics/revenue',
       CONVERSATION_ANALYTICS: '/dashboard/analytics/conversation-analytics',
       APP_STORE_INSTALL_STATS: '/dashboard/analytics/app-store-install-stats',
+      SAFETY_METRICS: '/dashboard/analytics/safety-metrics',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

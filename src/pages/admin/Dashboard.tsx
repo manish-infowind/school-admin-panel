@@ -4,6 +4,7 @@ import {
   TrendingUp,
   DollarSign,
   MessageSquare,
+  Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
   const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
   const [appStoreInstallStatsChart, setAppStoreInstallStatsChart] = useState<ChartConfig>(createChartConfig());
+  const [safetyChart, setSafetyChart] = useState<ChartConfig>(createChartConfig());
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
   const { data: statsSummary, isLoading: statsLoading } = useDashboardStatsSummary();
@@ -93,6 +95,8 @@ export default function Dashboard() {
   const { data: conversationData, loading: conversationLoading } = useChartData(conversationChart, 'conversationAnalytics');
   // Use the new dedicated App Store Install Stats API for install to signup ratio chart
   const { data: appStoreInstallStatsData, loading: appStoreInstallStatsLoading } = useChartData(appStoreInstallStatsChart, 'appStoreInstallStats');
+  // Use the new dedicated Safety Metrics API for safety metrics chart
+  const { data: safetyMetricsData, loading: safetyMetricsLoading } = useChartData(safetyChart, 'safetyMetrics');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -601,6 +605,80 @@ export default function Dashboard() {
     });
   }, [appStoreInstallStatsData, appStoreInstallStatsChart.timeRange, appStoreInstallStatsChart.selectedYears]);
 
+  const safetyMetricsChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
+    if (!safetyMetricsData || !safetyMetricsData.safetyMetrics) return [];
+
+    const safetyMetrics = safetyMetricsData.safetyMetrics;
+
+    // Handle multi-year monthly comparison
+    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
+      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
+
+      safetyMetrics.forEach(item => {
+        // Parse date string - handle both "Jan 01, 2024" and "Jan 2024" formats
+        const parts = item.date.split(' ');
+        if (parts.length === 2) {
+          // Monthly format: "Jan 2024"
+          const month = parts[0];
+          const year = parseInt(parts[1]);
+
+          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          monthData[`${year} - Report Rate (%)`] = item.reportRate;
+          monthData[`${year} - Ban Rate (%)`] = item.banRate;
+          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
+        } else if (parts.length === 3) {
+          // Daily format: "Jan 01, 2024" - extract month and year
+          const month = parts[0];
+          const year = parseInt(parts[2]);
+
+          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          // For daily data in monthly view, aggregate or use the latest value
+          const existingReportRate = monthData[`${year} - Report Rate (%)`] as number | undefined;
+          const existingBanRate = monthData[`${year} - Ban Rate (%)`] as number | undefined;
+          const existingBacklog = monthData[`${year} - Moderation Backlog`] as number | undefined;
+          
+          // Use the latest value for that month (or could aggregate - using latest for now)
+          monthData[`${year} - Report Rate (%)`] = item.reportRate;
+          monthData[`${year} - Ban Rate (%)`] = item.banRate;
+          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
+        }
+      });
+
+      // Convert map to array and sort by month order
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      });
+    }
+
+    // Standard format for single year or other time ranges
+    // Use the backend-provided date string directly (already formatted and UTC-based)
+    return safetyMetrics.map(item => ({
+      name: item.date,
+      'Report Rate (%)': item.reportRate,
+      'Ban Rate (%)': item.banRate,
+      'Moderation Backlog': item.moderationBacklog,
+    }));
+  }, [safetyMetricsData, safetyChart.timeRange, safetyChart.selectedYears]);
+
   if (statsLoading) {
     return (
       <PageLoader pagename="dashboard" />
@@ -768,6 +846,28 @@ export default function Dashboard() {
           delay={0.7}
           originalData={appStoreInstallStatsData}
           loading={appStoreInstallStatsLoading}
+        />
+
+        {/* Safety Metrics Chart */}
+        <ChartCard
+          title="Safety Metrics"
+          icon={Shield}
+          iconColor="text-red-500"
+          config={safetyChart}
+          onConfigChange={setSafetyChart}
+          data={safetyMetricsChartData}
+          dataKeys={
+            safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1
+              ? safetyChart.selectedYears.flatMap(year => [
+                  `${year.toString()} - Report Rate (%)`,
+                  `${year.toString()} - Ban Rate (%)`,
+                  `${year.toString()} - Moderation Backlog`
+                ])
+              : ['Report Rate (%)', 'Ban Rate (%)', 'Moderation Backlog']
+          }
+          delay={0.8}
+          originalData={safetyMetricsData}
+          loading={safetyMetricsLoading}
         />
       </div>
     </div>
