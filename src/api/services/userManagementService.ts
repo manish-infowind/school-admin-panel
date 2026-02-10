@@ -78,5 +78,45 @@ export class UserManagementService {
       throw error;
     }
   }
+
+  /**
+   * Ban user
+   */
+  static async banUser(id: number, data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string }): Promise<ApiResponse<null>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.USERS.BAN.replace(':id', String(id));
+      const response = await apiClient.put<null>(url, data);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get user moderation actions (including bans)
+   */
+  static async getUserModerationActions(id: number): Promise<ApiResponse<any>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.USERS.MODERATION_ACTIONS.replace(':id', String(id));
+      const response = await apiClient.get<any>(url);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Unban user
+   */
+  static async unbanUser(id: number): Promise<ApiResponse<null>> {
+    try {
+      const url = API_CONFIG.ENDPOINTS.USERS.UNBAN.replace(':id', String(id));
+      // Currently the unban endpoint does not require a request body
+      const response = await apiClient.put<null>(url);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 

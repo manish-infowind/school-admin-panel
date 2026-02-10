@@ -52,6 +52,9 @@ export const API_CONFIG = {
       DELETE: '/users/:id',
       PAUSE: '/users/:id/pause',
       DETAILS: '/users/:id',
+      BAN: '/users/:id/ban',
+      MODERATION_ACTIONS: '/users/:id/moderation-actions',
+      UNBAN: '/users/:id/unban',
     },
     ADMIN_PROFILE: {
       PROFILE: '/admin-profile',
