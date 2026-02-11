@@ -232,9 +232,11 @@ export interface AppStoreInstallStatsResponse {
 // Safety metrics data point
 export interface SafetyMetricsData {
   date: string; // Formatted based on timeRange (e.g., "Jan 01, 2024")
-  reportRate: number; // per 1000 active users
+  reportRate: number | string; // per 1000 active users or "no sufficient data"
   moderationBacklog: number; // direct count
-  banRate: number; // per 1000 active users
+  banRate: number | string; // per 1000 active users or "no sufficient data"
+  totalReports?: number; // total number of reports (when available)
+  totalBannedAccounts?: number; // total number of banned accounts (when available)
 }
 
 // Metadata object for safety metrics

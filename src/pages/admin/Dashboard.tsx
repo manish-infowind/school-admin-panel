@@ -609,6 +609,20 @@ export default function Dashboard() {
     if (!safetyMetricsData || !safetyMetricsData.safetyMetrics) return [];
 
     const safetyMetrics = safetyMetricsData.safetyMetrics;
+    
+    // Helper function to check if an item should use totals
+    const shouldUseTotals = (item: typeof safetyMetrics[0]) => {
+      return item.totalReports !== undefined && 
+             item.totalBannedAccounts !== undefined &&
+             typeof item.totalReports === 'number' &&
+             typeof item.totalBannedAccounts === 'number';
+    };
+    
+    // Helper function to check if reportRate/banRate are valid numbers (not "no sufficient data")
+    const hasValidRates = (item: typeof safetyMetrics[0]) => {
+      return (typeof item.reportRate === 'number' && !isNaN(item.reportRate)) &&
+             (typeof item.banRate === 'number' && !isNaN(item.banRate));
+    };
 
     // Handle multi-year monthly comparison
     if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
@@ -631,8 +645,14 @@ export default function Dashboard() {
           }
 
           const monthData = monthDataMap.get(month)!;
-          monthData[`${year} - Report Rate (%)`] = item.reportRate;
-          monthData[`${year} - Ban Rate (%)`] = item.banRate;
+          // Use totals if available, otherwise use rates if they are valid numbers
+          if (shouldUseTotals(item)) {
+            monthData[`${year} - Total Reports`] = item.totalReports!;
+            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
+          } else if (hasValidRates(item)) {
+            monthData[`${year} - Report Rate`] = item.reportRate as number;
+            monthData[`${year} - Ban Rate`] = item.banRate as number;
+          }
           monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
         } else if (parts.length === 3) {
           // Daily format: "Jan 01, 2024" - extract month and year
@@ -649,13 +669,14 @@ export default function Dashboard() {
 
           const monthData = monthDataMap.get(month)!;
           // For daily data in monthly view, aggregate or use the latest value
-          const existingReportRate = monthData[`${year} - Report Rate (%)`] as number | undefined;
-          const existingBanRate = monthData[`${year} - Ban Rate (%)`] as number | undefined;
-          const existingBacklog = monthData[`${year} - Moderation Backlog`] as number | undefined;
-          
-          // Use the latest value for that month (or could aggregate - using latest for now)
-          monthData[`${year} - Report Rate (%)`] = item.reportRate;
-          monthData[`${year} - Ban Rate (%)`] = item.banRate;
+          // Use totals if available, otherwise use rates if they are valid numbers
+          if (shouldUseTotals(item)) {
+            monthData[`${year} - Total Reports`] = item.totalReports!;
+            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
+          } else if (hasValidRates(item)) {
+            monthData[`${year} - Report Rate`] = item.reportRate as number;
+            monthData[`${year} - Ban Rate`] = item.banRate as number;
+          }
           monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
         }
       });
@@ -671,13 +692,40 @@ export default function Dashboard() {
 
     // Standard format for single year or other time ranges
     // Use the backend-provided date string directly (already formatted and UTC-based)
-    return safetyMetrics.map(item => ({
-      name: item.date,
-      'Report Rate (%)': item.reportRate,
-      'Ban Rate (%)': item.banRate,
-      'Moderation Backlog': item.moderationBacklog,
-    }));
+    return safetyMetrics.map(item => {
+      const baseData: { name: string; [key: string]: string | number } = {
+        name: item.date,
+        'Moderation Backlog': item.moderationBacklog,
+      };
+      
+      // Use totals if available, otherwise use rates if they are valid numbers
+      if (shouldUseTotals(item)) {
+        baseData['Total Reports'] = item.totalReports!;
+        baseData['Total Banned Accounts'] = item.totalBannedAccounts!;
+      } else if (hasValidRates(item)) {
+        baseData['Report Rate'] = item.reportRate as number;
+        baseData['Ban Rate'] = item.banRate as number;
+      }
+      
+      return baseData;
+    });
   }, [safetyMetricsData, safetyChart.timeRange, safetyChart.selectedYears]);
+
+  // Memoize the dataKeys for Safety Metrics chart
+  // Include all possible keys since different dates might have different data structures
+  const safetyMetricsDataKeys = useMemo(() => {
+    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
+      return safetyChart.selectedYears.flatMap(year => [
+        `${year.toString()} - Total Reports`,
+        `${year.toString()} - Total Banned Accounts`,
+        `${year.toString()} - Report Rate`,
+        `${year.toString()} - Ban Rate`,
+        `${year.toString()} - Moderation Backlog`
+      ]);
+    }
+    // Include all possible keys - the chart will only show bars for keys that have data
+    return ['Total Reports', 'Total Banned Accounts', 'Report Rate', 'Ban Rate', 'Moderation Backlog'];
+  }, [safetyChart.timeRange, safetyChart.selectedYears]);
 
   if (statsLoading) {
     return (
@@ -856,15 +904,7 @@ export default function Dashboard() {
           config={safetyChart}
           onConfigChange={setSafetyChart}
           data={safetyMetricsChartData}
-          dataKeys={
-            safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1
-              ? safetyChart.selectedYears.flatMap(year => [
-                  `${year.toString()} - Report Rate (%)`,
-                  `${year.toString()} - Ban Rate (%)`,
-                  `${year.toString()} - Moderation Backlog`
-                ])
-              : ['Report Rate (%)', 'Ban Rate (%)', 'Moderation Backlog']
-          }
+          dataKeys={safetyMetricsDataKeys}
           delay={0.8}
           originalData={safetyMetricsData}
           loading={safetyMetricsLoading}
