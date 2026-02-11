@@ -885,6 +885,8 @@ export interface UserListItem {
   isPhoneVerified: boolean;
   isFaceVerified: boolean;
   isAccountPaused: boolean;
+  // Indicates whether the user is currently banned
+  isBanned?: boolean;
   accountCurrentStatus: number;
   accountStatusName?: string; // Optional - may not be in API response
   accountStatusDescription?: string; // Optional - may not be in API response

@@ -229,6 +229,31 @@ export interface AppStoreInstallStatsResponse {
   metadata?: AppStoreInstallStatsMetadata;
 }
 
+// Safety metrics data point
+export interface SafetyMetricsData {
+  date: string; // Formatted based on timeRange (e.g., "Jan 01, 2024")
+  reportRate: number | string; // per 1000 active users or "no sufficient data"
+  moderationBacklog: number; // direct count
+  banRate: number | string; // per 1000 active users or "no sufficient data"
+  totalReports?: number; // total number of reports (when available)
+  totalBannedAccounts?: number; // total number of banned accounts (when available)
+}
+
+// Metadata object for safety metrics
+export interface SafetyMetricsMetadata {
+  totalRecords: number;
+  startDate: string; // ISO 8601
+  endDate: string; // ISO 8601
+  timeRange: string;
+  selectedYears?: number[];
+}
+
+// Complete API response for safety metrics
+export interface SafetyMetricsResponse {
+  safetyMetrics: SafetyMetricsData[];
+  metadata: SafetyMetricsMetadata;
+}
+
 export interface PerformanceMetrics {
   averageResponseTime: number;
   uptime: number;
@@ -244,6 +269,7 @@ export interface AnalyticsData {
   revenueAnalytics?: RevenueAnalyticsData[];
   conversationAnalytics?: ConversationAnalyticsData[];
   appStoreInstallStats?: AppStoreInstallStatsData[];
+  safetyMetrics?: SafetyMetricsData[];
 }
 
 export interface DashboardData {
@@ -674,6 +700,57 @@ export class DashboardService {
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.APP_STORE_INSTALL_STATS}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<AppStoreInstallStatsResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get safety metrics analytics data
+  static async getSafetyMetrics(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<SafetyMetricsResponse>> {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      // Add conditional parameters based on timeRange
+      if (timeRange === 'daily' || timeRange === 'weekly') {
+        if (options.month !== undefined) {
+          params.append('month', options.month.toString());
+        }
+        if (options.year !== undefined) {
+          params.append('year', options.year.toString());
+        }
+      } else if (timeRange === 'monthly') {
+        if (options.years && options.years.length > 0) {
+          options.years.forEach(year => {
+            params.append('years', year.toString());
+          });
+        }
+      } else if (timeRange === 'custom') {
+        if (options.startDate) {
+          params.append('startDate', options.startDate.toISOString());
+        }
+        if (options.endDate) {
+          params.append('endDate', options.endDate.toISOString());
+        }
+      }
+
+      const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.SAFETY_METRICS}?${params.toString()}`;
+      // Use extended timeout for analytics API (2 minutes)
+      const response = await apiClient.get<SafetyMetricsResponse>(url, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       

@@ -123,6 +123,55 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
+  // Ban user mutation
+  const banUserMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string } }) =>
+      UserManagementService.banUser(id, data),
+    onSuccess: (response) => {
+      if (response.success) {
+        toast({
+          title: "User Banned",
+          description: "User has been banned successfully.",
+          variant: "destructive",
+        });
+        // Invalidate and refetch users list
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to ban user. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Unban user mutation
+  const unbanUserMutation = useMutation({
+    mutationFn: (id: number) => UserManagementService.unbanUser(id),
+    onSuccess: (response) => {
+      if (response.success) {
+        toast({
+          title: "User Unbanned",
+          description: "User has been unbanned successfully.",
+        });
+        // Invalidate and refetch users list
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to unban user. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Fetch user moderation actions (on-demand)
+  const getUserModerationActions = (id: number) => UserManagementService.getUserModerationActions(id);
+
   return {
     users,
     pagination,
@@ -136,6 +185,11 @@ export const useUserManagement = (params?: UserListParams) => {
     isTogglingPause: togglePauseMutation.isPending,
     deleteUser: deleteUserMutation.mutate,
     isDeleting: deleteUserMutation.isPending,
+    banUser: banUserMutation.mutate,
+    isBanning: banUserMutation.isPending,
+    unbanUser: unbanUserMutation.mutate,
+    isUnbanning: unbanUserMutation.isPending,
+    getUserModerationActions,
   };
 };
 

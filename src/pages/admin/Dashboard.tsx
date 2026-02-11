@@ -4,6 +4,7 @@ import {
   TrendingUp,
   DollarSign,
   MessageSquare,
+  Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
   const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
   const [appStoreInstallStatsChart, setAppStoreInstallStatsChart] = useState<ChartConfig>(createChartConfig());
+  const [safetyChart, setSafetyChart] = useState<ChartConfig>(createChartConfig());
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
   const { data: statsSummary, isLoading: statsLoading } = useDashboardStatsSummary();
@@ -93,6 +95,8 @@ export default function Dashboard() {
   const { data: conversationData, loading: conversationLoading } = useChartData(conversationChart, 'conversationAnalytics');
   // Use the new dedicated App Store Install Stats API for install to signup ratio chart
   const { data: appStoreInstallStatsData, loading: appStoreInstallStatsLoading } = useChartData(appStoreInstallStatsChart, 'appStoreInstallStats');
+  // Use the new dedicated Safety Metrics API for safety metrics chart
+  const { data: safetyMetricsData, loading: safetyMetricsLoading } = useChartData(safetyChart, 'safetyMetrics');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -601,6 +605,128 @@ export default function Dashboard() {
     });
   }, [appStoreInstallStatsData, appStoreInstallStatsChart.timeRange, appStoreInstallStatsChart.selectedYears]);
 
+  const safetyMetricsChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
+    if (!safetyMetricsData || !safetyMetricsData.safetyMetrics) return [];
+
+    const safetyMetrics = safetyMetricsData.safetyMetrics;
+    
+    // Helper function to check if an item should use totals
+    const shouldUseTotals = (item: typeof safetyMetrics[0]) => {
+      return item.totalReports !== undefined && 
+             item.totalBannedAccounts !== undefined &&
+             typeof item.totalReports === 'number' &&
+             typeof item.totalBannedAccounts === 'number';
+    };
+    
+    // Helper function to check if reportRate/banRate are valid numbers (not "no sufficient data")
+    const hasValidRates = (item: typeof safetyMetrics[0]) => {
+      return (typeof item.reportRate === 'number' && !isNaN(item.reportRate)) &&
+             (typeof item.banRate === 'number' && !isNaN(item.banRate));
+    };
+
+    // Handle multi-year monthly comparison
+    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
+      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
+
+      safetyMetrics.forEach(item => {
+        // Parse date string - handle both "Jan 01, 2024" and "Jan 2024" formats
+        const parts = item.date.split(' ');
+        if (parts.length === 2) {
+          // Monthly format: "Jan 2024"
+          const month = parts[0];
+          const year = parseInt(parts[1]);
+
+          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          // Use totals if available, otherwise use rates if they are valid numbers
+          if (shouldUseTotals(item)) {
+            monthData[`${year} - Total Reports`] = item.totalReports!;
+            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
+          } else if (hasValidRates(item)) {
+            monthData[`${year} - Report Rate`] = item.reportRate as number;
+            monthData[`${year} - Ban Rate`] = item.banRate as number;
+          }
+          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
+        } else if (parts.length === 3) {
+          // Daily format: "Jan 01, 2024" - extract month and year
+          const month = parts[0];
+          const year = parseInt(parts[2]);
+
+          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
+            return;
+          }
+
+          if (!monthDataMap.has(month)) {
+            monthDataMap.set(month, { name: month });
+          }
+
+          const monthData = monthDataMap.get(month)!;
+          // For daily data in monthly view, aggregate or use the latest value
+          // Use totals if available, otherwise use rates if they are valid numbers
+          if (shouldUseTotals(item)) {
+            monthData[`${year} - Total Reports`] = item.totalReports!;
+            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
+          } else if (hasValidRates(item)) {
+            monthData[`${year} - Report Rate`] = item.reportRate as number;
+            monthData[`${year} - Ban Rate`] = item.banRate as number;
+          }
+          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
+        }
+      });
+
+      // Convert map to array and sort by month order
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return Array.from(monthDataMap.values()).sort((a, b) => {
+        const aName = typeof a.name === 'string' ? a.name : '';
+        const bName = typeof b.name === 'string' ? b.name : '';
+        return months.indexOf(aName) - months.indexOf(bName);
+      });
+    }
+
+    // Standard format for single year or other time ranges
+    // Use the backend-provided date string directly (already formatted and UTC-based)
+    return safetyMetrics.map(item => {
+      const baseData: { name: string; [key: string]: string | number } = {
+        name: item.date,
+        'Moderation Backlog': item.moderationBacklog,
+      };
+      
+      // Use totals if available, otherwise use rates if they are valid numbers
+      if (shouldUseTotals(item)) {
+        baseData['Total Reports'] = item.totalReports!;
+        baseData['Total Banned Accounts'] = item.totalBannedAccounts!;
+      } else if (hasValidRates(item)) {
+        baseData['Report Rate'] = item.reportRate as number;
+        baseData['Ban Rate'] = item.banRate as number;
+      }
+      
+      return baseData;
+    });
+  }, [safetyMetricsData, safetyChart.timeRange, safetyChart.selectedYears]);
+
+  // Memoize the dataKeys for Safety Metrics chart
+  // Include all possible keys since different dates might have different data structures
+  const safetyMetricsDataKeys = useMemo(() => {
+    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
+      return safetyChart.selectedYears.flatMap(year => [
+        `${year.toString()} - Total Reports`,
+        `${year.toString()} - Total Banned Accounts`,
+        `${year.toString()} - Report Rate`,
+        `${year.toString()} - Ban Rate`,
+        `${year.toString()} - Moderation Backlog`
+      ]);
+    }
+    // Include all possible keys - the chart will only show bars for keys that have data
+    return ['Total Reports', 'Total Banned Accounts', 'Report Rate', 'Ban Rate', 'Moderation Backlog'];
+  }, [safetyChart.timeRange, safetyChart.selectedYears]);
+
   if (statsLoading) {
     return (
       <PageLoader pagename="dashboard" />
@@ -768,6 +894,20 @@ export default function Dashboard() {
           delay={0.7}
           originalData={appStoreInstallStatsData}
           loading={appStoreInstallStatsLoading}
+        />
+
+        {/* Safety Metrics Chart */}
+        <ChartCard
+          title="Safety Metrics"
+          icon={Shield}
+          iconColor="text-red-500"
+          config={safetyChart}
+          onConfigChange={setSafetyChart}
+          data={safetyMetricsChartData}
+          dataKeys={safetyMetricsDataKeys}
+          delay={0.8}
+          originalData={safetyMetricsData}
+          loading={safetyMetricsLoading}
         />
       </div>
     </div>

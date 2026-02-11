@@ -23,6 +23,22 @@ interface ChartRendererProps {
 export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMultiYearMonthly = false, selectedYears, originalData, conversionType }: ChartRendererProps) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
+  // Helper function to check if we should format Y-axis ticks as percentages
+  const shouldFormatAsPercentage = (keys: string[]) => {
+    return keys.some(key => 
+      (key.includes('Report Rate') && !key.includes('Total Reports')) ||
+      (key.includes('Ban Rate') && !key.includes('Total Banned Accounts'))
+    );
+  };
+  
+  // Y-axis tick formatter for percentage metrics
+  const formatYAxisTick = (value: number) => {
+    if (shouldFormatAsPercentage(dataKeys)) {
+      return `${value}%`;
+    }
+    return value.toString();
+  };
+  
   // Custom tooltip formatter to add dollar signs to revenue metrics and percentage to rate metrics
   const formatTooltipValue = (value: number, dataKey: string | undefined, name: string | undefined) => {
     if (value === undefined || value === null || isNaN(value)) {
@@ -37,17 +53,19 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
     )) {
       return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-    // Check if this is a rate metric that should have percentage symbol
+    // Check if this is a rate metric that should have percentage symbol (but not Total Reports or Total Banned Accounts)
     if (keyToCheck && (
       keyToCheck.includes('Churn Rate') || 
       keyToCheck.includes('Free to Paid Rate') ||
       keyToCheck.includes('Conversation Initiation Rate') ||
       keyToCheck.includes('Ghosting Rate') ||
-      keyToCheck.includes('Swipe to Match Rate')
+      keyToCheck.includes('Swipe to Match Rate') ||
+      (keyToCheck.includes('Report Rate') && !keyToCheck.includes('Total Reports')) ||
+      (keyToCheck.includes('Ban Rate') && !keyToCheck.includes('Total Banned Accounts'))
     )) {
       return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
     }
-    // Default formatting for other metrics
+    // Default formatting for other metrics (including Total Reports and Total Banned Accounts)
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
@@ -121,12 +139,14 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
               yAxisId="left"
               stroke={CHART_COLORS[0]}
               label={{ value: dataKeys[0], angle: -90, position: 'insideLeft' }}
+              tickFormatter={formatYAxisTick}
             />
             <YAxis 
               yAxisId="right"
               orientation="right"
               stroke={CHART_COLORS[1]}
               label={{ value: dataKeys[1], angle: 90, position: 'insideRight' }}
+              tickFormatter={formatYAxisTick}
             />
             <Tooltip 
               content={<CustomTooltip />}
@@ -210,12 +230,14 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
               yAxisId="left"
               stroke={CHART_COLORS[0]}
               label={{ value: dataKeys[0], angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+              tickFormatter={formatYAxisTick}
             />
             <YAxis 
               yAxisId="right"
               orientation="right"
               stroke={CHART_COLORS[1]}
               label={{ value: dataKeys[1], angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
+              tickFormatter={formatYAxisTick}
             />
             <Tooltip 
               content={<CustomTooltip />}
@@ -262,7 +284,10 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
             tick={{ fontSize: 11 }}
             stroke="#6b7280"
           />
-          <YAxis stroke="#6b7280" />
+          <YAxis 
+            stroke="#6b7280"
+            tickFormatter={formatYAxisTick}
+          />
           <Tooltip 
             content={<CustomTooltip />}
             contentStyle={{ 
