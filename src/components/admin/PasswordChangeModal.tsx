@@ -17,7 +17,6 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/features/authSlice";
 import { useProfile } from "@/api/hooks/useProfile";
-import { PasswordService } from "@/api/services/passwordService";
 import { LogoutApi } from "@/api/services/authApis/logoutApi";
 
 // Password validation functions

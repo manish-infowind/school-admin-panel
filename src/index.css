@@ -11,36 +11,36 @@
   :root {
     /* Background & Foreground - Light Mode */
     --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 0 0% 10%; /* #1A1A1A */
+    --foreground: 222 47% 11%; /* #0F172A */
 
     --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 10%; /* #1A1A1A */
+    --card-foreground: 222 47% 11%; /* #0F172A */
 
     --popover: 0 0% 100%; /* #FFFFFF */
-    --popover-foreground: 0 0% 10%; /* #1A1A1A */
+    --popover-foreground: 222 47% 11%; /* #0F172A */
 
-    /* Primary - Purple Brand Color */
-    --primary: 268 95% 60%; /* #A33AF8 */
+    /* Primary - Green Brand Color */
+    --primary: 142 71% 45%; /* #22C55E */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Secondary - Super Like Blue */
-    --secondary: 195 92% 61%; /* #3FBDF8 */
+    /* Secondary - Teal */
+    --secondary: 160 84% 39%; /* #10B981 */
     --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Muted */
-    --muted: 0 0% 96%; /* #F5F5F5 */
-    --muted-foreground: 0 0% 40%; /* #666666 */
+    --muted: 210 40% 96%; /* #F1F5F9 */
+    --muted-foreground: 215 16% 47%; /* #64748B */
 
-    /* Accent - Purple */
-    --accent: 268 95% 60%; /* #A33AF8 */
+    /* Accent - Green */
+    --accent: 142 71% 45%; /* #22C55E */
     --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Destructive - Error Red */
-    --destructive: 3 78% 55%; /* #E53935 */
+    --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Success - Green */
-    --success: 122 39% 49%; /* #43A047 */
+    --success: 142 71% 45%; /* #22C55E */
     --success-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Boost - Orange */
@@ -48,67 +48,67 @@
     --boost-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Border & Input */
-    --border: 0 0% 88%; /* #E0E0E0 */
-    --input: 0 0% 88%; /* #E0E0E0 */
-    --ring: 268 95% 60%; /* #A33AF8 */
+    --border: 214 32% 91%; /* #E2E8F0 */
+    --input: 214 32% 91%; /* #E2E8F0 */
+    --ring: 142 71% 45%; /* #22C55E */
 
     --radius: 0.75rem;
 
     /* Sidebar - Light Mode */
     --sidebar-background: 0 0% 100%; /* #FFFFFF */
-    --sidebar-foreground: 0 0% 10%; /* #1A1A1A */
-    --sidebar-primary: 268 95% 60%; /* #A33AF8 */
+    --sidebar-foreground: 222 47% 11%; /* #0F172A */
+    --sidebar-primary: 142 71% 45%; /* #22C55E */
     --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --sidebar-accent: 268 95% 96%; /* Light purple tint */
-    --sidebar-accent-foreground: 268 95% 20%; /* Dark purple */
-    --sidebar-border: 0 0% 88%; /* #E0E0E0 */
-    --sidebar-ring: 268 95% 60%; /* #A33AF8 */
+    --sidebar-accent: 142 71% 95%; /* Light green tint */
+    --sidebar-accent-foreground: 142 60% 20%; /* Dark green */
+    --sidebar-border: 214 32% 91%; /* #E2E8F0 */
+    --sidebar-ring: 142 71% 45%; /* #22C55E */
 
-    /* Brand colors - Purple Theme */
-    --brand-green: 268 95% 60%; /* #A33AF8 - Main Purple */
-    --brand-teal: 195 92% 61%; /* #3FBDF8 - Super Like Blue */
-    --brand-blue: 268 95% 60%; /* #A33AF8 - Purple (keeping for compatibility) */
+    /* Brand colors - Green Theme */
+    --brand-green: 142 71% 45%; /* #22C55E */
+    --brand-teal: 160 84% 39%; /* #10B981 */
+    --brand-blue: 199 89% 48%; /* #0EA5E9 */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(268 95% 60%),
-      hsl(195 92% 61%),
-      hsl(268 95% 75%)
+      hsl(142 71% 45%),
+      hsl(160 84% 39%),
+      hsl(199 89% 48%)
     );
   }
 
   .dark {
     /* Background & Foreground - Dark Mode */
-    --background: 0 0% 7%; /* #121212 */
-    --foreground: 0 0% 96%; /* #F4F4F4 */
+    --background: 152 30% 6%; /* near-black green tint */
+    --foreground: 210 40% 98%; /* #F8FAFC */
 
-    --card: 0 0% 7%; /* #121212 */
-    --card-foreground: 0 0% 96%; /* #F4F4F4 */
+    --card: 152 30% 8%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 7%; /* #121212 */
-    --popover-foreground: 0 0% 96%; /* #F4F4F4 */
+    --popover: 152 30% 8%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Primary - Purple Brand Color */
-    --primary: 268 95% 60%; /* #A33AF8 */
+    /* Primary - Green Brand Color */
+    --primary: 142 72% 55%; /* #34D399 */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Secondary - Super Like Blue */
-    --secondary: 195 92% 61%; /* #3FBDF8 */
+    /* Secondary - Teal */
+    --secondary: 160 84% 39%; /* #10B981 */
     --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Muted */
-    --muted: 0 0% 15%; /* #252525 */
-    --muted-foreground: 0 0% 70%; /* #B3B3B3 */
+    --muted: 152 20% 12%;
+    --muted-foreground: 215 20% 65%; /* #94A3B8 */
 
-    /* Accent - Purple */
-    --accent: 268 95% 60%; /* #A33AF8 */
+    /* Accent - Green */
+    --accent: 142 72% 55%; /* #34D399 */
     --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Destructive - Error Red */
-    --destructive: 3 78% 55%; /* #E53935 */
+    --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Success - Green */
-    --success: 122 39% 49%; /* #43A047 */
+    --success: 142 72% 55%; /* #34D399 */
     --success-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Boost - Yellow (dark mode) */
@@ -116,29 +116,29 @@
     --boost-foreground: 0 0% 10%; /* #1A1A1A */
 
     /* Border & Input */
-    --border: 0 0% 18%; /* #2D2D2D */
-    --input: 0 0% 18%; /* #2D2D2D */
-    --ring: 268 95% 60%; /* #A33AF8 */
+    --border: 152 20% 18%;
+    --input: 152 20% 18%;
+    --ring: 142 72% 55%; /* #34D399 */
 
     /* Sidebar - Dark Mode */
-    --sidebar-background: 0 0% 12%; /* #1E1E1E */
-    --sidebar-foreground: 0 0% 96%; /* #F4F4F4 */
-    --sidebar-primary: 268 95% 60%; /* #A33AF8 */
+    --sidebar-background: 152 30% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 142 72% 55%; /* #34D399 */
     --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --sidebar-accent: 0 0% 15%; /* #252525 */
-    --sidebar-accent-foreground: 0 0% 96%; /* #F4F4F4 */
-    --sidebar-border: 0 0% 18%; /* #2D2D2D */
-    --sidebar-ring: 268 95% 60%; /* #A33AF8 */
+    --sidebar-accent: 152 25% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 152 20% 18%;
+    --sidebar-ring: 142 72% 55%;
 
-    /* Brand colors - Purple Theme (Dark Mode) */
-    --brand-green: 268 95% 60%; /* #A33AF8 - Main Purple */
-    --brand-teal: 195 92% 61%; /* #3FBDF8 - Super Like Blue */
-    --brand-blue: 268 95% 60%; /* #A33AF8 - Purple (keeping for compatibility) */
+    /* Brand colors - Green Theme (Dark Mode) */
+    --brand-green: 142 72% 55%; /* #34D399 */
+    --brand-teal: 160 84% 39%; /* #10B981 */
+    --brand-blue: 199 89% 48%; /* #0EA5E9 */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(268 95% 60%),
-      hsl(195 92% 61%),
-      hsl(268 95% 75%)
+      hsl(142 72% 55%),
+      hsl(160 84% 39%),
+      hsl(199 89% 48%)
     );
   }
 }
@@ -156,17 +156,17 @@
 @layer utilities {
   /* Solid button with very subtle gradient - appears mostly solid */
   .btn-solid-gradient {
-    background: hsl(268 95% 60%);
-    background-image: linear-gradient(135deg, hsl(268 95% 60%) 0%, hsl(268 95% 60.5%) 100%);
+    background: hsl(var(--primary));
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.98) 100%);
   }
   
   .btn-solid-gradient:hover {
-    background: hsl(268 95% 58%);
-    background-image: linear-gradient(135deg, hsl(268 95% 58%) 0%, hsl(268 95% 58.5%) 100%);
+    background: hsl(var(--primary) / 0.92);
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.92) 0%, hsl(var(--primary) / 0.9) 100%);
   }
   
   /* Solid icon background with subtle gradient */
   .icon-solid-gradient {
-    background: linear-gradient(135deg, hsl(268 95% 60% / 0.2) 0%, hsl(268 95% 60% / 0.18) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.18) 0%, hsl(var(--primary) / 0.14) 100%);
   }
 }

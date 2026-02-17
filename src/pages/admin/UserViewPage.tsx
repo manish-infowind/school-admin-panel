@@ -65,8 +65,9 @@ const getStatusBadgeVariant = (status: number, isPaused: boolean, isDeleted: boo
 const UserViewPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const userId = id ? parseInt(id, 10) : 0;
+    const userId = id || '';
 
+    // Always fetch full user details from details API
     const { data: userResponse, isLoading, error } = useUserManagement().useUserDetails(userId);
 
     const backToUserHandler = () => {
@@ -80,7 +81,7 @@ const UserViewPage = () => {
         return (
             <PageLoader pagename="user" />
         );
-    };
+    }
 
     if (error || !user) {
         return (
@@ -90,7 +91,7 @@ const UserViewPage = () => {
                 onRetry={backToUserHandler}
             />
         );
-    };
+    }
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -126,7 +127,7 @@ const UserViewPage = () => {
                         {user.profilePic ? (
                             <img
                                 src={user.profilePic}
-                                alt={`${user.firstName} ${user.lastName}`}
+                                alt={user.email || user.id}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -135,36 +136,35 @@ const UserViewPage = () => {
                     </div>
                     <div className="flex-1">
                         <h3 className="text-2xl font-semibold">
-                            {user.firstName || 'N/A'} {user.lastName || ''}
+                            {user.email || user.id || 'N/A'}
                         </h3>
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-2">
                             <Mail className="h-4 w-4" />
                             {user.email || 'No email'}
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Smartphone className="h-4 w-4" />
-                            {user.countryCode} {user.phone}
+                            <MapPin className="h-4 w-4" />
+                            {user.cityName || 'N/A'}
+                            {user.stateName && `, ${user.stateName}`}
+                            {user.countryName && `, ${user.countryName}`}
                         </p>
                     </div>
                     <div className="flex flex-col gap-2">
                         <Badge
-                            variant={getStatusBadgeVariant(
-                                user.accountCurrentStatus,
-                                user.isAccountPaused,
-                                user.isDeleted
-                            )}
+                            variant={user.isDeleted ? 'destructive' : 'default'}
                             className="text-sm"
                         >
-                            {user.accountStatusName || getAccountStatusInfo(user.accountCurrentStatus).name}
+                            {user.stage?.label || user.stageLabel || 'N/A'}
                         </Badge>
-                        <Badge variant={user.isAccountPaused ? 'destructive' : 'default'}>
-                            {user.isAccountPaused ? 'Paused' : 'Active'}
+                        <Badge variant={user.isOnboardingCompleted ? 'default' : 'secondary'}>
+                            {user.isOnboardingCompleted ? 'Onboarding Complete' : 'Onboarding Pending'}
                         </Badge>
-                        {user.isPausedByUser && (
-                            <Badge variant="outline" className="text-xs">
-                                Paused by User
-                            </Badge>
-                        )}
+                        <Badge variant={user.isEmailVerified ? 'default' : 'secondary'}>
+                            {user.isEmailVerified ? 'Email Verified' : 'Email Not Verified'}
+                        </Badge>
+                        <Badge variant={user.isPaused ? 'destructive' : 'default'}>
+                            {user.isPaused ? 'Paused' : 'Active'}
+                        </Badge>
                     </div>
                 </div>
 
@@ -176,27 +176,12 @@ const UserViewPage = () => {
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <p className="text-sm text-muted-foreground">UUID</p>
-                            <p className="font-medium break-all">{user.uuid}</p>
+                            <p className="text-sm text-muted-foreground">User ID</p>
+                            <p className="font-medium break-all">{user.id}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Gender</p>
-                            <p className="font-medium">{formatGender(user.gender)}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Date of Birth
-                            </p>
-                            <p className="font-medium">
-                                {user.dob ? new Date(user.dob).toLocaleDateString() : 'N/A'}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Account Status</p>
-                            <p className="font-medium">
-                                {user.accountStatusDescription || getAccountStatusInfo(user.accountCurrentStatus).description}
-                            </p>
+                            <p className="text-sm text-muted-foreground">Email</p>
+                            <p className="font-medium">{user.email || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Email Verified</p>
@@ -205,16 +190,34 @@ const UserViewPage = () => {
                             </Badge>
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Phone Verified</p>
-                            <Badge variant={user.isPhoneVerified ? 'default' : 'secondary'}>
-                                {user.isPhoneVerified ? 'Yes' : 'No'}
+                            <p className="text-sm text-muted-foreground">Email Verified At</p>
+                            <p className="font-medium">
+                                {user.emailVerifiedAt ? new Date(user.emailVerifiedAt).toLocaleString() : 'N/A'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Onboarding Completed</p>
+                            <Badge variant={user.isOnboardingCompleted ? 'default' : 'secondary'}>
+                                {user.isOnboardingCompleted ? 'Yes' : 'No'}
                             </Badge>
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Face Verified</p>
-                            <Badge variant={user.isFaceVerified ? 'default' : 'secondary'}>
-                                {user.isFaceVerified ? 'Yes' : 'No'}
-                            </Badge>
+                            <p className="text-sm text-muted-foreground">Onboarding Completed At</p>
+                            <p className="font-medium">
+                                {user.onboardingCompletedAt ? new Date(user.onboardingCompletedAt).toLocaleString() : 'N/A'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Terms Accepted At</p>
+                            <p className="font-medium">
+                                {user.termsAcceptedAt ? new Date(user.termsAcceptedAt).toLocaleString() : 'N/A'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Last Login At</p>
+                            <p className="font-medium">
+                                {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
+                            </p>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Created At</p>
@@ -229,23 +232,119 @@ const UserViewPage = () => {
                             </p>
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground">Paused By User</p>
-                            <Badge variant={user.isPausedByUser ? 'destructive' : 'secondary'}>
-                                {user.isPausedByUser ? 'Yes' : 'No'}
-                            </Badge>
-                        </div>
-                        <div>
                             <p className="text-sm text-muted-foreground">Deleted</p>
                             <Badge variant={user.isDeleted ? 'destructive' : 'secondary'}>
                                 {user.isDeleted ? 'Yes' : 'No'}
                             </Badge>
+                        </div>
+                        {user.deletedAt && (
+                            <div>
+                                <p className="text-sm text-muted-foreground">Deleted At</p>
+                                <p className="font-medium">
+                                    {new Date(user.deletedAt).toLocaleString()}
+                                </p>
+                            </div>
+                        )}
+                        <div>
+                            <p className="text-sm text-muted-foreground">Paused</p>
+                            <Badge variant={user.isPaused ? 'destructive' : 'secondary'}>
+                                {user.isPaused ? 'Yes' : 'No'}
+                            </Badge>
+                        </div>
+                        {user.pausedAt && (
+                            <div>
+                                <p className="text-sm text-muted-foreground">Paused At</p>
+                                <p className="font-medium">
+                                    {new Date(user.pausedAt).toLocaleString()}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Business Information */}
+                <div className="space-y-4 p-6 border rounded-lg">
+                    <h4 className="font-semibold text-lg flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Business Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Stage</p>
+                            <p className="font-medium">{user.stage?.label || user.stageLabel || 'N/A'}</p>
+                            {user.stage?.code && (
+                                <p className="text-xs text-muted-foreground mt-1">Code: {user.stage.code}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Funding Range</p>
+                            <p className="font-medium">{user.fundingRange?.label || 'N/A'}</p>
+                            {user.fundingRange?.code && (
+                                <p className="text-xs text-muted-foreground mt-1">Code: {user.fundingRange.code}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Team Size</p>
+                            <p className="font-medium">{user.teamSize?.label || 'N/A'}</p>
+                            {user.teamSize?.code && (
+                                <p className="text-xs text-muted-foreground mt-1">Code: {user.teamSize.code}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Revenue Status</p>
+                            <p className="font-medium">{user.revenueStatus?.label || 'N/A'}</p>
+                            {user.revenueStatus?.code && (
+                                <p className="text-xs text-muted-foreground mt-1">Code: {user.revenueStatus.code}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Incorporation Status</p>
+                            <p className="font-medium">{user.incorporationStatus?.label || 'N/A'}</p>
+                            {user.incorporationStatus?.code && (
+                                <p className="text-xs text-muted-foreground mt-1">Code: {user.incorporationStatus.code}</p>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 <Separator />
 
-                {/* Profile, Address and Profile Image section  */}
+                {/* Location Information */}
+                <div className="space-y-4 p-6 border rounded-lg">
+                    <h4 className="font-semibold text-lg flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        Location Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Country Code</p>
+                            <p className="font-medium">{user.countryCode || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Country Name</p>
+                            <p className="font-medium">{user.countryName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">State Code</p>
+                            <p className="font-medium">{user.stateCode || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">State Name</p>
+                            <p className="font-medium">{user.stateName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">City Name</p>
+                            <p className="font-medium">{user.cityName || 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Legacy Profile, Address and Profile Image section (if available) */}
+                {(user.profile || user.address || (user.profileImages && user.profileImages.length > 0)) && (
                 <div className="flex flex-col md:grid grid-cols-3 gap-4">
                     <div className="space-y-4 col-span-2">
                         {/* Profile Information */}
@@ -384,8 +483,9 @@ const UserViewPage = () => {
                         )}
                     </div>
                 </div>
+                )}
 
-                <Separator />
+                {(user.profile || user.address || (user.profileImages && user.profileImages.length > 0)) && <Separator />}
 
                 {/* Interactions */}
                 {user.interactions && (

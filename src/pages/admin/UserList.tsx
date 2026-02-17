@@ -14,6 +14,7 @@ import {
     Pause,
     Play,
     Ban,
+    MapPin,
 } from "lucide-react";
 import {
     Table,
@@ -47,14 +48,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
-import { genderList, statusList, tableConfig } from "@/api/mockData";
+import { genderList, stageList, tableConfig } from "@/api/mockData";
 import PageLoader from "@/components/common/PageLoader";
 import RetryPage from "@/components/common/RetryPage";
 import { UserBanSchema, UserBanRequest } from "@/validations/userBan";
 import { format } from "date-fns";
 
-// Helper function to format gender
-const formatGender = (gender: 'm' | 'f' | 'o'): string => {
+// Helper function to format gender (kept for backward compatibility)
+const formatGender = (gender: 'm' | 'f' | 'o' | undefined): string => {
+    if (!gender) return 'N/A';
     const genderMap = {
         'm': 'Male',
         'f': 'Female',
@@ -63,12 +65,12 @@ const formatGender = (gender: 'm' | 'f' | 'o'): string => {
     return genderMap[gender] || gender;
 };
 
-// Helper function to get status badge variant
-const getStatusBadgeVariant = (status: number, isPaused: boolean, isDeleted: boolean) => {
+// Helper function to get status badge variant (kept for backward compatibility)
+const getStatusBadgeVariant = (status: number | undefined, isPaused: boolean | undefined, isDeleted: boolean) => {
     if (isDeleted) return 'destructive';
     if (isPaused) return 'secondary';
     if (status === 5) return 'default';
-    if (status >= 3) return 'secondary';
+    if (status && status >= 3) return 'secondary';
     return 'outline';
 };
 
@@ -90,7 +92,7 @@ const UsersList = () => {
 
     // Filters and search
     const [searchText, setSearchText] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("");
+    const [stageFilter, setStageFilter] = useState<string>("");
     const [genderFilter, setGenderFilter] = useState<'m' | 'f' | 'o' | "">("");
 
     // Pagination States
@@ -123,19 +125,21 @@ const UsersList = () => {
     // Sorting
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: '', direction: 'asc' });
 
-    // Build query params
+    // Build query params - request only required fields for list
     const queryParams = useMemo(() => {
         const params: any = {
             page: currentPage,
             limit: pageSize,
+            // Request only required fields for list view
+            fields: "id,email,countryCode,countryName,stateCode,stateName,cityName,stage,isEmailVerified,isOnboardingCompleted,createdAt,updatedAt"
         };
 
         if (searchText.trim()) {
             params.search = searchText.trim();
         }
 
-        if (statusFilter) {
-            params.status = statusFilter;
+        if (stageFilter && stageFilter !== "all") {
+            params.stage = stageFilter; // Can be stageId (number) or stageCode (string)
         }
 
         if (genderFilter) {
@@ -143,7 +147,7 @@ const UsersList = () => {
         }
 
         return params;
-    }, [currentPage, pageSize, searchText, statusFilter, genderFilter]);
+    }, [currentPage, pageSize, searchText, stageFilter, genderFilter]);
 
     // Use the user management hook
     const {
@@ -166,16 +170,16 @@ const UsersList = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchText, statusFilter, genderFilter, pageSize]);
+    }, [searchText, stageFilter, genderFilter, pageSize]);
 
     // Handle search with debounce
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchText(e.target.value);
     }, []);
 
-    // Handle status filter change
-    const handleStatusFilterChange = useCallback((value: string) => {
-        setStatusFilter(value);
+    // Handle stage filter change
+    const handleStageFilterChange = useCallback((value: string) => {
+        setStageFilter(value);
     }, []);
 
     // Handle gender filter change
@@ -183,7 +187,7 @@ const UsersList = () => {
         setGenderFilter(value as 'm' | 'f' | 'o' | "");
     }, []);
 
-    // Handle view user - navigate to view page
+    // Handle view user - navigate to view page (details API will fetch full data)
     const handleViewUser = useCallback((user: UserListItem) => {
         navigate(`/admin/users/${user.id}`);
     }, [navigate]);
@@ -222,8 +226,8 @@ const UsersList = () => {
         togglePause(user.id, {
             onSuccess: () => {
                 toast({
-                    title: user.isAccountPaused ? "User Unpaused" : "User Paused",
-                    description: `${user.firstName} ${user.lastName} has been ${user.isAccountPaused ? 'unpaused' : 'paused'}.`,
+                    title: user.isPaused ? "User Unpaused" : "User Paused",
+                    description: `${user.email || user.id} has been ${user.isPaused ? 'unpaused' : 'paused'}.`,
                 });
             },
         });
@@ -484,7 +488,6 @@ const UsersList = () => {
     return (
         <div className="space-y-6">
             <PageHeader
-                page="systemuser"
                 heading="System Users"
                 subHeading="Manage and view all system users"
             />
@@ -500,12 +503,12 @@ const UsersList = () => {
                         onChange={handleSearchChange}
                     />
                 </div>
-                <Select value={statusFilter || "all"} onValueChange={(value) => handleStatusFilterChange(value === "all" ? "" : value)}>
+                <Select value={stageFilter || "all"} onValueChange={(value) => handleStageFilterChange(value === "all" ? "" : value)}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="All Statuses" />
+                        <SelectValue placeholder="All Stages" />
                     </SelectTrigger>
                     <SelectContent>
-                        {statusList?.map(list => (
+                        {stageList?.map(list => (
                             <SelectItem key={list?.value} value={list?.value}>{list?.name}</SelectItem>
                         ))}
                     </SelectContent>
@@ -558,46 +561,33 @@ const UsersList = () => {
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
                                                 <User className="h-4 w-4 text-muted-foreground" />
-                                                {user.firstName} {user.lastName}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={getStatusBadgeVariant(
-                                                    user.accountCurrentStatus,
-                                                    user.isAccountPaused,
-                                                    user.isDeleted
-                                                )}
-                                                className="min-w-[100px] text-center"
-                                            >
-                                                {user.accountStatusName}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <Smartphone className="h-4 w-4 text-muted-foreground" />
-                                                {user.countryCode} {user.phone}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4 text-muted-foreground" />
                                                 {user.email || 'N/A'}
                                             </div>
                                         </TableCell>
                                         <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                {user.accountStatusDescription || user.accountStatusName}
-                                            </div>
+                                            {user.cityName || 'N/A'}
                                         </TableCell>
                                         <TableCell className="font-medium">
-                                            {formatGender(user.gender)}
+                                            {user.stateName || 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {user.countryName || user.countryCode || 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {user.stage?.label || user.stageLabel || 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            {user.isEmailVerified ? (
+                                                <Badge variant="default">Verified</Badge>
+                                            ) : (
+                                                <Badge variant="secondary">Not Verified</Badge>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Badge
-                                                variant={user.isAccountPaused ? 'destructive' : 'default'}
+                                                variant={user.isOnboardingCompleted ? 'default' : 'secondary'}
                                             >
-                                                {user.isAccountPaused ? 'Paused' : 'Active'}
+                                                {user.isOnboardingCompleted ? 'Completed' : 'Pending'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
@@ -610,7 +600,7 @@ const UsersList = () => {
                                                     className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-amber-600"
                                                     onClick={() => handleEditUser(user)}
                                                 />
-                                                {user.isAccountPaused ? (
+                                                {user.isPaused ? (
                                                     <div title="Unpause User">
                                                         <Play
                                                             className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-green-600"
@@ -660,7 +650,7 @@ const UsersList = () => {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={tableConfig?.length} className="text-center py-12 text-muted-foreground">
-                                        {searchText || statusFilter || genderFilter
+                                        {searchText || stageFilter || genderFilter
                                             ? "No users match your filters."
                                             : "No users found."}
                                     </TableCell>
@@ -694,7 +684,7 @@ const UsersList = () => {
                 onConfirm={handleDeleteUser}
                 title="Delete User"
                 message="Are you sure you want to delete this user? This will permanently remove the user from the system."
-                itemName={deleteUser ? `${deleteUser.firstName} ${deleteUser.lastName}` : ''}
+                itemName={deleteUser ? (deleteUser.email || deleteUser.id) : ''}
                 isLoading={isDeleting}
             />
 
@@ -711,7 +701,7 @@ const UsersList = () => {
                         </DialogTitle>
                         {selectedUser && (
                             <p className="text-sm text-muted-foreground">
-                                {selectedUser.isBanned ? 'User:' : 'Banning:'} {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email || selectedUser.phone})
+                                {selectedUser.isBanned ? 'User:' : 'Banning:'} {selectedUser.email || selectedUser.id}
                             </p>
                         )}
                     </DialogHeader>

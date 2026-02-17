@@ -599,6 +599,14 @@ export const statusList = [
   { name: "Completed", value: "completed" },
 ];
 
+// Stage list for business stages (based on actual API response)
+export const stageList = [
+  { name: "All Stages", value: "all" },
+  { name: "Idea / Concept", value: "idea" }, // stage.code: "idea"
+  { name: "MVP / Prototype", value: "mvp" }, // stage.code: "mvp"
+  { name: "Early Revenue", value: "early_revenue" }, // stage.code: "early_revenue"
+];
+
 export const genderList = [
   { name: "All Genders", value: "all" },
   { name: "Male", value: "m" },
@@ -608,13 +616,13 @@ export const genderList = [
 
 // Table Configuration
 export const tableConfig = [
-  { label: "Name", sortKey: "firstName" },
-  { label: "Status", sortKey: "accountCurrentStatus" },
-  { label: "Contact No.", sortKey: "phone" },
   { label: "Email", sortKey: "email" },
-  { label: "Account Status", sortKey: "accountStatusName" },
-  { label: "Gender", sortKey: "gender" },
-  { label: "Paused", sortKey: "isAccountPaused" },
+  { label: "City", sortKey: "cityName" },
+  { label: "State", sortKey: "stateName" },
+  { label: "Country", sortKey: "countryName" },
+  { label: "Stage", sortKey: "stage" },
+  { label: "Email Verified", sortKey: "isEmailVerified" },
+  { label: "Onboarding", sortKey: "isOnboardingCompleted" },
   { label: "Actions", sortKey: null },
 ];
 

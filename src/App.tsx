@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
@@ -10,24 +10,12 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { loginInfo, logout } from "@/redux/features/authSlice";
 import { AuthService } from "@/api/services/authService";
-import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/admin/Dashboard";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
-import AdminManagement from "./pages/admin/AdminManagement";
-import RolesManagement from "./pages/admin/RolesManagement";
-import PermissionsManagement from "./pages/admin/PermissionsManagement";
-// import Campaigns from "./pages/admin/Campaigns";
 import UsersList from "./pages/admin/UserList";
 import UserViewPage from "./pages/admin/UserViewPage";
 import UserEditPage from "./pages/admin/UserEditPage";
-import FaceVerifications from "./pages/admin/FaceVerifications";
-import PendingVerifications from "./pages/admin/PendingVerifications";
-import VerificationDetails from "./pages/admin/VerificationDetails";
-import FlaggedUsers from "./pages/admin/FlaggedUsers";
-import Report from "./pages/admin/Report";
-import ReportDetailsPage from "./pages/admin/ReportDetailsPage";
-import ActivityLogs from "./pages/admin/ActivityLogs";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +69,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/admin/profile"
             element={
@@ -97,47 +86,6 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <Settings />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/management/users"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <AdminManagement />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/management/roles"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <RolesManagement />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/management/permissions"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <PermissionsManagement />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          {/* Redirect old /admin/management to users */}
-          <Route
-            path="/admin/management"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <AdminManagement />
                 </AdminLayout>
               </ProtectedRoute>
             }
@@ -172,79 +120,9 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin/face-verifications"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <FaceVerifications />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/face-verifications/pending"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <PendingVerifications />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/face-verifications/:id"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <VerificationDetails />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/face-verifications/flagged"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <FlaggedUsers />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reports"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <Report />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reports/:id"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <ReportDetailsPage />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/activity-logs"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <ActivityLogs />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -869,30 +869,80 @@ export interface UserListInterface {
 };
 
 // User Management API Types
+export interface StageInfo {
+  code: string;
+  label: string;
+}
+
+export interface FundingRangeInfo {
+  code: string;
+  label: string;
+}
+
+export interface TeamSizeInfo {
+  code: string;
+  label: string;
+}
+
+export interface RevenueStatusInfo {
+  code: string;
+  label: string;
+}
+
+export interface IncorporationStatusInfo {
+  code: string;
+  label: string;
+}
+
 export interface UserListItem {
-  id: number;
-  uuid: string;
-  firstName: string;
-  lastName: string;
+  id: string; // UUID string from backend
   email: string | null;
-  phone: string;
   countryCode: string;
-  gender: 'm' | 'f' | 'o';
-  dob: string | null;
-  profilePic: string | null;
-  profileImages: string[];
+  countryName: string | null;
+  stateCode: string | null;
+  stateName: string | null;
+  cityName: string | null;
+  stage: StageInfo | null;
+  fundingRange: FundingRangeInfo | null;
+  teamSize: TeamSizeInfo | null;
+  revenueStatus: RevenueStatusInfo | null;
+  incorporationStatus: IncorporationStatusInfo | null;
   isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  isFaceVerified: boolean;
-  isAccountPaused: boolean;
-  // Indicates whether the user is currently banned
-  isBanned?: boolean;
-  accountCurrentStatus: number;
-  accountStatusName?: string; // Optional - may not be in API response
-  accountStatusDescription?: string; // Optional - may not be in API response
+  isOnboardingCompleted: boolean;
+  emailVerifiedAt: string | null;
+  termsAcceptedAt: string | null;
+  onboardingCompletedAt: string | null;
+  lastLoginAt: string | null;
   isDeleted: boolean;
+  deletedAt: string | null;
+  isPaused: boolean;
+  pausedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  // Legacy fields (may not be in new API response, kept for backward compatibility)
+  uuid?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  gender?: 'm' | 'f' | 'o';
+  dob?: string | null;
+  profilePic?: string | null;
+  profileImages?: string[];
+  isPhoneVerified?: boolean;
+  isFaceVerified?: boolean;
+  isAccountPaused?: boolean;
+  isBanned?: boolean;
+  accountCurrentStatus?: number;
+  accountStatusName?: string;
+  accountStatusDescription?: string;
+  // Legacy flat structure (for backward compatibility)
+  stageId?: number | null;
+  stageLabel?: string | null;
+  stageCode?: string | null;
+  fundingRangeId?: number | null;
+  teamSizeId?: number | null;
+  revenueStatusId?: number | null;
+  incorporationStatusId?: number | null;
 }
 
 export interface UserProfile {
@@ -957,18 +1007,35 @@ export interface UserDetails extends UserListItem {
 }
 
 export interface UpdateUserRequest {
+  // Business fields (using codes)
+  stageCode?: string;
+  fundingRangeCode?: string;
+  teamSizeCode?: string;
+  revenueStatusCode?: string;
+  incorporationStatusCode?: string;
+  // Location fields
+  countryCode?: string;
+  stateCode?: string;
+  cityName?: string;
+  // Verification fields
+  isEmailVerified?: boolean;
+  isOnboardingCompleted?: boolean;
+  // Legacy fields (for backward compatibility)
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
-  countryCode?: string;
   dob?: string;
   gender?: 'm' | 'f' | 'o';
-  isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
   isFaceVerified?: boolean;
   isAccountPaused?: boolean;
   accountCurrentStatus?: number;
+  stageId?: number;
+  fundingRangeId?: number;
+  teamSizeId?: number;
+  revenueStatusId?: number;
+  incorporationStatusId?: number;
 }
 
 export interface UserListResponse {
@@ -987,8 +1054,10 @@ export interface UserListParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: string;
+  stage?: string | number; // Filter by stage (stageId or stageCode)
   gender?: 'm' | 'f' | 'o';
+  status?: string; // Legacy support
+  fields?: string; // Comma-separated list of fields to return (e.g., "id,email,countryCode,countryName,stateCode,stateName,cityName,stage,isEmailVerified,isOnboardingCompleted,createdAt")
 }
 
 export interface DeleteUserRequest {

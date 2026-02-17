@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { UserManagementService } from '../services/userManagementService';
 import { UserListParams, UpdateUserRequest, UserListItem, UserDetails } from '../types';
-import { faceVerificationKeys } from './useFaceVerification';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -33,20 +32,21 @@ export const useUserManagement = (params?: UserListParams) => {
   const users: UserListItem[] = usersData?.data?.data || [];
   const pagination = usersData?.data?.pagination;
 
-  // Get user details
-  const useUserDetails = (id: number) => {
+  // Get user details (accepts UUID string or number)
+  // If id is empty string, query is disabled (used when we have user data from navigation state)
+  const useUserDetails = (id: string | number) => {
     return useQuery({
       queryKey: userKeys.detail(id),
       queryFn: () => UserManagementService.getUserById(id),
-      enabled: !!id,
+      enabled: !!id && id !== '', // Disable if id is empty string
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
     });
   };
 
-  // Update user mutation
+  // Update user mutation (accepts UUID string or number)
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUserRequest }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: UpdateUserRequest }) =>
       UserManagementService.updateUser(id, data),
     onSuccess: (response, variables) => {
       if (response.success) {
@@ -57,13 +57,6 @@ export const useUserManagement = (params?: UserListParams) => {
         // Invalidate and refetch users list and details
         queryClient.invalidateQueries({ queryKey: userKeys.lists() });
         queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
-        
-        // Invalidate face verification queries if isFaceVerified was updated
-        // This ensures the VerificationDetails page reflects the latest status
-        if (variables.data?.isFaceVerified !== undefined) {
-          queryClient.invalidateQueries({ queryKey: faceVerificationKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: faceVerificationKeys.all });
-        }
       }
     },
     onError: (error: any) => {
@@ -75,9 +68,9 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
-  // Toggle user pause mutation
+  // Toggle user pause mutation (accepts UUID string or number)
   const togglePauseMutation = useMutation({
-    mutationFn: (id: number) => UserManagementService.toggleUserPause(id),
+    mutationFn: (id: string | number) => UserManagementService.toggleUserPause(id),
     onSuccess: (response, id) => {
       if (response.success) {
         const isPaused = response.data?.isAccountPaused;
@@ -99,9 +92,9 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
-  // Delete user mutation
+  // Delete user mutation (accepts UUID string or number)
   const deleteUserMutation = useMutation({
-    mutationFn: ({ id, deletionReason }: { id: number; deletionReason?: string }) =>
+    mutationFn: ({ id, deletionReason }: { id: string | number; deletionReason?: string }) =>
       UserManagementService.deleteUser(id, deletionReason),
     onSuccess: (response) => {
       if (response.success) {
@@ -123,9 +116,9 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
-  // Ban user mutation
+  // Ban user mutation (accepts UUID string or number)
   const banUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string } }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string } }) =>
       UserManagementService.banUser(id, data),
     onSuccess: (response) => {
       if (response.success) {
@@ -147,9 +140,9 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
-  // Unban user mutation
+  // Unban user mutation (accepts UUID string or number)
   const unbanUserMutation = useMutation({
-    mutationFn: (id: number) => UserManagementService.unbanUser(id),
+    mutationFn: (id: string | number) => UserManagementService.unbanUser(id),
     onSuccess: (response) => {
       if (response.success) {
         toast({
@@ -169,8 +162,8 @@ export const useUserManagement = (params?: UserListParams) => {
     },
   });
 
-  // Fetch user moderation actions (on-demand)
-  const getUserModerationActions = (id: number) => UserManagementService.getUserModerationActions(id);
+  // Fetch user moderation actions (on-demand, accepts UUID string or number)
+  const getUserModerationActions = (id: string | number) => UserManagementService.getUserModerationActions(id);
 
   return {
     users,

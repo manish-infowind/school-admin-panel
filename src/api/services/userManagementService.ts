@@ -27,9 +27,9 @@ export class UserManagementService {
   }
 
   /**
-   * Get user details by ID
+   * Get user details by ID (accepts UUID string)
    */
-  static async getUserById(id: number): Promise<ApiResponse<UserDetails>> {
+  static async getUserById(id: string | number): Promise<ApiResponse<UserDetails>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.DETAILS.replace(':id', String(id));
       const response = await apiClient.get<UserDetails>(url);
@@ -40,9 +40,9 @@ export class UserManagementService {
   }
 
   /**
-   * Update user information
+   * Update user information (accepts UUID string)
    */
-  static async updateUser(id: number, data: UpdateUserRequest): Promise<ApiResponse<UserDetails>> {
+  static async updateUser(id: string | number, data: UpdateUserRequest): Promise<ApiResponse<UserDetails>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.UPDATE.replace(':id', String(id));
       const response = await apiClient.put<UserDetails>(url, data);
@@ -53,12 +53,12 @@ export class UserManagementService {
   }
 
   /**
-   * Toggle user pause status
+   * Toggle user pause status (accepts UUID string)
    */
-  static async toggleUserPause(id: number): Promise<ApiResponse<{ id: number; isAccountPaused: boolean; updatedAt: string }>> {
+  static async toggleUserPause(id: string | number): Promise<ApiResponse<{ id: string; isPaused: boolean; pausedAt: string | null; updatedAt: string }>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.PAUSE.replace(':id', String(id));
-      const response = await apiClient.put<{ id: number; isAccountPaused: boolean; updatedAt: string }>(url);
+      const response = await apiClient.put<{ id: string; isPaused: boolean; pausedAt: string | null; updatedAt: string }>(url);
       return response;
     } catch (error) {
       throw error;
@@ -66,9 +66,9 @@ export class UserManagementService {
   }
 
   /**
-   * Delete user (soft delete)
+   * Delete user (soft delete) (accepts UUID string)
    */
-  static async deleteUser(id: number, deletionReason?: string): Promise<ApiResponse<null>> {
+  static async deleteUser(id: string | number, deletionReason?: string): Promise<ApiResponse<null>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.DELETE.replace(':id', String(id));
       const requestData: DeleteUserRequest = deletionReason ? { deletionReason } : {};
@@ -80,9 +80,9 @@ export class UserManagementService {
   }
 
   /**
-   * Ban user
+   * Ban user (accepts UUID string)
    */
-  static async banUser(id: number, data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string }): Promise<ApiResponse<null>> {
+  static async banUser(id: string | number, data: { actionType: string; reasonCode: string; reason?: string; relatedReportId: number; expiresAt?: string }): Promise<ApiResponse<null>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.BAN.replace(':id', String(id));
       const response = await apiClient.put<null>(url, data);
@@ -93,9 +93,9 @@ export class UserManagementService {
   }
 
   /**
-   * Get user moderation actions (including bans)
+   * Get user moderation actions (including bans) (accepts UUID string)
    */
-  static async getUserModerationActions(id: number): Promise<ApiResponse<any>> {
+  static async getUserModerationActions(id: string | number): Promise<ApiResponse<any>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.MODERATION_ACTIONS.replace(':id', String(id));
       const response = await apiClient.get<any>(url);
@@ -106,9 +106,9 @@ export class UserManagementService {
   }
 
   /**
-   * Unban user
+   * Unban user (accepts UUID string)
    */
-  static async unbanUser(id: number): Promise<ApiResponse<null>> {
+  static async unbanUser(id: string | number): Promise<ApiResponse<null>> {
     try {
       const url = API_CONFIG.ENDPOINTS.USERS.UNBAN.replace(':id', String(id));
       // Currently the unban endpoint does not require a request body

@@ -22,7 +22,7 @@ const UserEditPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { toast } = useToast();
-    const userId = id ? parseInt(id, 10) : 0;
+    const userId = id || '';
 
     const { useUserDetails, updateUser, isUpdating } = useUserManagement();
     const { data: userResponse, isLoading: isLoadingUser } = useUserDetails(userId);
@@ -37,18 +37,26 @@ const UserEditPage = () => {
     useEffect(() => {
         if (user) {
             setFormData({
+                email: user.email || undefined,
+                countryCode: user.countryCode || undefined,
+                stateCode: user.stateCode || undefined,
+                cityName: user.cityName || undefined,
+                stageCode: user.stage?.code || undefined,
+                fundingRangeCode: user.fundingRange?.code || undefined,
+                teamSizeCode: user.teamSize?.code || undefined,
+                revenueStatusCode: user.revenueStatus?.code || undefined,
+                incorporationStatusCode: user.incorporationStatus?.code || undefined,
+                isEmailVerified: user.isEmailVerified,
+                isOnboardingCompleted: user.isOnboardingCompleted,
+                // Legacy fields (for backward compatibility)
                 firstName: user.firstName || undefined,
                 lastName: user.lastName || undefined,
-                email: user.email || undefined,
                 phone: user.phone || undefined,
-                countryCode: user.countryCode || undefined,
                 dob: user.dob ? new Date(user.dob).toISOString().split('T')[0] : undefined,
                 gender: user.gender || undefined,
-                isEmailVerified: user.isEmailVerified,
                 isPhoneVerified: user.isPhoneVerified,
                 isFaceVerified: user.isFaceVerified,
                 isAccountPaused: user.isAccountPaused,
-                // accountCurrentStatus: user.accountCurrentStatus,
             });
         }
     }, [user]);
@@ -121,7 +129,7 @@ const UserEditPage = () => {
                         Back
                     </Button>
                     <h1 className="text-2xl font-semibold">
-                        Edit User: {user.firstName} {user.lastName}
+                        Edit User: {user.email || user.id}
                     </h1>
                 </div>
             </div>
@@ -131,26 +139,6 @@ const UserEditPage = () => {
                 <div className="space-y-4 p-6 border rounded-lg">
                     <h4 className="font-semibold text-lg mb-4">Basic Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="firstName">First Name</Label>
-                            <Input
-                                id="firstName"
-                                value={formData.firstName || ''}
-                                onChange={(e) => handleChange('firstName', e.target.value)}
-                                placeholder="First Name"
-                                disabled={isSaving}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <Input
-                                id="lastName"
-                                value={formData.lastName || ''}
-                                onChange={(e) => handleChange('lastName', e.target.value)}
-                                placeholder="Last Name"
-                                disabled={isSaving}
-                            />
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
@@ -163,78 +151,137 @@ const UserEditPage = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
-                            <Input
-                                id="phone"
-                                value={formData.phone || ''}
-                                onChange={(e) => handleChange('phone', e.target.value)}
-                                placeholder="Phone"
-                                disabled={isSaving}
-                            />
-                        </div>
-                        <div className="space-y-2">
                             <Label htmlFor="countryCode">Country Code</Label>
                             <Input
                                 id="countryCode"
                                 value={formData.countryCode || ''}
                                 onChange={(e) => handleChange('countryCode', e.target.value)}
-                                placeholder="+1"
+                                placeholder="AF"
                                 disabled={isSaving}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="dob">Date of Birth</Label>
+                            <Label htmlFor="stateCode">State Code</Label>
                             <Input
-                                id="dob"
-                                type="date"
-                                value={formData.dob || ''}
-                                onChange={(e) => handleChange('dob', e.target.value)}
+                                id="stateCode"
+                                value={formData.stateCode || ''}
+                                onChange={(e) => handleChange('stateCode', e.target.value)}
+                                placeholder="BDS"
                                 disabled={isSaving}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="gender">Gender</Label>
-                            <Select
-                                value={formData.gender || ''}
-                                onValueChange={(value) => handleChange('gender', value)}
+                            <Label htmlFor="cityName">City Name</Label>
+                            <Input
+                                id="cityName"
+                                value={formData.cityName || ''}
+                                onChange={(e) => handleChange('cityName', e.target.value)}
+                                placeholder="City Name"
                                 disabled={isSaving}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select gender" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="m">Male</SelectItem>
-                                    <SelectItem value="f">Female</SelectItem>
-                                    <SelectItem value="o">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            />
                         </div>
-                        {/* <div className="space-y-2">
-                            <Label htmlFor="accountCurrentStatus">Account Status</Label>
-                            <Select
-                                value={formData.accountCurrentStatus?.toString() || ''}
-                                onValueChange={(value) => handleChange('accountCurrentStatus', parseInt(value, 10))}
-                                disabled={isSaving}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="0">Mobile Verification Pending</SelectItem>
-                                    <SelectItem value="1">Mobile Verified</SelectItem>
-                                    <SelectItem value="2">Basic Info Collected</SelectItem>
-                                    <SelectItem value="3">Email Verified</SelectItem>
-                                    <SelectItem value="4">Face Verified</SelectItem>
-                                    <SelectItem value="5">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div> */}
                     </div>
                 </div>
 
-                {/* Verification Status */}
+                {/* Business Information */}
                 <div className="space-y-4 p-6 border rounded-lg">
-                    <h4 className="font-semibold text-lg mb-4">Verification Status</h4>
+                    <h4 className="font-semibold text-lg mb-4">Business Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="stageCode">Stage</Label>
+                            <Select
+                                value={formData.stageCode || ''}
+                                onValueChange={(value) => handleChange('stageCode', value === 'none' ? undefined : value)}
+                                disabled={isSaving}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select stage" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="idea">Idea / Concept</SelectItem>
+                                    <SelectItem value="mvp">MVP / Prototype</SelectItem>
+                                    <SelectItem value="early_revenue">Early Revenue</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fundingRangeCode">Funding Range</Label>
+                            <Select
+                                value={formData.fundingRangeCode || ''}
+                                onValueChange={(value) => handleChange('fundingRangeCode', value === 'none' ? undefined : value)}
+                                disabled={isSaving}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select funding range" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="early">$0 - $500K</SelectItem>
+                                    <SelectItem value="seed">$500K - $2M</SelectItem>
+                                    <SelectItem value="growth">$2M+</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="teamSizeCode">Team Size</Label>
+                            <Select
+                                value={formData.teamSizeCode || ''}
+                                onValueChange={(value) => handleChange('teamSizeCode', value === 'none' ? undefined : value)}
+                                disabled={isSaving}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select team size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="solo">Solo founder</SelectItem>
+                                    <SelectItem value="2-5">2-5</SelectItem>
+                                    <SelectItem value="6-10">6-10</SelectItem>
+                                    <SelectItem value="11+">11+</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="revenueStatusCode">Revenue Status</Label>
+                            <Select
+                                value={formData.revenueStatusCode || ''}
+                                onValueChange={(value) => handleChange('revenueStatusCode', value === 'none' ? undefined : value)}
+                                disabled={isSaving}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select revenue status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="pre_revenue">Pre-revenue</SelectItem>
+                                    <SelectItem value="early_revenue">Early revenue</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="incorporationStatusCode">Incorporation Status</Label>
+                            <Select
+                                value={formData.incorporationStatusCode || ''}
+                                onValueChange={(value) => handleChange('incorporationStatusCode', value === 'none' ? undefined : value)}
+                                disabled={isSaving}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select incorporation status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="not_incorporated">Not incorporated</SelectItem>
+                                    <SelectItem value="incorporated">Incorporated</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Verification & Status */}
+                <div className="space-y-4 p-6 border rounded-lg">
+                    <h4 className="font-semibold text-lg mb-4">Verification & Status</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="isEmailVerified">Email Verified</Label>
@@ -246,32 +293,48 @@ const UserEditPage = () => {
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="isPhoneVerified">Phone Verified</Label>
+                            <Label htmlFor="isOnboardingCompleted">Onboarding Completed</Label>
                             <Switch
-                                id="isPhoneVerified"
-                                checked={formData.isPhoneVerified || false}
-                                onCheckedChange={(checked) => handleChange('isPhoneVerified', checked)}
+                                id="isOnboardingCompleted"
+                                checked={formData.isOnboardingCompleted || false}
+                                onCheckedChange={(checked) => handleChange('isOnboardingCompleted', checked)}
                                 disabled={isSaving}
                             />
                         </div>
-                        <div className="flex items-center justify-between">
-                            <Label htmlFor="isFaceVerified">Face Verified</Label>
-                            <Switch
-                                id="isFaceVerified"
-                                checked={formData.isFaceVerified || false}
-                                onCheckedChange={(checked) => handleChange('isFaceVerified', checked)}
-                                disabled={isSaving}
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <Label htmlFor="isAccountPaused">Account Paused</Label>
-                            <Switch
-                                id="isAccountPaused"
-                                checked={formData.isAccountPaused || false}
-                                onCheckedChange={(checked) => handleChange('isAccountPaused', checked)}
-                                disabled={isSaving}
-                            />
-                        </div>
+                        {/* Legacy fields (for backward compatibility) */}
+                        {user.isPhoneVerified !== undefined && (
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="isPhoneVerified">Phone Verified</Label>
+                                <Switch
+                                    id="isPhoneVerified"
+                                    checked={formData.isPhoneVerified || false}
+                                    onCheckedChange={(checked) => handleChange('isPhoneVerified', checked)}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        )}
+                        {user.isFaceVerified !== undefined && (
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="isFaceVerified">Face Verified</Label>
+                                <Switch
+                                    id="isFaceVerified"
+                                    checked={formData.isFaceVerified || false}
+                                    onCheckedChange={(checked) => handleChange('isFaceVerified', checked)}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        )}
+                        {user.isAccountPaused !== undefined && (
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="isAccountPaused">Account Paused</Label>
+                                <Switch
+                                    id="isAccountPaused"
+                                    checked={formData.isAccountPaused || false}
+                                    onCheckedChange={(checked) => handleChange('isAccountPaused', checked)}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
