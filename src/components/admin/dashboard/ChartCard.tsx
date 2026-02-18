@@ -46,7 +46,7 @@ export function ChartCard({
             <Icon className={`h-5 w-5 ${iconColor}`} />
             {title}
           </CardTitle>
-          <div className="w-full">
+          <div className="w-full mt-4">
             <ChartFilters
               config={config}
               onConfigChange={onConfigChange}

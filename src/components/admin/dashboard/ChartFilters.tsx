@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar as CalendarIcon, BarChart3, PieChart, LineChart, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, BarChart3, LineChart, ChevronDown } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -392,13 +392,9 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
 
   // Check if this is the Conversion Insights chart
   const isConversionInsights = title === "Conversion Insights Analytics";
-  const isGenderDisabledForConversion =
-    isConversionInsights &&
-    config.conversionType &&
-    ['message-before-match', 'subscription', 'matches'].includes(config.conversionType);
 
   return (
-    <div className="flex items-center gap-2 flex-wrap w-full">
+    <div className="flex items-center gap-2 flex-wrap w-full px-1">
       {/* Conversion Type Filter - Only for Conversion Insights */}
       {isConversionInsights && (
         <Select
@@ -406,11 +402,6 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           onValueChange={(value) =>
             updateConfig({
               conversionType: value as ChartConfig['conversionType'],
-              // When conversion type disables gender, force it back to 'all'
-              ...( ['message-before-match', 'subscription', 'matches'].includes(value)
-                ? { gender: 'all' as ChartConfig['gender'] }
-                : {}
-              ),
             })
           }
         >
@@ -419,32 +410,10 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="subscription">Subscription</SelectItem>
-            <SelectItem value="message-before-match">Message Before Match</SelectItem>
-            <SelectItem value="likes">Likes</SelectItem>
-            <SelectItem value="matches">Matches</SelectItem>
-            <SelectItem value="gifts">Gifts</SelectItem>
           </SelectContent>
         </Select>
       )}
 
-      {/* Gender Filter */}
-      <Select
-        value={(config.gender || 'all')}
-        onValueChange={(value) => {
-          if (isGenderDisabledForConversion) return;
-          updateConfig({ gender: value as ChartConfig['gender'] });
-        }}
-        disabled={isGenderDisabledForConversion}
-      >
-        <SelectTrigger className="h-8 w-[120px] text-xs" disabled={isGenderDisabledForConversion}>
-          <SelectValue placeholder="Gender" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          <SelectItem value="m">Male</SelectItem>
-          <SelectItem value="f">Female</SelectItem>
-        </SelectContent>
-      </Select>
 
       {/* Daily: Month and Year Dropdowns */}
       {config.timeRange === 'daily' && (
@@ -758,15 +727,6 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
         >
           <LineChart className="h-4 w-4 mr-1" />
           Line
-        </Button>
-        <Button
-          variant={config.chartType === 'pie' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => updateConfig({ chartType: 'pie' })}
-          className="h-8"
-        >
-          <PieChart className="h-4 w-4 mr-1" />
-          Pie
         </Button>
       </div>
     </div>

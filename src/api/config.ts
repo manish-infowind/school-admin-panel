@@ -107,6 +107,7 @@ export const API_CONFIG = {
       APP_STORE_INSTALL_STATS: '/dashboard/analytics/app-store-install-stats',
       SAFETY_METRICS: '/dashboard/analytics/safety-metrics',
       ACTIVE_USERS_MAP: '/api/active-users-map',
+      ANALYTICS_REFRESH: '/dashboard/analytics/refresh',
     },
     ENQUIRIES: {
       LIST: '/enquiries',

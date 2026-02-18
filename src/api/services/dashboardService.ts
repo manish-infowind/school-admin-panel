@@ -105,6 +105,34 @@ export interface UserGrowthSyncResponse {
   externalServiceResponse?: any;
 }
 
+export interface AnalyticsRefreshData {
+  date: string;
+  duration_ms: number;
+  userGrowth: {
+    date: string;
+    newUsers: number;
+    totalUsers: number;
+    action: 'created' | 'updated';
+  };
+  activeUsers: {
+    date: string;
+    dailyActive: number;
+    monthlyActive: number;
+    action: 'created' | 'updated';
+  };
+  errors?: Array<{
+    type: string;
+    message: string;
+  }>;
+}
+
+export interface AnalyticsRefreshResponse {
+  statusCode: number;
+  responseCode: string;
+  message: string;
+  data: AnalyticsRefreshData;
+}
+
 // Dashboard stats summary (static, unfiltered)
 export interface DashboardStatsSummary {
   totalUsers: number;
@@ -670,6 +698,27 @@ export class DashboardService {
 
       // Use extended timeout for sync API (2 minutes)
       const response = await apiClient.get<UserGrowthSyncResponse>(url, {
+        timeout: API_CONFIG.ANALYTICS_TIMEOUT
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Refresh analytics data for a specific date or current date
+  static async refreshAnalytics(date?: string): Promise<ApiResponse<AnalyticsRefreshData>> {
+    try {
+      let url = API_CONFIG.ENDPOINTS.DASHBOARD.ANALYTICS_REFRESH;
+      
+      // Add date parameter if provided (format: YYYY-MM-DD)
+      if (date) {
+        url += `?date=${date}`;
+      }
+
+      // Use extended timeout for refresh API (2 minutes)
+      const response = await apiClient.post<AnalyticsRefreshData>(url, {}, {
         timeout: API_CONFIG.ANALYTICS_TIMEOUT
       });
       

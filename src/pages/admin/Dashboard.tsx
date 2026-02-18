@@ -2,10 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   TrendingUp,
-  DollarSign,
-  MessageSquare,
-  Shield,
-  MapPin,
+  RefreshCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
@@ -18,7 +15,8 @@ import { useChartData } from "@/hooks/useChartData";
 import { useDashboardStatsSummary } from "@/hooks/useDashboardStatsSummary";
 import PageHeader from "@/components/common/PageHeader";
 import PageLoader from "@/components/common/PageLoader";
-import { ActivityMap } from "@/components/admin/dashboard/ActivityMap";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 // Helper function to create initial chart config
 const createChartConfig = (): ChartConfig => {
@@ -69,6 +67,7 @@ export default function Dashboard() {
 
   const [products, setProducts] = useState(productStore.getProducts());
   const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Separate state for each chart
   const [userGrowthChart, setUserGrowthChart] = useState<ChartConfig>(createChartConfig());
@@ -77,13 +76,9 @@ export default function Dashboard() {
     ...createChartConfig(),
     conversionType: 'subscription', // Default conversion type
   });
-  const [revenueChart, setRevenueChart] = useState<ChartConfig>(createChartConfig());
-  const [conversationChart, setConversationChart] = useState<ChartConfig>(createChartConfig());
-  const [appStoreInstallStatsChart, setAppStoreInstallStatsChart] = useState<ChartConfig>(createChartConfig());
-  const [safetyChart, setSafetyChart] = useState<ChartConfig>(createChartConfig());
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
-  const { data: statsSummary, isLoading: statsLoading } = useDashboardStatsSummary();
+  const { data: statsSummary, isLoading: statsLoading, refetch: refetchStatsSummary } = useDashboardStatsSummary();
   
   // Use the new dedicated User Growth API for user growth chart
   const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, 'userGrowth');
@@ -91,14 +86,6 @@ export default function Dashboard() {
   const { data: activeUsersData, loading: activeUsersLoading } = useChartData(activeUsersChart, 'activeUsers');
   // Use the new dedicated Conversions API for conversion insights chart
   const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart, 'conversions');
-  // Use the new dedicated Revenue API for revenue analytics chart
-  const { data: revenueData, loading: revenueLoading } = useChartData(revenueChart, 'revenue');
-  // Use the new dedicated Conversation Analytics API for conversation analytics chart
-  const { data: conversationData, loading: conversationLoading } = useChartData(conversationChart, 'conversationAnalytics');
-  // Use the new dedicated App Store Install Stats API for install to signup ratio chart
-  const { data: appStoreInstallStatsData, loading: appStoreInstallStatsLoading } = useChartData(appStoreInstallStatsChart, 'appStoreInstallStats');
-  // Use the new dedicated Safety Metrics API for safety metrics chart
-  const { data: safetyMetricsData, loading: safetyMetricsLoading } = useChartData(safetyChart, 'safetyMetrics');
 
   useEffect(() => {
     const unsubscribe = productStore.subscribe(() => {
@@ -145,6 +132,73 @@ export default function Dashboard() {
       });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Handle refresh analytics data for a specific date (defaults to current date)
+  const handleRefreshAnalytics = async (date?: string) => {
+    try {
+      setRefreshing(true);
+      
+      // Format date as YYYY-MM-DD if provided, otherwise use current date
+      const dateToRefresh = date || new Date().toISOString().split('T')[0];
+      
+      const response = await DashboardService.refreshAnalytics(dateToRefresh);
+
+      if (response.success && response.data) {
+        const { userGrowth, activeUsers, duration_ms } = response.data;
+        
+        toast({
+          title: "Refresh Successful",
+          description: `Analytics data refreshed successfully for ${response.data.date} (${duration_ms}ms)`,
+        });
+
+        // Force refresh all chart data by updating the chart configs
+        // This will trigger the useChartData hooks to refetch
+        const now = new Date();
+        
+        setUserGrowthChart(prev => ({
+          ...prev,
+          dateRange: {
+            from: prev.dateRange.from,
+            to: now,
+          },
+        }));
+        
+        setActiveUsersChart(prev => ({
+          ...prev,
+          dateRange: {
+            from: prev.dateRange.from,
+            to: now,
+          },
+        }));
+        
+        setConversionChart(prev => ({
+          ...prev,
+          dateRange: {
+            from: prev.dateRange.from,
+            to: now,
+          },
+        }));
+
+        // Refetch dashboard stats summary after analytics refresh
+        await refetchStatsSummary();
+      } else {
+        toast({
+          title: "Refresh Failed",
+          description: response.message || "Failed to refresh analytics data",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error refreshing analytics:', error);
+      toast({
+        title: "Refresh Error",
+        description: error.message || "An error occurred while refreshing analytics data",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -262,6 +316,7 @@ export default function Dashboard() {
       'Monthly Active': item.monthlyActive,
     }));
   }, [activeUsersData, activeUsersChart.timeRange, activeUsersChart.selectedYears]);
+
   // here i need to change to align the months in correct order
   const conversionChartData = useMemo(() => {
     if (!conversionData) return [];
@@ -344,383 +399,6 @@ export default function Dashboard() {
     conversionChart.selectedYears,
     conversionChart.chartType,
   ]);
-  const revenueChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
-    if (!revenueData || !revenueData.revenueAnalytics) return [];
-
-    const revenueAnalytics = revenueData.revenueAnalytics;
-
-    // Handle multi-year monthly comparison
-    if (revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
-
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-      revenueAnalytics.forEach(item => {
-        // Parse ISO date string through UTC function 
-        const parsed = new Date(item.date);
-        if (isNaN(parsed.getTime())) return;
-
-        const monthShort = months[parsed.getUTCMonth()];
-        const yearNum = parsed.getUTCFullYear();
-
-        if (!revenueChart.selectedYears || !revenueChart.selectedYears.includes(yearNum)) {
-          return;
-        }
-
-        if (!monthDataMap.has(monthShort)) {
-          monthDataMap.set(monthShort, { name: monthShort });
-        }
-
-        const monthData = monthDataMap.get(monthShort)!;
-        monthData[`${yearNum} - Average Revenue Per User`] = item.averageRevenuePerUser;
-        monthData[`${yearNum} - Average Revenue Per Paying User`] = item.averageRevenuePerPayingUser;
-        monthData[`${yearNum} - Churn Rate`] = item.churnRate;
-        monthData[`${yearNum} - Free to Paid Rate`] = item.freeToPaidRate;
-        if (item.averageLtv !== undefined) {
-          monthData[`${yearNum} - Inactive Users Life Time Value`] = item.averageLtv;
-        }
-      });
-
-      // Convert map to array and sort by month order
-      // const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return Array.from(monthDataMap.values()).sort((a, b) => {
-        const aName = typeof a.name === 'string' ? a.name : '';
-        const bName = typeof b.name === 'string' ? b.name : '';
-        return months.indexOf(aName) - months.indexOf(bName);
-      }) as Array<{ name: string; [key: string]: string | number }>;
-    }
-
-    // Standard format for single year or other time ranges
-    return revenueAnalytics.map(item => {
-      // Format date for display using UTC to avoid timezone shifts
-      const parsed = new Date(item.date);
-      let dateLabel = '';
-      if (!isNaN(parsed.getTime())) {
-        if (revenueChart.timeRange === 'daily' || revenueChart.timeRange === 'custom') {
-          // For daily and custom ranges, use UTC formatting to avoid timezone shifts
-          dateLabel = formatDateUTC(parsed, 'daily');
-        } else if (revenueChart.timeRange === 'weekly') {
-          // For weekly, use UTC formatting
-          dateLabel = formatDateUTC(parsed, 'weekly');
-        } else {
-          // Monthly format: "Jan 2024" - use UTC formatting
-          dateLabel = formatDateUTC(parsed, 'monthly');
-        }
-      } else {
-        dateLabel = item.date;
-      }
-
-      const chartData: { name: string; [key: string]: string | number } = {
-        name: dateLabel,
-        'Average Revenue Per User': item.averageRevenuePerUser,
-        'Average Revenue Per Paying User': item.averageRevenuePerPayingUser,
-        'Churn Rate': item.churnRate,
-        'Free to Paid Rate': item.freeToPaidRate,
-      };
-      
-      if (item.averageLtv !== undefined) {
-        chartData['Inactive Users Life Time Value'] = item.averageLtv;
-      }
-      
-      return chartData;
-    });
-  }, [revenueData, revenueChart.timeRange, revenueChart.selectedYears]);
-
-  const conversationChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
-    if (!conversationData || !conversationData.conversationAnalytics) return [];
-
-    const conversationAnalytics = conversationData.conversationAnalytics;
-
-    // Handle multi-year monthly comparison
-    if (conversationChart.timeRange === 'monthly' && conversationChart.selectedYears && conversationChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-      conversationAnalytics.forEach(item => {
-        // Parse ISO date string through UTC function 
-        const parsed = new Date(item.date);
-        if (isNaN(parsed.getTime())) return;
-
-        const monthShort = months[parsed.getUTCMonth()];
-        const yearNum = parsed.getUTCFullYear();
-
-        if (!conversationChart.selectedYears || !conversationChart.selectedYears.includes(yearNum)) {
-          return;
-        }
-
-        if (!monthDataMap.has(monthShort)) {
-          monthDataMap.set(monthShort, { name: monthShort });
-        }
-
-        const monthData = monthDataMap.get(monthShort)!;
-        monthData[`${yearNum} - Conversation Initiation Rate`] = item.conversationInitiationRate;
-        monthData[`${yearNum} - Messages Per Match`] = item.messagesPerMatch;
-        monthData[`${yearNum} - Ghosting Rate`] = item.ghostingRate;
-        if (item.swipeToMatchRate !== undefined) {
-          monthData[`${yearNum} - Swipe to Match Rate`] = item.swipeToMatchRate;
-        }
-      });
-
-      // Convert map to array and sort by month order
-      
-      return Array.from(monthDataMap.values()).sort((a, b) => {
-        const aName = typeof a.name === 'string' ? a.name : '';
-        const bName = typeof b.name === 'string' ? b.name : '';
-        return months.indexOf(aName) - months.indexOf(bName);
-      });
-    }
-
-    // Standard format for single year or other time ranges
-    return conversationAnalytics.map(item => {
-      // Format date for display using UTC to avoid timezone shifts
-      const parsed = new Date(item.date);
-      let dateLabel = '';
-      if (!isNaN(parsed.getTime())) {
-        if (conversationChart.timeRange === 'daily' || conversationChart.timeRange === 'custom') {
-          // For daily and custom ranges, use UTC formatting to avoid timezone shifts
-          dateLabel = formatDateUTC(parsed, 'daily');
-        } else if (conversationChart.timeRange === 'weekly') {
-          // For weekly, use UTC formatting
-          dateLabel = formatDateUTC(parsed, 'weekly');
-        } else {
-          // Monthly format: "Jan 2024" - use UTC formatting
-          dateLabel = formatDateUTC(parsed, 'monthly');
-        }
-      } else {
-        dateLabel = item.date;
-      }
-
-      const chartData: { name: string; [key: string]: string | number } = {
-        name: dateLabel,
-        'Conversation Initiation Rate': item.conversationInitiationRate,
-        'Messages Per Match': item.messagesPerMatch,
-        'Ghosting Rate': item.ghostingRate,
-      };
-      
-      if (item.swipeToMatchRate !== undefined) {
-        chartData['Swipe to Match Rate'] = item.swipeToMatchRate;
-      }
-      
-      return chartData;
-    });
-  }, [conversationData, conversationChart.timeRange, conversationChart.selectedYears]);
-
-  const appStoreInstallStatsChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
-    if (!appStoreInstallStatsData || !appStoreInstallStatsData.appStoreInstallStats) return [];
-
-    const appStoreInstallStats = appStoreInstallStatsData.appStoreInstallStats;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    // Handle multi-year monthly comparison
-    if (appStoreInstallStatsChart.timeRange === 'monthly' && appStoreInstallStatsChart.selectedYears && appStoreInstallStatsChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
-
-      appStoreInstallStats.forEach(item => {
-        // Parse date string - handle both "Jan 21, 2026" and "Jan 2026" formats
-        const parts = item.date.split(' ');
-        if (parts.length === 2) {
-          // Monthly format: "Jan 2026"
-          const month = parts[0];
-          const year = parseInt(parts[1]);
-
-          if (isNaN(year) || !appStoreInstallStatsChart.selectedYears?.includes(year)) {
-            return;
-          }
-
-          if (!monthDataMap.has(month)) {
-            monthDataMap.set(month, { name: month });
-          }
-
-          const monthData = monthDataMap.get(month)!;
-          monthData[`${year} - Signup Percentage`] = item.signupPercentage;
-        } else if (parts.length === 3) {
-          // Daily format: "Jan 21, 2026" - extract month and year
-          const month = parts[0];
-          const year = parseInt(parts[2]);
-
-          if (isNaN(year) || !appStoreInstallStatsChart.selectedYears?.includes(year)) {
-            return;
-          }
-
-          if (!monthDataMap.has(month)) {
-            monthDataMap.set(month, { name: month });
-          }
-
-          const monthData = monthDataMap.get(month)!;
-          // For daily data in monthly view, we might want to aggregate or use the latest value
-          // For now, we'll use the latest value for that month
-          const existingValue = monthData[`${year} - Signup Percentage`] as number | undefined;
-          if (existingValue === undefined || item.signupPercentage > existingValue) {
-            monthData[`${year} - Signup Percentage`] = item.signupPercentage;
-          }
-        }
-      });
-
-      // Convert map to array and sort by month order
-      return Array.from(monthDataMap.values()).sort((a, b) => {
-        const aName = typeof a.name === 'string' ? a.name : '';
-        const bName = typeof b.name === 'string' ? b.name : '';
-        return months.indexOf(aName) - months.indexOf(bName);
-      });
-    }
-
-    // Standard format for single year or other time ranges
-    return appStoreInstallStats.map(item => {
-      // Use the date as-is from API (already formatted as "Jan 21, 2026" or "Jan 2026")
-      // For daily/weekly/custom, the date should already be in the correct format
-      let dateLabel = item.date;
-
-      // If we need to format it differently for display, parse and reformat
-      if (appStoreInstallStatsChart.timeRange === 'daily' || appStoreInstallStatsChart.timeRange === 'custom') {
-        // Try to parse and ensure consistent format using UTC to avoid timezone shifts
-        const parsed = new Date(item.date);
-        if (!isNaN(parsed.getTime())) {
-          dateLabel = formatDateUTC(parsed, 'daily');
-        }
-      } else if (appStoreInstallStatsChart.timeRange === 'weekly') {
-        // Check if the date is already in "Week X (Month YYYY)" format from API
-        const weekPattern = /^Week \d+ \([A-Za-z]{3} \d{4}\)$/;
-        if (weekPattern.test(item.date)) {
-          // Use the date as-is if it's already in the correct format
-          dateLabel = item.date;
-        } else {
-          // Try to parse as a date and format it using UTC
-          const parsed = new Date(item.date);
-          if (!isNaN(parsed.getTime())) {
-            dateLabel = formatDateUTC(parsed, 'weekly');
-          }
-        }
-      }
-      // For monthly, use the date as-is (should be "Jan 2026" format)
-
-      return {
-        name: dateLabel,
-        'Signup Percentage': item.signupPercentage,
-      };
-    });
-  }, [appStoreInstallStatsData, appStoreInstallStatsChart.timeRange, appStoreInstallStatsChart.selectedYears]);
-
-  const safetyMetricsChartData = useMemo((): Array<{ name: string; [key: string]: string | number }> => {
-    if (!safetyMetricsData || !safetyMetricsData.safetyMetrics) return [];
-
-    const safetyMetrics = safetyMetricsData.safetyMetrics;
-    
-    // Helper function to check if an item should use totals
-    const shouldUseTotals = (item: typeof safetyMetrics[0]) => {
-      return item.totalReports !== undefined && 
-             item.totalBannedAccounts !== undefined &&
-             typeof item.totalReports === 'number' &&
-             typeof item.totalBannedAccounts === 'number';
-    };
-    
-    // Helper function to check if reportRate/banRate are valid numbers (not "no sufficient data")
-    const hasValidRates = (item: typeof safetyMetrics[0]) => {
-      return (typeof item.reportRate === 'number' && !isNaN(item.reportRate)) &&
-             (typeof item.banRate === 'number' && !isNaN(item.banRate));
-    };
-
-    // Handle multi-year monthly comparison
-    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
-      const monthDataMap = new Map<string, { name: string; [key: string]: string | number }>();
-
-      safetyMetrics.forEach(item => {
-        // Parse date string - handle both "Jan 01, 2024" and "Jan 2024" formats
-        const parts = item.date.split(' ');
-        if (parts.length === 2) {
-          // Monthly format: "Jan 2024"
-          const month = parts[0];
-          const year = parseInt(parts[1]);
-
-          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
-            return;
-          }
-
-          if (!monthDataMap.has(month)) {
-            monthDataMap.set(month, { name: month });
-          }
-
-          const monthData = monthDataMap.get(month)!;
-          // Use totals if available, otherwise use rates if they are valid numbers
-          if (shouldUseTotals(item)) {
-            monthData[`${year} - Total Reports`] = item.totalReports!;
-            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
-          } else if (hasValidRates(item)) {
-            monthData[`${year} - Report Rate`] = item.reportRate as number;
-            monthData[`${year} - Ban Rate`] = item.banRate as number;
-          }
-          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
-        } else if (parts.length === 3) {
-          // Daily format: "Jan 01, 2024" - extract month and year
-          const month = parts[0];
-          const year = parseInt(parts[2]);
-
-          if (isNaN(year) || !safetyChart.selectedYears?.includes(year)) {
-            return;
-          }
-
-          if (!monthDataMap.has(month)) {
-            monthDataMap.set(month, { name: month });
-          }
-
-          const monthData = monthDataMap.get(month)!;
-          // For daily data in monthly view, aggregate or use the latest value
-          // Use totals if available, otherwise use rates if they are valid numbers
-          if (shouldUseTotals(item)) {
-            monthData[`${year} - Total Reports`] = item.totalReports!;
-            monthData[`${year} - Total Banned Accounts`] = item.totalBannedAccounts!;
-          } else if (hasValidRates(item)) {
-            monthData[`${year} - Report Rate`] = item.reportRate as number;
-            monthData[`${year} - Ban Rate`] = item.banRate as number;
-          }
-          monthData[`${year} - Moderation Backlog`] = item.moderationBacklog;
-        }
-      });
-
-      // Convert map to array and sort by month order
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return Array.from(monthDataMap.values()).sort((a, b) => {
-        const aName = typeof a.name === 'string' ? a.name : '';
-        const bName = typeof b.name === 'string' ? b.name : '';
-        return months.indexOf(aName) - months.indexOf(bName);
-      });
-    }
-
-    // Standard format for single year or other time ranges
-    // Use the backend-provided date string directly (already formatted and UTC-based)
-    return safetyMetrics.map(item => {
-      const baseData: { name: string; [key: string]: string | number } = {
-        name: item.date,
-        'Moderation Backlog': item.moderationBacklog,
-      };
-      
-      // Use totals if available, otherwise use rates if they are valid numbers
-      if (shouldUseTotals(item)) {
-        baseData['Total Reports'] = item.totalReports!;
-        baseData['Total Banned Accounts'] = item.totalBannedAccounts!;
-      } else if (hasValidRates(item)) {
-        baseData['Report Rate'] = item.reportRate as number;
-        baseData['Ban Rate'] = item.banRate as number;
-      }
-      
-      return baseData;
-    });
-  }, [safetyMetricsData, safetyChart.timeRange, safetyChart.selectedYears]);
-
-  // Memoize the dataKeys for Safety Metrics chart
-  // Include all possible keys since different dates might have different data structures
-  const safetyMetricsDataKeys = useMemo(() => {
-    if (safetyChart.timeRange === 'monthly' && safetyChart.selectedYears && safetyChart.selectedYears.length > 1) {
-      return safetyChart.selectedYears.flatMap(year => [
-        `${year.toString()} - Total Reports`,
-        `${year.toString()} - Total Banned Accounts`,
-        `${year.toString()} - Report Rate`,
-        `${year.toString()} - Ban Rate`,
-        `${year.toString()} - Moderation Backlog`
-      ]);
-    }
-    // Include all possible keys - the chart will only show bars for keys that have data
-    return ['Total Reports', 'Total Banned Accounts', 'Report Rate', 'Ban Rate', 'Moderation Backlog'];
-  }, [safetyChart.timeRange, safetyChart.selectedYears]);
 
   if (statsLoading) {
     return (
@@ -730,11 +408,38 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        page="dashboard"
-        heading="Dashboard"
-        subHeading="Welcome to your Pinaypal admin panel. Manage your website content from here"
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between"
+      >
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-green via-brand-teal to-brand-blue bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Welcome to your Pinaypal admin panel. Manage your website content from here
+          </p>
+        </div>
+        <Button
+          onClick={() => handleRefreshAnalytics()}
+          disabled={refreshing}
+          variant="outline"
+        >
+          {refreshing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Analytics
+            </>
+          )}
+        </Button>
+      </motion.div>
 
       {/* Stats Cards */}
       <motion.div
@@ -826,103 +531,6 @@ export default function Dashboard() {
           loading={conversionLoading}
         />
 
-        {/* Monetization and Finance Analytics Chart */}
-        <ChartCard
-          title="Monetization and Finance Analytics"
-          icon={DollarSign}
-          iconColor="text-brand-green"
-          config={revenueChart}
-          onConfigChange={setRevenueChart}
-          data={revenueChartData}
-          dataKeys={
-            revenueChart.timeRange === 'monthly' && revenueChart.selectedYears && revenueChart.selectedYears.length > 1
-              ? revenueChart.selectedYears.flatMap(year => [
-                  `${year.toString()} - Average Revenue Per User`,
-                  `${year.toString()} - Average Revenue Per Paying User`,
-                  `${year.toString()} - Churn Rate`,
-                  `${year.toString()} - Free to Paid Rate`,
-                  `${year.toString()} - Inactive Users Life Time Value`
-                ])
-              : ['Average Revenue Per User', 'Average Revenue Per Paying User', 'Churn Rate', 'Free to Paid Rate', 'Inactive Users Life Time Value']
-          }
-          delay={0.5}
-          originalData={revenueData}
-          loading={revenueLoading}
-        />
-
-        {/* Conversation Analytics Chart */}
-        <ChartCard
-          title="Conversation Analytics"
-          icon={MessageSquare}
-          iconColor="text-brand-blue"
-          config={conversationChart}
-          onConfigChange={setConversationChart}
-          data={conversationChartData}
-          dataKeys={
-            conversationChart.timeRange === 'monthly' && conversationChart.selectedYears && conversationChart.selectedYears.length > 1
-              ? conversationChart.selectedYears.flatMap(year => [
-                  `${year.toString()} - Conversation Initiation Rate`,
-                  `${year.toString()} - Messages Per Match`,
-                  `${year.toString()} - Ghosting Rate`,
-                  `${year.toString()} - Swipe to Match Rate`
-                ])
-              : ['Conversation Initiation Rate', 'Messages Per Match', 'Ghosting Rate', 'Swipe to Match Rate']
-          }
-          delay={0.6}
-          originalData={conversationData}
-          loading={conversationLoading}
-        />
-
-        {/* Install to Signup Ratio Chart */}
-        <ChartCard
-          title="Install to Signup Ratio"
-          icon={TrendingUp}
-          iconColor="text-brand-green"
-          config={appStoreInstallStatsChart}
-          onConfigChange={setAppStoreInstallStatsChart}
-          data={appStoreInstallStatsChartData}
-          dataKeys={
-            appStoreInstallStatsChart.timeRange === 'monthly' && appStoreInstallStatsChart.selectedYears && appStoreInstallStatsChart.selectedYears.length > 1
-              ? appStoreInstallStatsChart.selectedYears.map(year => `${year.toString()} - Signup Percentage`)
-              : ['Signup Percentage']
-          }
-          delay={0.7}
-          originalData={appStoreInstallStatsData}
-          loading={appStoreInstallStatsLoading}
-        />
-
-        {/* Safety Metrics Chart */}
-        <ChartCard
-          title="Safety Metrics"
-          icon={Shield}
-          iconColor="text-red-500"
-          config={safetyChart}
-          onConfigChange={setSafetyChart}
-          data={safetyMetricsChartData}
-          dataKeys={safetyMetricsDataKeys}
-          delay={0.8}
-          originalData={safetyMetricsData}
-          loading={safetyMetricsLoading}
-        />
-
-        {/* User Activity Map */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.9 }}
-        >
-          <Card className="shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg mb-4">
-                <MapPin className="h-5 w-5 text-brand-teal" />
-                User Activity Map
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ActivityMap />
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     </div>
   );

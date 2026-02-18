@@ -615,27 +615,6 @@ const UsersList = () => {
                                                         />
                                                     </div>
                                                 )}
-                                                {user.isBanned ? (
-                                                    <div title="Unban User">
-                                                        <Ban
-                                                            className="h-5 w-5 cursor-pointer text-orange-600 hover:text-orange-700"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                openBanDialog(user);
-                                                            }}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div title="Ban User">
-                                                        <Ban
-                                                            className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-orange-600"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                openBanDialog(user);
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )}
                                                 <Trash
                                                     className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-red-600"
                                                     onClick={(e) => {
