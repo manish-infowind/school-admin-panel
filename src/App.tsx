@@ -16,6 +16,15 @@ import Settings from "./pages/admin/Settings";
 import UsersList from "./pages/admin/UserList";
 import UserViewPage from "./pages/admin/UserViewPage";
 import UserEditPage from "./pages/admin/UserEditPage";
+import AdminManagement from "./pages/admin/AdminManagement";
+import RolesManagement from "./pages/admin/RolesManagement";
+import PermissionsManagement from "./pages/admin/PermissionsManagement";
+import StagesManagement from "./pages/admin/onboarding/StagesManagement";
+import IndustriesManagement from "./pages/admin/onboarding/IndustriesManagement";
+import FundingRangesManagement from "./pages/admin/onboarding/FundingRangesManagement";
+import TeamSizesManagement from "./pages/admin/onboarding/TeamSizesManagement";
+import InvestorsList from "./pages/admin/investors/InvestorsList";
+import InvestorDetails from "./pages/admin/investors/InvestorDetails";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +125,107 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <UserEditPage />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/management/users"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/management/roles"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <RolesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/management/permissions"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PermissionsManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Redirect old /admin/management to users */}
+          <Route
+            path="/admin/management"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/onboarding/stages"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StagesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/onboarding/industries"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <IndustriesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/onboarding/funding-ranges"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FundingRangesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/onboarding/team-sizes"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TeamSizesManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/investors"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <InvestorsList />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/investors/:id"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <InvestorDetails />
                 </AdminLayout>
               </ProtectedRoute>
             }

@@ -19,9 +19,9 @@
     --popover: 0 0% 100%; /* #FFFFFF */
     --popover-foreground: 222 47% 11%; /* #0F172A */
 
-    /* Primary - Green Brand Color */
-    --primary: 142 71% 45%; /* #22C55E */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Primary - Green Brand Color #3EFF8B */
+    --primary: 144 100% 62%; /* #3EFF8B */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Secondary - Teal */
     --secondary: 160 84% 39%; /* #10B981 */
@@ -31,17 +31,17 @@
     --muted: 210 40% 96%; /* #F1F5F9 */
     --muted-foreground: 215 16% 47%; /* #64748B */
 
-    /* Accent - Green */
-    --accent: 142 71% 45%; /* #22C55E */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Accent - Green #3EFF8B */
+    --accent: 144 100% 62%; /* #3EFF8B */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Destructive - Error Red */
     --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Success - Green */
-    --success: 142 71% 45%; /* #22C55E */
-    --success-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Success - Green #3EFF8B */
+    --success: 144 100% 62%; /* #3EFF8B */
+    --success-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Boost - Orange */
     --boost: 35 100% 50%; /* #FF8300 */
@@ -50,93 +50,93 @@
     /* Border & Input */
     --border: 214 32% 91%; /* #E2E8F0 */
     --input: 214 32% 91%; /* #E2E8F0 */
-    --ring: 142 71% 45%; /* #22C55E */
+    --ring: 144 100% 62%; /* #3EFF8B */
 
     --radius: 0.75rem;
 
     /* Sidebar - Light Mode */
     --sidebar-background: 0 0% 100%; /* #FFFFFF */
     --sidebar-foreground: 222 47% 11%; /* #0F172A */
-    --sidebar-primary: 142 71% 45%; /* #22C55E */
-    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --sidebar-accent: 142 71% 95%; /* Light green tint */
-    --sidebar-accent-foreground: 142 60% 20%; /* Dark green */
+    --sidebar-primary: 144 100% 62%; /* #3EFF8B */
+    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    --sidebar-accent: 120 100% 95%; /* Light green tint */
+    --sidebar-accent-foreground: 120 100% 20%; /* Dark green */
     --sidebar-border: 214 32% 91%; /* #E2E8F0 */
-    --sidebar-ring: 142 71% 45%; /* #22C55E */
+    --sidebar-ring: 144 100% 62%; /* #3EFF8B */
 
     /* Brand colors - Green Theme */
-    --brand-green: 142 71% 45%; /* #22C55E */
+    --brand-green: 144 100% 62%; /* #3EFF8B */
     --brand-teal: 160 84% 39%; /* #10B981 */
     --brand-blue: 199 89% 48%; /* #0EA5E9 */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(142 71% 45%),
+      hsl(144 100% 62%),
       hsl(160 84% 39%),
       hsl(199 89% 48%)
     );
   }
 
   .dark {
-    /* Background & Foreground - Dark Mode */
-    --background: 152 30% 6%; /* near-black green tint */
-    --foreground: 210 40% 98%; /* #F8FAFC */
+    /* Background & Foreground - Dark Mode - Glossy Black */
+    --background: 0 0% 2%; /* #050505 - Glossy black base */
+    --foreground: 0 0% 98%; /* #FAFAFA - Almost white */
 
-    --card: 152 30% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 4%; /* Glossy dark gray */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 152 30% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary - Green Brand Color */
-    --primary: 142 72% 55%; /* #34D399 */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Primary - Green Brand Color #3EFF8B */
+    --primary: 144 100% 62%; /* #3EFF8B */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Secondary - Teal */
     --secondary: 160 84% 39%; /* #10B981 */
     --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Muted */
-    --muted: 152 20% 12%;
-    --muted-foreground: 215 20% 65%; /* #94A3B8 */
+    /* Muted - Glossy dark gray, no green tint */
+    --muted: 0 0% 8%; /* Glossy dark gray */
+    --muted-foreground: 0 0% 65%; /* Light gray */
 
-    /* Accent - Green */
-    --accent: 142 72% 55%; /* #34D399 */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Accent - Green #3EFF8B */
+    --accent: 144 100% 62%; /* #3EFF8B */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Destructive - Error Red */
     --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
-    /* Success - Green */
-    --success: 142 72% 55%; /* #34D399 */
-    --success-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Success - Green #3EFF8B */
+    --success: 144 100% 62%; /* #3EFF8B */
+    --success-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
 
     /* Boost - Yellow (dark mode) */
     --boost: 50 100% 68%; /* #FFD54F */
     --boost-foreground: 0 0% 10%; /* #1A1A1A */
 
-    /* Border & Input */
-    --border: 152 20% 18%;
-    --input: 152 20% 18%;
-    --ring: 142 72% 55%; /* #34D399 */
+    /* Border & Input - Glossy dark gray, no green tint */
+    --border: 0 0% 15%; /* Glossy dark gray border */
+    --input: 0 0% 15%;
+    --ring: 144 100% 62%; /* #3EFF8B */
 
-    /* Sidebar - Dark Mode */
-    --sidebar-background: 152 30% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 142 72% 55%; /* #34D399 */
-    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --sidebar-accent: 152 25% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 152 20% 18%;
-    --sidebar-ring: 142 72% 55%;
+    /* Sidebar - Dark Mode - Glossy Black */
+    --sidebar-background: 0 0% 3%; /* Glossy dark gray */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 144 100% 62%; /* #3EFF8B */
+    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    --sidebar-accent: 0 0% 10%; /* Glossy dark gray, no green tint */
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%; /* Glossy dark gray border */
+    --sidebar-ring: 144 100% 62%; /* #3EFF8B */
 
     /* Brand colors - Green Theme (Dark Mode) */
-    --brand-green: 142 72% 55%; /* #34D399 */
+    --brand-green: 144 100% 62%; /* #3EFF8B */
     --brand-teal: 160 84% 39%; /* #10B981 */
     --brand-blue: 199 89% 48%; /* #0EA5E9 */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(142 72% 55%),
+      hsl(144 100% 62%),
       hsl(160 84% 39%),
       hsl(199 89% 48%)
     );
@@ -150,6 +150,70 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Apply glossy black effect in dark mode */
+  .dark body {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 2%) 0%,
+      hsl(0 0% 1%) 50%,
+      hsl(0 0% 2%) 100%
+    );
+  }
+
+  /* Glossy effect for cards */
+  .dark [class*="card"],
+  .dark [class*="Card"],
+  .dark [data-card] {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 4%) 0%,
+      hsl(0 0% 6%) 50%,
+      hsl(0 0% 4%) 100%
+    );
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.9),
+      0 4px 6px -1px rgba(0, 0, 0, 0.4),
+      0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Glossy effect for sidebar */
+  .dark [class*="sidebar"],
+  .dark [data-sidebar="sidebar"],
+  .dark .bg-sidebar {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 3%) 0%,
+      hsl(0 0% 5%) 50%,
+      hsl(0 0% 3%) 100%
+    ) !important;
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.8),
+      2px 0 8px -2px rgba(0, 0, 0, 0.5);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Glossy effect for popovers and dialogs */
+  .dark [role="dialog"],
+  .dark [data-radix-popper-content-wrapper],
+  .dark [class*="popover"],
+  .dark [class*="Popover"] {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 4%) 0%,
+      hsl(0 0% 6%) 50%,
+      hsl(0 0% 4%) 100%
+    ) !important;
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.9),
+      0 10px 15px -3px rgba(0, 0, 0, 0.5),
+      0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -168,5 +232,35 @@
   /* Solid icon background with subtle gradient */
   .icon-solid-gradient {
     background: linear-gradient(135deg, hsl(var(--primary) / 0.18) 0%, hsl(var(--primary) / 0.14) 100%);
+  }
+
+  /* Glossy black effect for dark mode */
+  .glossy-black {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 2%) 0%,
+      hsl(0 0% 4%) 50%,
+      hsl(0 0% 2%) 100%
+    );
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.8),
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  .glossy-card {
+    background: linear-gradient(
+      135deg,
+      hsl(0 0% 4%) 0%,
+      hsl(0 0% 6%) 50%,
+      hsl(0 0% 4%) 100%
+    );
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.9),
+      0 4px 6px -1px rgba(0, 0, 0, 0.4),
+      0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 }

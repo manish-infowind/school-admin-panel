@@ -202,6 +202,22 @@ export class AuthService {
           localStorage.setItem('accessToken', loginData.tokens.accessToken);
           localStorage.setItem('refreshToken', loginData.tokens.refreshToken);
           
+          // Ensure permissions and roles are properly formatted
+          const permissions: UserPermission[] = Array.isArray(loginData.permissions) 
+            ? loginData.permissions.map((p: any) => ({
+                permissionName: p.permissionName || p.permission_name || p.name || '',
+                allowedActions: p.allowedActions || p.allowed_actions || p.actions || null,
+              }))
+            : [];
+          
+          const roles = Array.isArray(loginData.roles)
+            ? loginData.roles.map((r: any) => ({
+                id: r.id || 0,
+                roleName: r.roleName || r.role_name || r.name || '',
+                description: r.description || '',
+              }))
+            : [];
+          
           // Store user data in a format compatible with existing code
           const userData: User = {
             id: loginData.id,
@@ -214,15 +230,26 @@ export class AuthService {
             phone: '',
             location: '',
             isActive: true,
-            permissions: loginData.permissions || [], // Now stores UserPermission[] objects
-            roles: loginData.roles || [],
-            isSuperAdmin: loginData.is_super_admin,
+            permissions: permissions, // Properly formatted UserPermission[] objects
+            roles: roles, // Properly formatted roles array
+            isSuperAdmin: loginData.is_super_admin || loginData.isSuperAdmin || false,
           };
           
           // Store all user data synchronously before any navigation
           localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('sessionId', loginData.sessionId);
-          localStorage.setItem('isSuperAdmin', String(loginData.is_super_admin));
+          localStorage.setItem('sessionId', loginData.sessionId || '');
+          localStorage.setItem('isSuperAdmin', String(userData.isSuperAdmin));
+          
+          // Debug: Log stored user data for verification
+          console.log('✅ Login successful - User data stored:', {
+            id: userData.id,
+            email: userData.email,
+            isSuperAdmin: userData.isSuperAdmin,
+            rolesCount: userData.roles?.length || 0,
+            permissionsCount: userData.permissions?.length || 0,
+            roles: userData.roles,
+            permissions: userData.permissions,
+          });
           
           // Force a small delay to ensure localStorage is written
           // This helps prevent race conditions with context updates

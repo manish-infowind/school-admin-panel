@@ -190,6 +190,40 @@ export const API_CONFIG = {
       LIST: '/activity-logs',
       USERS: '/activity-logs/users',
     },
+    ONBOARDING: {
+      STAGES: {
+        LIST: '/stages',
+        GET: '/stages/:id',
+        CREATE: '/stages',
+        UPDATE: '/stages/:id',
+        DELETE: '/stages/:id',
+      },
+      INDUSTRIES: {
+        LIST: '/industries',
+        GET: '/industries/:id',
+        CREATE: '/industries',
+        UPDATE: '/industries/:id',
+        DELETE: '/industries/:id',
+      },
+      FUNDING_RANGES: {
+        LIST: '/funding-ranges',
+        GET: '/funding-ranges/:id',
+        CREATE: '/funding-ranges',
+        UPDATE: '/funding-ranges/:id',
+        DELETE: '/funding-ranges/:id',
+      },
+      TEAM_SIZES: {
+        LIST: '/team-sizes',
+        GET: '/team-sizes/:id',
+        CREATE: '/team-sizes',
+        UPDATE: '/team-sizes/:id',
+        DELETE: '/team-sizes/:id',
+      },
+    },
+    INVESTORS: {
+      LIST: '/investors',
+      GET: '/investors/:id',
+    },
   },
 } as const;
 

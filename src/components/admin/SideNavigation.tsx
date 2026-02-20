@@ -5,11 +5,20 @@ import {
   LayoutDashboard,
   ChevronRight,
   UserCheck,
+  Users,
+  UserCog,
+  Key,
+  ChevronDown,
+  TrendingUp,
+  Building2,
+  DollarSign,
+  Users as UsersIcon,
+  Briefcase,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoIcon } from "@/components/ui/logo-icon";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 
 const navigation = [
@@ -23,6 +32,52 @@ const navigation = [
     href: "/admin/users",
     icon: UserCheck,
   },
+  {
+    name: "Investors",
+    href: "/admin/investors",
+    icon: Briefcase,
+  },
+];
+
+const adminManagementItems = [
+  {
+    name: "Admin Users",
+    href: "/admin/management/users",
+    icon: Users,
+  },
+  {
+    name: "Roles",
+    href: "/admin/management/roles",
+    icon: UserCog,
+  },
+  {
+    name: "Permissions",
+    href: "/admin/management/permissions",
+    icon: Key,
+  },
+];
+
+const onboardingManagementItems = [
+  {
+    name: "Stages",
+    href: "/admin/onboarding/stages",
+    icon: TrendingUp,
+  },
+  {
+    name: "Industries",
+    href: "/admin/onboarding/industries",
+    icon: Building2,
+  },
+  {
+    name: "Funding Ranges",
+    href: "/admin/onboarding/funding-ranges",
+    icon: DollarSign,
+  },
+  {
+    name: "Team Sizes",
+    href: "/admin/onboarding/team-sizes",
+    icon: UsersIcon,
+  },
 ];
 
 interface SideNavigationProps {
@@ -33,6 +88,31 @@ interface SideNavigationProps {
 
 export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   const location = useLocation();
+  
+  // Check if current path is in admin management section
+  const isAdminManagementActive = location.pathname.startsWith('/admin/management');
+  
+  // Check if current path is in onboarding management section
+  const isOnboardingManagementActive = location.pathname.startsWith('/admin/onboarding');
+  
+  // Auto-expand admin management section if on one of those pages
+  const [adminManagementOpen, setAdminManagementOpen] = useState(isAdminManagementActive);
+  
+  // Auto-expand onboarding management section if on one of those pages
+  const [onboardingManagementOpen, setOnboardingManagementOpen] = useState(isOnboardingManagementActive);
+  
+  // Update state when location changes
+  useEffect(() => {
+    if (isAdminManagementActive) {
+      setAdminManagementOpen(true);
+    }
+  }, [isAdminManagementActive]);
+
+  useEffect(() => {
+    if (isOnboardingManagementActive) {
+      setOnboardingManagementOpen(true);
+    }
+  }, [isOnboardingManagementActive]);
 
   const sidebarContent = (
     <motion.div
@@ -44,7 +124,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
     >
       {/* Header with Logo */}
       <div className="flex h-32 items-center justify-center px-6 py-4">
-        <div className="h-24 w-24 rounded-full overflow-hidden bg-brand-green p-3 shadow-lg flex items-center justify-center">
+        <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-200 dark:bg-black p-3 shadow-lg flex items-center justify-center">
           <LogoIcon size="lg" className="h-16 w-16" />
         </div>
       </div>
@@ -94,6 +174,164 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                   </motion.div>
                 );
               })}
+            
+            {/* Admin Management Section */}
+            <div className="mt-2">
+              <Button
+                variant={isAdminManagementActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 text-base",
+                  isAdminManagementActive &&
+                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                )}
+                onClick={() => setAdminManagementOpen(!adminManagementOpen)}
+              >
+                <Users className="h-5 w-5" />
+                Admin Management
+                <motion.div
+                  className="ml-auto"
+                  animate={{ rotate: adminManagementOpen ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </motion.div>
+              </Button>
+              
+              <AnimatePresence>
+                {adminManagementOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="ml-6 mt-1 space-y-0.5">
+                      {adminManagementItems.map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <motion.div
+                            key={item.name}
+                            whileHover={{ x: 4 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                          >
+                            <Link
+                              to={item.href}
+                              onClick={() => window.innerWidth < 1024 && onClose()}
+                            >
+                              <Button
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={cn(
+                                  "w-full justify-start gap-3 h-9 text-sm",
+                                  isActive &&
+                                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                                )}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                {item.name}
+                                {isActive && (
+                                  <motion.div
+                                    className="ml-auto"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 25,
+                                    }}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </motion.div>
+                                )}
+                              </Button>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Onboarding Management Section */}
+            <div className="mt-2">
+              <Button
+                variant={isOnboardingManagementActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 text-base",
+                  isOnboardingManagementActive &&
+                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                )}
+                onClick={() => setOnboardingManagementOpen(!onboardingManagementOpen)}
+              >
+                <TrendingUp className="h-5 w-5" />
+                Onboarding Options
+                <motion.div
+                  className="ml-auto"
+                  animate={{ rotate: onboardingManagementOpen ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </motion.div>
+              </Button>
+              
+              <AnimatePresence>
+                {onboardingManagementOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="ml-6 mt-1 space-y-0.5">
+                      {onboardingManagementItems.map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <motion.div
+                            key={item.name}
+                            whileHover={{ x: 4 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                          >
+                            <Link
+                              to={item.href}
+                              onClick={() => window.innerWidth < 1024 && onClose()}
+                            >
+                              <Button
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={cn(
+                                  "w-full justify-start gap-3 h-9 text-sm",
+                                  isActive &&
+                                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                                )}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                {item.name}
+                                {isActive && (
+                                  <motion.div
+                                    className="ml-auto"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 25,
+                                    }}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </motion.div>
+                                )}
+                              </Button>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </ScrollArea>

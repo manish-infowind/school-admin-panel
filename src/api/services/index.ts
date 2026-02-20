@@ -36,3 +36,18 @@ export { UserManagementService } from './userManagementService';
 
 // Dashboard Services
 export { DashboardService } from './dashboardService';
+
+// Admin Management Services
+export { AdminManagementService } from './adminManagementService';
+
+// Role Services
+export { RoleService } from './roleService';
+
+// Permission Services
+export { PermissionService } from './permissionService';
+
+// Onboarding Management Services
+export { OnboardingService } from './onboardingService';
+
+// Investors Management Services
+export { InvestorsService } from './investorsService';

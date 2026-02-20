@@ -1421,3 +1421,161 @@ export const FEATURES = {
   DASHBOARD: 'dashboard',
   DASHBOARD_ANALYTICS: 'dashboard-analytics',
 } as const;
+
+// Onboarding Management - Reference Data Types
+export interface ReferenceDataItem {
+  id: number;
+  code: string;
+  label: string;
+  description?: string | null;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Stage extends ReferenceDataItem {}
+export interface Industry extends ReferenceDataItem {}
+export interface FundingRange extends ReferenceDataItem {}
+export interface TeamSize extends ReferenceDataItem {}
+
+export interface CreateReferenceDataRequest {
+  code: string;
+  label: string;
+  description?: string;
+  sortOrder: number;
+  active?: boolean;
+}
+
+export interface UpdateReferenceDataRequest {
+  code?: string;
+  label?: string;
+  description?: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface ReferenceDataQueryParams {
+  includeInactive?: boolean;
+}
+
+// Investors Management Types
+export interface PortfolioHighlights {
+  description?: string;
+  totalInvestments?: number;
+  averageTicketSize?: number;
+  notable_investments?: string[];
+  focus_areas?: string[];
+}
+
+export interface GeographicalPreferenceItem {
+  city: string;
+  state: string;
+  country: string;
+  priority: number;
+}
+
+export interface GeographicalPreferences {
+  cities?: string[];
+  states?: string[];
+  countries?: string[];
+}
+
+export interface StageInfo {
+  id: number;
+  code: string;
+  label: string;
+  description?: string;
+}
+
+export interface FundInfo {
+  amount: number;
+  currency: string;
+  formatted_amount?: string;
+  type: string | null;
+  source: string;
+}
+
+export interface StatusInfo {
+  value: number;
+  label: string;
+}
+
+export interface Timestamps {
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Investment {
+  id: string;
+  investor_id: string;
+  stage_preference_id: number;
+  // Nested structure
+  stage?: StageInfo;
+  fund?: FundInfo;
+  status?: StatusInfo;
+  timestamps?: Timestamps;
+  geographical_preferences?: GeographicalPreferenceItem[];
+  geographical_preferences_formatted?: string | null;
+  // Flat structure (for backward compatibility)
+  stage_code?: string;
+  stage_label?: string;
+  geographical_preferences_flat?: GeographicalPreferences | null;
+  fund_amount: number;
+  fund_currency: string;
+  fund_type: string | null;
+  fund_source: string;
+  status_value?: number;
+  status: number | StatusInfo;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Investor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  country_code: string;
+  country_name: string;
+  state_code: string;
+  state_name: string;
+  city_name: string;
+  portfolio_highlights: PortfolioHighlights | null;
+  status: number;
+  website: string | null;
+  created_at: string;
+  updated_at: string;
+  investment_count: number;
+}
+
+export interface InvestorDetails extends Investor {
+  investments: Investment[];
+}
+
+export interface InvestorsListResponse {
+  investors: Investor[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface InvestorsQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  country_code?: string;
+  state_code?: string;
+  city_name?: string;
+  status?: string;
+  min_investment_count?: number;
+  max_investment_count?: number;
+  sort_by?: 'created_at' | 'updated_at' | 'name' | 'email' | 'investment_count';
+  sort_order?: 'asc' | 'desc';
+}

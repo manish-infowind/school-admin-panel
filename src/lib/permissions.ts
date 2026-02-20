@@ -1,9 +1,14 @@
 /**
  * Permission utility functions for checking user permissions
  * Updated to work with new permission structure: { permissionName, allowedActions }
+ * 
+ * DEVELOPMENT MODE: All permission checks return true during development
  */
 
 import { User, UserPermission } from '@/api/types';
+
+// Development mode flag - HARDCODED to true to bypass all permission checks during development
+const IS_DEVELOPMENT = true; // Hardcoded for development - change to false for production
 
 export const PERMISSIONS = {
   // Admin Management Permissions
@@ -56,14 +61,28 @@ export const hasSuperAdminRole = (user: User | null | undefined): boolean => {
  * Get user permissions from User object
  */
 const getUserPermissions = (user: User | null | undefined): UserPermission[] => {
-  if (!user) return [];
+  if (!user) {
+    console.warn('⚠️ Permission check: No user provided');
+    return [];
+  }
   
   // If user has super_admin role, grant all permissions
   if (hasSuperAdminRole(user)) {
+    console.log('✅ Permission check: User is super admin - all permissions granted');
     return [{ permissionName: PERMISSIONS.ALL_ALLOWED, allowedActions: null }];
   }
   
-  return user.permissions || [];
+  const permissions = user.permissions || [];
+  console.log('🔍 Permission check:', {
+    userId: user.id,
+    email: user.email,
+    isSuperAdmin: user.isSuperAdmin,
+    rolesCount: user.roles?.length || 0,
+    permissionsCount: permissions.length,
+    permissions: permissions.map(p => p.permissionName),
+  });
+  
+  return permissions;
 };
 
 /**
@@ -71,6 +90,9 @@ const getUserPermissions = (user: User | null | undefined): UserPermission[] => 
  * Super admins automatically have all permissions
  */
 export const hasPermissionName = (user: User | null | undefined, permissionName: string): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have all permissions
   if (hasSuperAdminRole(user)) {
     return true;
@@ -95,6 +117,9 @@ export const canPerformAction = (
   permissionName: string,
   action: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
@@ -130,6 +155,9 @@ export const hasAnyPermissionName = (
   user: User | null | undefined,
   permissionNames: string[]
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have all permissions
   if (hasSuperAdminRole(user)) {
     return true;
@@ -156,6 +184,9 @@ export const hasAllPermissionNames = (
   user: User | null | undefined,
   permissionNames: string[]
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have all permissions
   if (hasSuperAdminRole(user)) {
     return true;
@@ -179,6 +210,9 @@ export const hasAllPermissionNames = (
  * Super admins automatically have access
  */
 export const canAccessAdminManagement = (user: User | null | undefined): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
@@ -198,6 +232,9 @@ export const canManageAdminUsers = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
@@ -214,6 +251,9 @@ export const canManageRoles = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
@@ -230,6 +270,9 @@ export const canManagePermissions = (
   user: User | null | undefined,
   operation: 'create' | 'read' | 'update' | 'delete'
 ): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
@@ -243,6 +286,9 @@ export const canManagePermissions = (
  * @deprecated Use hasPermissionName or canPerformAction instead
  */
 export const hasPermission = (userPermissions: string[] | undefined, permission: string): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   if (!userPermissions || userPermissions.length === 0) {
     return false;
   }
@@ -259,6 +305,9 @@ export const hasPermission = (userPermissions: string[] | undefined, permission:
  * @deprecated Use hasAnyPermissionName instead
  */
 export const hasAnyPermission = (userPermissions: string[] | undefined, permissions: string[]): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   if (!userPermissions || userPermissions.length === 0) {
     return false;
   }
@@ -275,6 +324,9 @@ export const hasAnyPermission = (userPermissions: string[] | undefined, permissi
  * @deprecated Use hasAllPermissionNames instead
  */
 export const hasAllPermissions = (userPermissions: string[] | undefined, permissions: string[]): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   if (!userPermissions || userPermissions.length === 0) {
     return false;
   }
@@ -291,6 +343,9 @@ export const hasAllPermissions = (userPermissions: string[] | undefined, permiss
  * Super admins automatically have access
  */
 export const canAccessActivityLogs = (user: User | null | undefined): boolean => {
+  // DEVELOPMENT MODE: Allow all access
+  if (IS_DEVELOPMENT) return true;
+  
   // Super admins have access to everything
   if (hasSuperAdminRole(user)) {
     return true;
