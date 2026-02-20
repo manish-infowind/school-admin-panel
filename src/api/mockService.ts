@@ -750,7 +750,7 @@ export const getMockResponse = async <T>(
       return {
         success: true,
         data: {
-          pageTitle: 'Welcome to Pinaypal',
+          pageTitle: 'Welcome to FindMyFunding.ai',
           sections: [],
         } as any,
       };

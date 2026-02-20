@@ -419,7 +419,7 @@ export default function Dashboard() {
             Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Welcome to your Pinaypal admin panel. Manage your website content from here
+            Welcome to your FindMyFunding.ai admin panel. Manage your website content from here
           </p>
         </div>
         <Button

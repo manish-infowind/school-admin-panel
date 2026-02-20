@@ -20,7 +20,7 @@ export const LogoIcon: React.FC<LogoIconProps> = ({
     <div className={`${sizeClasses[size]} relative ${className}`}>
       <img 
         src="/logo.svg" 
-        alt="Pinaypal Logo" 
+        alt="FindMyFunding.ai Logo" 
         className="w-full h-full object-contain rounded-full"
       />
     </div>
