@@ -351,16 +351,28 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
-        {sidebarContent}
-      </div>
+      <AnimatePresence initial={false} mode="wait">
+        {isOpen && (
+          <motion.div
+            className="hidden lg:block lg:flex-shrink-0 overflow-hidden"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 256, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+          >
+            <div className="w-64 h-full">
+              {sidebarContent}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile sidebar overlay */}
       <AnimatePresence>
-        {isOpen && (
+        {!isOpen ? null : (
           <div className="lg:hidden">
             <motion.div
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

@@ -25,7 +25,7 @@ interface TopNavigationProps {
   isSidebarOpen: boolean;
 };
 
-const TopNavigation = ({ onToggleSidebar }: TopNavigationProps) => {
+const TopNavigation = ({ onToggleSidebar, isSidebarOpen }: TopNavigationProps) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -67,7 +67,7 @@ const TopNavigation = ({ onToggleSidebar }: TopNavigationProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="h-9 w-9 px-0 lg:hidden"
+          className="h-9 w-9 px-0"
           onClick={onToggleSidebar}
         >
           <Menu className="h-4 w-4" />
