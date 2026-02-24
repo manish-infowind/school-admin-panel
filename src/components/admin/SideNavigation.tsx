@@ -14,6 +14,8 @@ import {
   DollarSign,
   Users as UsersIcon,
   Briefcase,
+  Package,
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,6 +82,19 @@ const onboardingManagementItems = [
   },
 ];
 
+const plansManagementItems = [
+  {
+    name: "Plans",
+    href: "/admin/plans",
+    icon: Package,
+  },
+  {
+    name: "Features",
+    href: "/admin/plans/features",
+    icon: Sparkles,
+  },
+];
+
 interface SideNavigationProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,11 +110,17 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
   // Check if current path is in onboarding management section
   const isOnboardingManagementActive = location.pathname.startsWith('/admin/onboarding');
   
+  // Check if current path is in plans management section
+  const isPlansManagementActive = location.pathname.startsWith('/admin/plans');
+  
   // Auto-expand admin management section if on one of those pages
   const [adminManagementOpen, setAdminManagementOpen] = useState(isAdminManagementActive);
   
   // Auto-expand onboarding management section if on one of those pages
   const [onboardingManagementOpen, setOnboardingManagementOpen] = useState(isOnboardingManagementActive);
+  
+  // Auto-expand plans management section if on one of those pages
+  const [plansManagementOpen, setPlansManagementOpen] = useState(isPlansManagementActive);
   
   // Update state when location changes
   useEffect(() => {
@@ -113,6 +134,12 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
       setOnboardingManagementOpen(true);
     }
   }, [isOnboardingManagementActive]);
+
+  useEffect(() => {
+    if (isPlansManagementActive) {
+      setPlansManagementOpen(true);
+    }
+  }, [isPlansManagementActive]);
 
   const sidebarContent = (
     <motion.div
@@ -287,6 +314,85 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
                   >
                     <div className="ml-6 mt-1 space-y-0.5">
                       {onboardingManagementItems.map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <motion.div
+                            key={item.name}
+                            whileHover={{ x: 4 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                          >
+                            <Link
+                              to={item.href}
+                              onClick={() => window.innerWidth < 1024 && onClose()}
+                            >
+                              <Button
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={cn(
+                                  "w-full justify-start gap-3 h-9 text-sm",
+                                  isActive &&
+                                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                                )}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                {item.name}
+                                {isActive && (
+                                  <motion.div
+                                    className="ml-auto"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 25,
+                                    }}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </motion.div>
+                                )}
+                              </Button>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Plans Management Section */}
+            <div className="mt-2">
+              <Button
+                variant={isPlansManagementActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 h-10 text-base",
+                  isPlansManagementActive &&
+                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                )}
+                onClick={() => setPlansManagementOpen(!plansManagementOpen)}
+              >
+                <Package className="h-5 w-5" />
+                Plans & Features
+                <motion.div
+                  className="ml-auto"
+                  animate={{ rotate: plansManagementOpen ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </motion.div>
+              </Button>
+              
+              <AnimatePresence>
+                {plansManagementOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="ml-6 mt-1 space-y-0.5">
+                      {plansManagementItems.map((item) => {
                         const isActive = location.pathname === item.href;
                         return (
                           <motion.div

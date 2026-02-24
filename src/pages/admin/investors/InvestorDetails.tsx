@@ -65,7 +65,7 @@ export default function InvestorDetails() {
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
@@ -95,12 +95,12 @@ export default function InvestorDetails() {
     }
     // Fallback to formatting manually
     const amount = investment.fund_amount || investment.fund?.amount || 0;
-    const currency = investment.fund_currency || investment.fund?.currency || 'USD';
+    const currency = investment.fund_currency || investment.fund?.currency || 'INR';
     return formatCurrency(amount, currency);
   };
 
   const getInvestmentCurrency = (investment: any) => {
-    return investment.fund_currency || investment.fund?.currency || 'USD';
+    return investment.fund_currency || investment.fund?.currency || 'INR';
   };
 
   const getInvestmentFundType = (investment: any) => {
@@ -270,15 +270,15 @@ export default function InvestorDetails() {
                       }, 0);
                       // Get the most common currency or default to first investment's currency
                       const currencies = investor.investments.map((inv: any) => getInvestmentCurrency(inv));
-                      const mostCommonCurrency = currencies[0] || 'USD';
+                      const mostCommonCurrency = currencies[0] || 'INR';
                       return formatCurrency(total, mostCommonCurrency);
                     })()}
                   </p>
                   {investor.portfolio_highlights?.averageTicketSize && (
                     <p className="text-muted-foreground">
-                      Avg Ticket: {new Intl.NumberFormat('en-US', {
+                      Avg Ticket: {new Intl.NumberFormat('en-IN', {
                         style: 'currency',
-                        currency: 'USD',
+                        currency: 'INR',
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       }).format(investor.portfolio_highlights.averageTicketSize)}
@@ -315,9 +315,9 @@ export default function InvestorDetails() {
                 <div>
                   <p className="text-sm font-medium mb-1 text-muted-foreground">Average Ticket Size</p>
                   <p className="text-3xl font-bold">
-                    {new Intl.NumberFormat('en-US', {
+                    {new Intl.NumberFormat('en-IN', {
                       style: 'currency',
-                      currency: 'USD',
+                      currency: 'INR',
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     }).format(investor.portfolio_highlights.averageTicketSize)}

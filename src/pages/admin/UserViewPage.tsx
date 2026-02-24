@@ -548,7 +548,7 @@ const UserViewPage = () => {
                             <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div>
                                     <p className="text-muted-foreground">Price</p>
-                                    <p className="font-medium">${user.firstPlan.planPrice}</p>
+                                    <p className="font-medium">₹{user.firstPlan.planPrice}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Duration</p>
@@ -638,7 +638,7 @@ const UserViewPage = () => {
                                     <div className="grid grid-cols-2 gap-2 text-sm">
                                         <div>
                                             <p className="text-muted-foreground">Price</p>
-                                            <p className="font-medium">${subscription.planPrice}</p>
+                                            <p className="font-medium">₹{subscription.planPrice}</p>
                                         </div>
                                         <div>
                                             <p className="text-muted-foreground">Duration</p>

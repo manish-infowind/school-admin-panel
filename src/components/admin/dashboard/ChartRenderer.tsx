@@ -39,19 +39,19 @@ export function ChartRenderer({ data, chartType, dataKeys, height = 400, isMulti
     return value.toString();
   };
   
-  // Custom tooltip formatter to add dollar signs to revenue metrics and percentage to rate metrics
+  // Custom tooltip formatter to add rupee signs to revenue metrics and percentage to rate metrics
   const formatTooltipValue = (value: number, dataKey: string | undefined, name: string | undefined) => {
     if (value === undefined || value === null || isNaN(value)) {
       return 'N/A';
     }
-    // Check if this is a revenue metric that should have dollar signs
+    // Check if this is a revenue metric that should have rupee signs
     const keyToCheck = dataKey || name || '';
     if (keyToCheck && (
       keyToCheck.includes('Average Revenue Per User') || 
       keyToCheck.includes('Average Revenue Per Paying User') ||
       keyToCheck.includes('Inactive Users Life Time Value')
     )) {
-      return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     // Check if this is a rate metric that should have percentage symbol (but not Total Reports or Total Banned Accounts)
     if (keyToCheck && (

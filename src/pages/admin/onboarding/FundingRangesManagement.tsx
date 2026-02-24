@@ -298,7 +298,7 @@ export default function FundingRangesManagement() {
               <Label htmlFor="label">Label *</Label>
               <Input
                 id="label"
-                placeholder="e.g., $0 - $500K, $500K - $2M"
+                placeholder="e.g., ₹0 - ₹50 Lakh, ₹50 Lakh - ₹2 Cr"
                 value={formData.label}
                 onChange={(e) =>
                   setFormData({ ...formData, label: e.target.value })

@@ -224,6 +224,25 @@ export const API_CONFIG = {
       LIST: '/investors',
       GET: '/investors/:id',
     },
+    FEATURES: {
+      LIST: '/features',
+      STATS: '/features/stats',
+      GET: '/features/:id',
+      CREATE: '/features',
+      UPDATE: '/features/:id',
+      DELETE: '/features/:id',
+      TOGGLE_STATUS: '/features/:id/toggle-status',
+    },
+    PLANS: {
+      LIST: '/plans',
+      STATS: '/plans/stats',
+      GET: '/plans/:id',
+      CREATE: '/plans',
+      UPDATE: '/plans/:id',
+      DELETE: '/plans/:id',
+      TOGGLE_STATUS: '/plans/:id/toggle-status',
+      ASSOCIATE_FEATURES: '/plans/:id/features',
+    },
   },
 } as const;
 

@@ -1579,3 +1579,137 @@ export interface InvestorsQueryParams {
   sort_by?: 'created_at' | 'updated_at' | 'name' | 'email' | 'investment_count';
   sort_order?: 'asc' | 'desc';
 }
+
+// Plans & Features Management Types
+export interface Feature {
+  id: number;
+  key: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanFeature {
+  id: number;
+  key: string;
+  name: string;
+  description?: string | null;
+  included: boolean;
+  sortOrder: number;
+}
+
+export interface Plan {
+  id: number;
+  code: string;
+  name: string;
+  priceCents: number;
+  interval: string;
+  currency: string;
+  stripePriceId?: string | null;
+  ctaLabel?: string | null;
+  badge?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  features?: PlanFeature[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFeatureRequest {
+  key: string;
+  name: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateFeatureRequest {
+  name?: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface CreatePlanRequest {
+  code: string;
+  name: string;
+  priceCents: number;
+  interval: string;
+  currency?: string;
+  stripePriceId?: string;
+  ctaLabel?: string;
+  badge?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  featureIds?: number[];
+}
+
+export interface UpdatePlanRequest {
+  name?: string;
+  priceCents?: number;
+  interval?: string;
+  currency?: string;
+  stripePriceId?: string;
+  ctaLabel?: string;
+  badge?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  featureIds?: number[];
+}
+
+export interface AssociateFeaturesRequest {
+  featureIds: number[];
+}
+
+export interface FeaturesListResponse {
+  data: Feature[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface PlansListResponse {
+  data: Plan[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
+export interface FeatureStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface PlanStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface FeaturesQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: string; // "true" or "false"
+}
+
+export interface PlansQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: string; // "true" or "false"
+}

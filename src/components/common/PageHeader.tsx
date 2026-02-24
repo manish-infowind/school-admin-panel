@@ -119,6 +119,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                         </Button>
                     )}
 
+                    {page?.toLowerCase() === "features" && openModal && (
+                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Feature
+                        </Button>
+                    )}
+
+                    {page?.toLowerCase() === "plans" && openModal && (
+                        <Button className="bg-brand-green hover:bg-brand-green/90 text-white" onClick={openModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Plan
+                        </Button>
+                    )}
+
                 </div>
             </motion.div>
         </>

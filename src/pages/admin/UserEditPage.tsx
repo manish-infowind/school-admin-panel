@@ -217,9 +217,9 @@ const UserEditPage = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
-                                    <SelectItem value="early">$0 - $500K</SelectItem>
-                                    <SelectItem value="seed">$500K - $2M</SelectItem>
-                                    <SelectItem value="growth">$2M+</SelectItem>
+                                    <SelectItem value="early">₹0 - ₹50 Lakh</SelectItem>
+                                    <SelectItem value="seed">₹50 Lakh - ₹2 Cr</SelectItem>
+                                    <SelectItem value="growth">₹2 Cr+</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

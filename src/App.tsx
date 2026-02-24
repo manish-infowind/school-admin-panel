@@ -25,6 +25,8 @@ import FundingRangesManagement from "./pages/admin/onboarding/FundingRangesManag
 import TeamSizesManagement from "./pages/admin/onboarding/TeamSizesManagement";
 import InvestorsList from "./pages/admin/investors/InvestorsList";
 import InvestorDetails from "./pages/admin/investors/InvestorDetails";
+import PlansManagement from "./pages/admin/plans/PlansManagement";
+import FeaturesManagement from "./pages/admin/plans/FeaturesManagement";
 
 const queryClient = new QueryClient();
 
@@ -226,6 +228,26 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <InvestorDetails />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/plans"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PlansManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/plans/features"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FeaturesManagement />
                 </AdminLayout>
               </ProtectedRoute>
             }
