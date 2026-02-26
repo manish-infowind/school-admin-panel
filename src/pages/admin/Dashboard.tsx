@@ -23,7 +23,6 @@ const createChartConfig = (): ChartConfig => {
   return {
     chartType: 'bar',
     timeRange: 'monthly',
-    gender: 'all',
     dateRange: {
       from: (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })(),
       to: today,

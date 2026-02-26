@@ -1,184 +1,8 @@
 import { apiClient } from '../client';
 import { API_CONFIG } from '../config';
-import { LoginRequest, LoginResponse, LoginResponse2FA, LoginResponseLegacy, Verify2FARequest, RefreshTokenResponse, User, ApiResponse } from '../types';
+import { LoginRequest, LoginResponse, LoginResponse2FA, LoginResponseLegacy, Verify2FARequest, RefreshTokenResponse, User, ApiResponse, UserPermission } from '../types';
 
 export class AuthService {
-  // Get device information
-  private static getDeviceData() {
-    const userAgent = navigator.userAgent;
-    let deviceType = 'desktop';
-    let os = 'Unknown';
-    let browser = 'Unknown';
-
-    // Detect device type
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
-      deviceType = 'mobile';
-    } else if (/Tablet|iPad/i.test(userAgent)) {
-      deviceType = 'tablet';
-    }
-
-    // Detect OS
-    if (userAgent.includes('Windows')) {
-      os = 'Windows';
-    } else if (userAgent.includes('Mac')) {
-      os = 'macOS';
-    } else if (userAgent.includes('Linux')) {
-      os = 'Linux';
-    } else if (userAgent.includes('Android')) {
-      os = 'Android';
-    } else if (userAgent.includes('iOS')) {
-      os = 'iOS';
-    }
-
-    // Detect browser
-    if (userAgent.includes('Chrome')) {
-      browser = 'Chrome';
-    } else if (userAgent.includes('Firefox')) {
-      browser = 'Firefox';
-    } else if (userAgent.includes('Safari')) {
-      browser = 'Safari';
-    } else if (userAgent.includes('Edge')) {
-      browser = 'Edge';
-    } else if (userAgent.includes('Opera')) {
-      browser = 'Opera';
-    }
-
-    return {
-      deviceType,
-      os,
-      browser,
-    };
-  }
-
-  // Get IP address from a public service
-  private static async getIPAddress(): Promise<string> {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch (error) {
-      return 'Unknown';
-    }
-  }
-
-  // Get location from IP address using multiple services for better accuracy
-  private static async getLocationFromIP(ip: string): Promise<{ latitude: number; longitude: number }> {
-    try {
-      const services = [
-        `https://ipapi.co/${ip}/json/`,
-        `https://ip-api.com/json/${ip}`,
-        `https://freegeoip.app/json/${ip}`
-      ];
-
-      for (const serviceUrl of services) {
-        try {
-          const response = await fetch(serviceUrl, { 
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-          });
-          
-          if (!response.ok) {
-            continue;
-          }
-
-          const data = await response.json();
-          
-          // Handle different response formats
-          let lat, lng;
-          
-          if (data.latitude && data.longitude) {
-            lat = parseFloat(data.latitude);
-            lng = parseFloat(data.longitude);
-          } else if (data.lat && data.lon) {
-            lat = parseFloat(data.lat);
-            lng = parseFloat(data.lon);
-          } else if (data.lat && data.lng) {
-            lat = parseFloat(data.lat);
-            lng = parseFloat(data.lng);
-          }
-          
-          if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-            return { latitude: lat, longitude: lng };
-          }
-        } catch (serviceError) {
-          continue;
-        }
-      }
-      
-      throw new Error('All location services failed');
-    } catch (error) {
-      return {
-        latitude: 20.5937, // India center coordinates as fallback
-        longitude: 78.9629,
-      };
-    }
-  }
-
-  // Get geolocation from browser (if user allows)
-  private static async getBrowserLocation(): Promise<{ latitude: number; longitude: number } | null> {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          resolve(coords);
-        },
-        (error) => {
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              break;
-            case error.POSITION_UNAVAILABLE:
-              break;
-            case error.TIMEOUT:
-              break;
-            default:
-              break;
-          }
-          resolve(null);
-        },
-        {
-          enableHighAccuracy: true, // Try to get more accurate location
-          timeout: 10000, // 10 seconds timeout
-          maximumAge: 300000, // 5 minutes cache
-        }
-      );
-    });
-  }
-
-  // Get accurate location using multiple methods
-  private static async getAccurateLocation(ipAddress: string): Promise<{ latitude: number; longitude: number }> {
-    // Method 1: Try browser geolocation first (most accurate)
-    try {
-      const browserLocation = await this.getBrowserLocation();
-      if (browserLocation) {
-        return browserLocation;
-      }
-    } catch (error) {
-      // intentionally left blank
-    }
-    
-    // Method 2: Try IP-based geolocation
-    try {
-      const ipLocation = await this.getLocationFromIP(ipAddress);
-      return ipLocation;
-    } catch (error) {
-      // intentionally left blank
-    }
-    
-    // Method 3: Fallback to default location
-    return {
-      latitude: 20.5937,
-      longitude: 78.9629,
-    };
-  }
-
   // Login user - simplified to only send email and password as per API documentation
   static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse2FA | LoginResponse>> {
     try {
@@ -195,29 +19,29 @@ export class AuthService {
 
       if (response.success && response.data) {
         const loginData = response.data;
-        
+
         // Handle new API response structure
         if (loginData.tokens) {
           // Store tokens in localStorage
           localStorage.setItem('accessToken', loginData.tokens.accessToken);
           localStorage.setItem('refreshToken', loginData.tokens.refreshToken);
-          
+
           // Ensure permissions and roles are properly formatted
-          const permissions: UserPermission[] = Array.isArray(loginData.permissions) 
+          const permissions: UserPermission[] = Array.isArray(loginData.permissions)
             ? loginData.permissions.map((p: any) => ({
-                permissionName: p.permissionName || p.permission_name || p.name || '',
-                allowedActions: p.allowedActions || p.allowed_actions || p.actions || null,
-              }))
+              permissionName: p.permissionName || p.permission_name || p.name || '',
+              allowedActions: p.allowedActions || p.allowed_actions || p.actions || null,
+            }))
             : [];
-          
+
           const roles = Array.isArray(loginData.roles)
             ? loginData.roles.map((r: any) => ({
-                id: r.id || 0,
-                roleName: r.roleName || r.role_name || r.name || '',
-                description: r.description || '',
-              }))
+              id: r.id || 0,
+              roleName: r.roleName || r.role_name || r.name || '',
+              description: r.description || '',
+            }))
             : [];
-          
+
           // Store user data in a format compatible with existing code
           const userData: User = {
             id: loginData.id,
@@ -232,14 +56,14 @@ export class AuthService {
             isActive: true,
             permissions: permissions, // Properly formatted UserPermission[] objects
             roles: roles, // Properly formatted roles array
-            isSuperAdmin: loginData.is_super_admin || loginData.isSuperAdmin || false,
+            isSuperAdmin: loginData.is_super_admin || false,
           };
-          
+
           // Store all user data synchronously before any navigation
           localStorage.setItem('user', JSON.stringify(userData));
           localStorage.setItem('sessionId', loginData.sessionId || '');
           localStorage.setItem('isSuperAdmin', String(userData.isSuperAdmin));
-          
+
           // Debug: Log stored user data for verification
           console.log('✅ Login successful - User data stored:', {
             id: userData.id,
@@ -250,7 +74,7 @@ export class AuthService {
             roles: userData.roles,
             permissions: userData.permissions,
           });
-          
+
           // Force a small delay to ensure localStorage is written
           // This helps prevent race conditions with context updates
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -269,7 +93,7 @@ export class AuthService {
           //   localStorage.setItem('refreshToken', legacyData.refreshToken);
           //   localStorage.setItem('user', JSON.stringify(legacyData.user));
           // }
-          
+
           // Fallback for legacy format without tokens structure
           const legacyData = loginData as any;
           if (legacyData.accessToken) {
@@ -323,7 +147,7 @@ export class AuthService {
   static async refreshToken(): Promise<boolean> {
     try {
       const refreshToken = this.getRefreshToken();
-      
+
       if (!refreshToken) {
         return false;
       }
@@ -336,12 +160,12 @@ export class AuthService {
       if (response.success && response.data) {
         // Update access token in localStorage
         localStorage.setItem('accessToken', response.data.accessToken);
-        
+
         // Update user data if provided
         if (response.data.user) {
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
-        
+
         return true;
       }
 

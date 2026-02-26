@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/features/authSlice";
 import { useProfile } from "@/api/hooks/useProfile";
-import { LogoutApi } from "@/api/services/authApis/logoutApi";
+import { AuthService } from "@/api/services/authService";
 
 // Password validation functions
 const validatePassword = (password: string) => {
@@ -26,7 +26,7 @@ const validatePassword = (password: string) => {
   const hasNumber = /\d/.test(password);
   const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
   const isLongEnough = password.length >= 8;
-  
+
   return {
     hasUpperCase,
     hasLowerCase,
@@ -157,7 +157,7 @@ export function PasswordChangeModal({
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
-      
+
       // Directly proceed to success step if successful (no OTP step)
       if (success) {
         setPasswordChanged(true);
@@ -267,7 +267,7 @@ export function PasswordChangeModal({
   const logoutHandler = async () => {
     try {
       // Call logout API
-      await LogoutApi();
+      await AuthService.logout();
     } catch (error) {
       console.error("Logout error:", error);
       // Continue with logout even if API call fails
@@ -311,16 +311,16 @@ export function PasswordChangeModal({
 
         {(step?.toLowerCase() === 'otp' || type?.toLowerCase() === "forgotpassword")
           ? <form onSubmit={(e) => {
-              e.preventDefault();
-              // OTP verification is commented out - this is for forgot password flow
-              if (clearType) {
-                clearType();
-              }
-              setPasswordChanged(true);
-              localStorage.setItem('passwordChanged', 'true');
-              setStep('success');
-              startCountdown();
-            }} className="space-y-4">
+            e.preventDefault();
+            // OTP verification is commented out - this is for forgot password flow
+            if (clearType) {
+              clearType();
+            }
+            setPasswordChanged(true);
+            localStorage.setItem('passwordChanged', 'true');
+            setStep('success');
+            startCountdown();
+          }} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="otp">Enter OTP</Label>
               <Input

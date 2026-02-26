@@ -94,24 +94,13 @@ export interface ConversionDataPoint {
   percentage: number;  // Percentage share (0-100)
 }
 
-// Legacy interface for backward compatibility
-export interface ConversionData {
-  // For legacy data, metric may be a label like "Sign-ups"
-  // For new date-wise data, date can be provided and will be preferred on the X-axis
-  metric: string;
-  value: number;
-  percentage: number;
-  date?: string;
-}
-
 // Metadata object for conversion analytics
 export interface ConversionMetadata {
   timeRange: 'daily' | 'weekly' | 'monthly' | 'custom';
   startDate: string;           // ISO 8601
   endDate: string;             // ISO 8601
-  conversionType: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts';
+  conversionType: 'subscription';
   selectedYears?: number[];     // Only for monthly timeRange
-  gender?: 'm' | 'f';          // Only for likes/gifts when filter applied
 }
 
 // Complete API response for conversion analytics
@@ -123,18 +112,10 @@ export interface ConversionAnalyticsResponse {
 export interface AnalyticsData {
   userGrowth: UserGrowthData[];
   activeUsers: ActiveUsersData[];
-  conversions: ConversionData[];
-  performance: {
-    averageResponseTime: number;
-    uptime: number;
-    errorRate: number;
-    throughput: number;
-  };
+  conversions: ConversionDataPoint[];
 }
 
 export class DashboardService {
-
-
   // Get user growth analytics data
   static async getUserGrowth(
     timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
@@ -144,7 +125,6 @@ export class DashboardService {
       years?: number[];
       startDate?: Date;
       endDate?: Date;
-      gender?: 'm' | 'f';
     }
   ): Promise<ApiResponse<UserGrowthResponse>> {
     try {
@@ -175,11 +155,6 @@ export class DashboardService {
         }
       }
 
-      // Gender filter (optional)
-      if (options.gender) {
-        params.append('gender', options.gender);
-      }
-
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.USER_GROWTH}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<UserGrowthResponse>(url, {
@@ -201,7 +176,6 @@ export class DashboardService {
       years?: number[];
       startDate?: Date;
       endDate?: Date;
-      gender?: 'm' | 'f';
     }
   ): Promise<ApiResponse<ActiveUsersResponse>> {
     try {
@@ -232,11 +206,6 @@ export class DashboardService {
         }
       }
 
-      // Gender filter (optional)
-      if (options.gender) {
-        params.append('gender', options.gender);
-      }
-
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVE_USERS}?${params.toString()}`;
       // Use extended timeout for analytics API (2 minutes)
       const response = await apiClient.get<ActiveUsersResponse>(url, {
@@ -252,14 +221,13 @@ export class DashboardService {
   // Get conversion analytics data
   static async getConversions(
     timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
-    conversionType: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts',
+    conversionType: 'subscription',
     options: {
       month?: number;
       year?: number;
       years?: number[];
       startDate?: Date;
       endDate?: Date;
-      gender?: 'm' | 'f';
     }
   ): Promise<ApiResponse<ConversionAnalyticsResponse>> {
     try {
@@ -289,11 +257,6 @@ export class DashboardService {
         if (options.endDate) {
           params.append('endDate', options.endDate.toISOString());
         }
-      }
-
-      // Gender filter (optional, only for likes and gifts)
-      if (options.gender && (conversionType === 'likes' || conversionType === 'gifts')) {
-        params.append('gender', options.gender);
       }
 
       const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.CONVERSIONS}?${params.toString()}`;
@@ -363,25 +326,6 @@ export class DashboardService {
       throw error;
     }
   }
-
-  // Get analytics data (legacy/fallback)
-  static async getAnalytics(
-    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom' = 'monthly',
-    startDate?: Date,
-    endDate?: Date
-  ): Promise<ApiResponse<AnalyticsData>> {
-    try {
-      let url = `${API_CONFIG.ENDPOINTS.DASHBOARD.MAIN}/analytics?range=${timeRange}`;
-
-      if (timeRange === 'custom' && startDate && endDate) {
-        url += `&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
-      }
-
-      const response = await apiClient.get<AnalyticsData>(url);
-
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 }
+
+export default DashboardService;

@@ -10,15 +10,11 @@ export { profileService } from './profileService';
 export type {
   UserProfile,
   UpdateProfileRequest,
-  ChangePasswordRequest as ProfileChangePasswordRequest,
   VerifyOtpRequest,
   ResetPasswordRequest,
   ResetPasswordConfirmRequest,
-  TwoFactorSetupRequest,
   TwoFactorEnableRequest,
   TwoFactorDisableRequest,
-  UserActivity,
-  UpdatePreferencesRequest,
   ApiResponse as ProfileApiResponse,
 } from './profileService';
 

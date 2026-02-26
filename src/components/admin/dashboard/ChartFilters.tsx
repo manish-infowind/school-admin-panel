@@ -11,8 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 export interface ChartConfig {
   chartType: 'bar' | 'pie' | 'line';
   timeRange: 'daily' | 'weekly' | 'monthly' | 'custom';
-  gender?: 'all' | 'm' | 'f';
-  conversionType?: 'subscription' | 'message-before-match' | 'likes' | 'matches' | 'gifts';
+  conversionType?: 'subscription';
   dateRange: {
     from: Date | undefined;
     to: Date | undefined;
@@ -42,7 +41,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     if (!date) return;
 
     const { from, to } = config.dateRange;
-    
+
     // Normalize dates to compare only the date part (ignore time)
     const normalizeDate = (d: Date) => {
       const normalized = new Date(d);
@@ -102,7 +101,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     let newEnd: Date = today;
     let selectedMonth: number | undefined;
     let selectedYear: number | undefined;
-    
+
     if (newTimeRange === 'daily') {
       // For daily, set to current month and year
       selectedMonth = today.getMonth();
@@ -139,7 +138,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
       newStart.setMonth(newStart.getMonth() - 3);
       newEnd = today;
     }
-    
+
     updateConfig({
       timeRange: newTimeRange,
       dateRange: { from: newStart, to: newEnd },
@@ -156,7 +155,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
-    
+
     // Validation: Prevent selecting future months
     if (year === currentYear && monthNum > currentMonth) {
       toast({
@@ -166,7 +165,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
       });
       return;
     }
-    
+
     // Validation: Prevent selecting months in future years
     if (year > currentYear) {
       toast({
@@ -176,7 +175,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
       });
       return;
     }
-    
+
     if (config.timeRange === 'weekly') {
       // For weekly: calculate week range for the month
       const firstDay = new Date(year, monthNum, 1);
@@ -206,7 +205,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
-    
+
     // Validation: Prevent selecting future years
     if (yearNum > currentYear) {
       toast({
@@ -216,11 +215,11 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
       });
       return;
     }
-    
+
     if (config.timeRange === 'weekly') {
       // For weekly: calculate week range for the selected month in the year
       let month = config.selectedMonth !== undefined ? config.selectedMonth : currentMonth;
-      
+
       // If selected month is in the future for the selected year, reset to current month
       if (yearNum === currentYear && month > currentMonth) {
         month = currentMonth;
@@ -230,7 +229,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           variant: "default",
         });
       }
-      
+
       const firstDay = new Date(yearNum, month, 1);
       const start = startOfWeek(firstDay, { weekStartsOn: 1 });
       const lastDay = new Date(yearNum, month + 1, 0);
@@ -244,7 +243,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
     } else if (config.timeRange === 'daily') {
       // For daily: first day of selected month/year to today (if current) or last day of month
       let month = config.selectedMonth !== undefined ? config.selectedMonth : currentMonth;
-      
+
       // If selected month is in the future for the selected year, reset to current month
       if (yearNum === currentYear && month > currentMonth) {
         month = currentMonth;
@@ -254,7 +253,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           variant: "default",
         });
       }
-      
+
       const firstDay = new Date(yearNum, month, 1);
       const isCurrentMonth = yearNum === currentYear && month === currentMonth;
       const endDate = isCurrentMonth ? today : new Date(yearNum, month + 1, 0);
@@ -309,7 +308,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
   const handleYearToggle = (year: number) => {
     const currentYears = config.selectedYears || [new Date().getFullYear()];
     const today = new Date();
-    
+
     if (currentYears.includes(year)) {
       // Remove year if already selected (but keep at least one)
       if (currentYears.length > 1) {
@@ -429,8 +428,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
               {months.map((month, index) => {
                 const disabled = isMonthDisabled(index, config.selectedYear);
                 return (
-                  <SelectItem 
-                    key={index} 
+                  <SelectItem
+                    key={index}
                     value={index.toString()}
                     disabled={disabled}
                     className={disabled ? "opacity-50 cursor-not-allowed" : ""}
@@ -452,8 +451,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
               {years.map((year) => {
                 const isFutureYear = year > currentYear;
                 return (
-                  <SelectItem 
-                    key={year} 
+                  <SelectItem
+                    key={year}
                     value={year.toString()}
                     disabled={isFutureYear}
                     className={isFutureYear ? "opacity-50 cursor-not-allowed" : ""}
@@ -481,8 +480,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
               {months.map((month, index) => {
                 const disabled = isMonthDisabled(index, config.selectedYear);
                 return (
-                  <SelectItem 
-                    key={index} 
+                  <SelectItem
+                    key={index}
                     value={index.toString()}
                     disabled={disabled}
                     className={disabled ? "opacity-50 cursor-not-allowed" : ""}
@@ -504,8 +503,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
               {years.map((year) => {
                 const isFutureYear = year > currentYear;
                 return (
-                  <SelectItem 
-                    key={year} 
+                  <SelectItem
+                    key={year}
                     value={year.toString()}
                     disabled={isFutureYear}
                     className={isFutureYear ? "opacity-50 cursor-not-allowed" : ""}
@@ -524,9 +523,9 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-8 text-xs whitespace-nowrap"
                 type="button"
               >
@@ -549,9 +548,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
                     return (
                       <label
                         key={year}
-                        className={`flex items-center space-x-2 p-2 rounded-md ${
-                          isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'
-                        }`}
+                        className={`flex items-center space-x-2 p-2 rounded-md ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'
+                          }`}
                       >
                         <Checkbox
                           checked={isSelected}
@@ -581,8 +579,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
 
       {/* Daily and Custom: Date Range Picker */}
       {(config.timeRange === 'daily' || config.timeRange === 'custom') && (
-        <Popover 
-          open={config.isDatePickerOpen} 
+        <Popover
+          open={config.isDatePickerOpen}
           onOpenChange={(open) => {
             if (open && config.dateRange.from) {
               onConfigChange({
@@ -599,9 +597,9 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           }}
         >
           <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-8 text-xs whitespace-nowrap"
               type="button"
             >
@@ -609,8 +607,8 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
               {config.timeRange === 'custom' && config.dateRange.from && config.dateRange.to
                 ? `${format(config.dateRange.from, 'MMM dd, yyyy')} - ${format(config.dateRange.to, 'MMM dd, yyyy')}`
                 : config.timeRange === 'daily' && config.dateRange.from && config.dateRange.to
-                ? `${format(config.dateRange.from, 'MMM dd, yyyy')} - ${format(config.dateRange.to, 'MMM dd, yyyy')}`
-                : 'Select Date Range'}
+                  ? `${format(config.dateRange.from, 'MMM dd, yyyy')} - ${format(config.dateRange.to, 'MMM dd, yyyy')}`
+                  : 'Select Date Range'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end" sideOffset={5}>
@@ -707,7 +705,7 @@ export function ChartFilters({ config, onConfigChange, title, iconColor = "text-
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
         </TabsList>
       </Tabs>
-      
+
       {/* Chart Type Selector */}
       <div className="flex gap-1 border rounded-lg p-1">
         <Button
