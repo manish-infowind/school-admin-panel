@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse, ConversionAnalyticsResponse, ConversionDataPoint, RevenueAnalyticsResponse, ConversationAnalyticsResponse, AppStoreInstallStatsResponse, SafetyMetricsResponse } from "@/api/services/dashboardService";
+import { DashboardService, AnalyticsData, UserGrowthResponse, ActiveUsersResponse, ConversionAnalyticsResponse, ConversionDataPoint } from "@/api/services/dashboardService";
 import { ChartConfig } from "@/components/admin/dashboard/ChartFilters";
 
 // Generate mock analytics data based on date range
@@ -29,7 +29,7 @@ const generateMockAnalyticsData = (
 
         const dateStr = `${month} ${year}`;
         const yearOffset = selectedYears.length > 1 ? year - Math.min(...selectedYears) : 0;
-        
+
         userGrowth.push({
           date: dateStr,
           users: Math.floor(Math.random() * 500) + 1000 + (yearOffset * 200) + (monthIndex * 10),
@@ -70,7 +70,7 @@ const generateMockAnalyticsData = (
   const end = new Date(endDate);
   const diffTime = Math.abs(end.getTime() - start.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   let interval = 1;
   if (timeRange === 'weekly') interval = 7;
   else if (timeRange === 'monthly') interval = 30;
@@ -80,7 +80,7 @@ const generateMockAnalyticsData = (
 
   while (currentDate <= end) {
     let dateStr = '';
-    
+
     if (timeRange === 'daily' || (timeRange === 'custom' && diffDays <= 31)) {
       dateStr = format(currentDate, 'MMM dd, yyyy');
     } else if (timeRange === 'weekly' || (timeRange === 'custom' && diffDays <= 90)) {
@@ -117,7 +117,7 @@ const generateMockAnalyticsData = (
     } else {
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
-    
+
     dataPointIndex++;
     if (dataPointIndex > 100) break;
   }
@@ -169,7 +169,7 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
     }
 
     const response = await DashboardService.getUserGrowth(chartConfig.timeRange, options);
-    
+
     if (response.success && response.data) {
       // Transform UserGrowthResponse to AnalyticsData format
       return {
@@ -187,7 +187,7 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
       // Fallback to mock data
       let calculatedStartDate: Date;
       let calculatedEndDate: Date = new Date();
-      
+
       if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
         const minYear = Math.min(...chartConfig.selectedYears);
         calculatedStartDate = new Date(minYear, 0, 1);
@@ -205,10 +205,10 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
       } else {
         calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
       }
-      
+
       return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
+        calculatedStartDate,
+        calculatedEndDate,
         chartConfig.timeRange,
         chartConfig.selectedYears
       );
@@ -217,7 +217,7 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
     // Fallback to mock data on error
     let calculatedStartDate: Date;
     let calculatedEndDate: Date = new Date();
-    
+
     if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
       const minYear = Math.min(...chartConfig.selectedYears);
       calculatedStartDate = new Date(minYear, 0, 1);
@@ -235,10 +235,10 @@ const loadUserGrowthData = async (chartConfig: ChartConfig): Promise<AnalyticsDa
     } else {
       calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
     }
-    
+
     return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
+      calculatedStartDate,
+      calculatedEndDate,
       chartConfig.timeRange,
       chartConfig.selectedYears
     );
@@ -279,7 +279,7 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     }
 
     const response = await DashboardService.getActiveUsers(chartConfig.timeRange, options);
-    
+
     if (response.success && response.data) {
       // Transform ActiveUsersResponse to AnalyticsData format
       return {
@@ -297,7 +297,7 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       // Fallback to mock data
       let calculatedStartDate: Date;
       let calculatedEndDate: Date = new Date();
-      
+
       if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
         const minYear = Math.min(...chartConfig.selectedYears);
         calculatedStartDate = new Date(minYear, 0, 1);
@@ -315,10 +315,10 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       } else {
         calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
       }
-      
+
       return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
+        calculatedStartDate,
+        calculatedEndDate,
         chartConfig.timeRange,
         chartConfig.selectedYears
       );
@@ -327,7 +327,7 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     // Fallback to mock data on error
     let calculatedStartDate: Date;
     let calculatedEndDate: Date = new Date();
-    
+
     if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
       const minYear = Math.min(...chartConfig.selectedYears);
       calculatedStartDate = new Date(minYear, 0, 1);
@@ -345,127 +345,10 @@ const loadActiveUsersData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     } else {
       calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
     }
-    
+
     return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
-      chartConfig.timeRange,
-      chartConfig.selectedYears
-    );
-  }
-};
-
-// Load revenue analytics data using the new dedicated API
-const loadRevenueData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
-  try {
-    const options: {
-      month?: number;
-      year?: number;
-      years?: number[];
-      startDate?: Date;
-      endDate?: Date;
-      gender?: 'm' | 'f';
-    } = {};
-
-    // Build options based on timeRange
-    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
-      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        options.month = chartConfig.selectedMonth;
-        options.year = chartConfig.selectedYear;
-      }
-    } else if (chartConfig.timeRange === 'monthly') {
-      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        options.years = chartConfig.selectedYears;
-      }
-    } else if (chartConfig.timeRange === 'custom') {
-      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        options.startDate = chartConfig.dateRange.from;
-        options.endDate = chartConfig.dateRange.to;
-      }
-    }
-
-    if (chartConfig.gender && chartConfig.gender !== 'all') {
-      options.gender = chartConfig.gender;
-    }
-
-    const response = await DashboardService.getRevenue(chartConfig.timeRange, options);
-    
-    if (response.success && response.data) {
-      // Transform RevenueAnalyticsResponse to AnalyticsData format
-      // Sort by date to ensure chronological order
-      const sortedRevenue = [...response.data.revenueAnalytics].sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      return {
-        userGrowth: [], // Will be loaded separately
-        activeUsers: [], // Will be loaded separately
-        conversions: [], // Not used for revenue
-        revenueAnalytics: sortedRevenue, // Store revenue data
-        performance: {
-          averageResponseTime: 0,
-          uptime: 0,
-          errorRate: 0,
-          throughput: 0,
-        },
-      };
-    } else {
-      // Fallback to mock data
-      let calculatedStartDate: Date;
-      let calculatedEndDate: Date = new Date();
-      
-      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        const minYear = Math.min(...chartConfig.selectedYears);
-        calculatedStartDate = new Date(minYear, 0, 1);
-        const maxYear = Math.max(...chartConfig.selectedYears);
-        calculatedEndDate = new Date(maxYear, 11, 31);
-      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        calculatedStartDate = chartConfig.dateRange.from;
-        calculatedEndDate = chartConfig.dateRange.to;
-      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else {
-        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-      }
-      
-      return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
-        chartConfig.timeRange,
-        chartConfig.selectedYears
-      );
-    }
-  } catch (error) {
-    console.error('Error loading revenue analytics:', error);
-    // Fallback to mock data on error
-    let calculatedStartDate: Date;
-    let calculatedEndDate: Date = new Date();
-    
-    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-      const minYear = Math.min(...chartConfig.selectedYears);
-      calculatedStartDate = new Date(minYear, 0, 1);
-      const maxYear = Math.max(...chartConfig.selectedYears);
-      calculatedEndDate = new Date(maxYear, 11, 31);
-    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-      calculatedStartDate = chartConfig.dateRange.from;
-      calculatedEndDate = chartConfig.dateRange.to;
-    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else {
-      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-    }
-    
-    return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
+      calculatedStartDate,
+      calculatedEndDate,
       chartConfig.timeRange,
       chartConfig.selectedYears
     );
@@ -508,8 +391,8 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     }
 
     // Gender filter (only for likes and gifts)
-    if (chartConfig.gender && chartConfig.gender !== 'all' && 
-        (chartConfig.conversionType === 'likes' || chartConfig.conversionType === 'gifts')) {
+    if (chartConfig.gender && chartConfig.gender !== 'all' &&
+      (chartConfig.conversionType === 'likes' || chartConfig.conversionType === 'gifts')) {
       options.gender = chartConfig.gender;
     }
 
@@ -518,11 +401,11 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       chartConfig.conversionType,
       options
     );
-    
+
     if (response.success && response.data) {
       // Transform ConversionAnalyticsResponse to AnalyticsData format
       // Sort by date to ensure chronological order (as per API documentation best practices)
-      const sortedConversions = [...response.data.conversions].sort((a, b) => 
+      const sortedConversions = [...response.data.conversions].sort((a, b) =>
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
@@ -549,7 +432,7 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       // Fallback to mock data
       let calculatedStartDate: Date;
       let calculatedEndDate: Date = new Date();
-      
+
       if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
         const minYear = Math.min(...chartConfig.selectedYears);
         calculatedStartDate = new Date(minYear, 0, 1);
@@ -567,10 +450,10 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
       } else {
         calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
       }
-      
+
       return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
+        calculatedStartDate,
+        calculatedEndDate,
         chartConfig.timeRange,
         chartConfig.selectedYears
       );
@@ -580,7 +463,7 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     // Fallback to mock data on error
     let calculatedStartDate: Date;
     let calculatedEndDate: Date = new Date();
-    
+
     if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
       const minYear = Math.min(...chartConfig.selectedYears);
       calculatedStartDate = new Date(minYear, 0, 1);
@@ -598,390 +481,10 @@ const loadConversionsData = async (chartConfig: ChartConfig): Promise<AnalyticsD
     } else {
       calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
     }
-    
+
     return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
-      chartConfig.timeRange,
-      chartConfig.selectedYears
-    );
-  }
-};
-
-// Load conversation analytics data using the new dedicated API
-const loadConversationAnalyticsData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
-  try {
-    const options: {
-      month?: number;
-      year?: number;
-      years?: number[];
-      startDate?: Date;
-      endDate?: Date;
-    } = {};
-
-    // Build options based on timeRange
-    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
-      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        options.month = chartConfig.selectedMonth;
-        options.year = chartConfig.selectedYear;
-      }
-    } else if (chartConfig.timeRange === 'monthly') {
-      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        options.years = chartConfig.selectedYears;
-      }
-    } else if (chartConfig.timeRange === 'custom') {
-      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        options.startDate = chartConfig.dateRange.from;
-        options.endDate = chartConfig.dateRange.to;
-      }
-    }
-
-    const response = await DashboardService.getConversationAnalytics(chartConfig.timeRange, options);
-    
-    if (response.success && response.data) {
-      // Transform ConversationAnalyticsResponse to AnalyticsData format
-      // Sort by date to ensure chronological order
-      const sortedConversationAnalytics = [...response.data.conversationAnalytics].sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      return {
-        userGrowth: [], // Will be loaded separately
-        activeUsers: [], // Will be loaded separately
-        conversions: [], // Not used for conversation analytics
-        conversationAnalytics: sortedConversationAnalytics,
-        performance: {
-          averageResponseTime: 0,
-          uptime: 0,
-          errorRate: 0,
-          throughput: 0,
-        },
-      };
-    } else {
-      // Fallback to mock data
-      let calculatedStartDate: Date;
-      let calculatedEndDate: Date = new Date();
-      
-      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        const minYear = Math.min(...chartConfig.selectedYears);
-        calculatedStartDate = new Date(minYear, 0, 1);
-        const maxYear = Math.max(...chartConfig.selectedYears);
-        calculatedEndDate = new Date(maxYear, 11, 31);
-      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        calculatedStartDate = chartConfig.dateRange.from;
-        calculatedEndDate = chartConfig.dateRange.to;
-      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else {
-        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-      }
-      
-      return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
-        chartConfig.timeRange,
-        chartConfig.selectedYears
-      );
-    }
-  } catch (error) {
-    console.error('Error loading conversation analytics:', error);
-    // Fallback to mock data on error
-    let calculatedStartDate: Date;
-    let calculatedEndDate: Date = new Date();
-    
-    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-      const minYear = Math.min(...chartConfig.selectedYears);
-      calculatedStartDate = new Date(minYear, 0, 1);
-      const maxYear = Math.max(...chartConfig.selectedYears);
-      calculatedEndDate = new Date(maxYear, 11, 31);
-    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-      calculatedStartDate = chartConfig.dateRange.from;
-      calculatedEndDate = chartConfig.dateRange.to;
-    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else {
-      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-    }
-    
-    return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
-      chartConfig.timeRange,
-      chartConfig.selectedYears
-    );
-  }
-};
-
-// Load app store install stats data using the new dedicated API
-const loadAppStoreInstallStatsData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
-  try {
-    const options: {
-      month?: number;
-      year?: number;
-      years?: number[];
-      startDate?: Date;
-      endDate?: Date;
-    } = {};
-
-    // Build options based on timeRange
-    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
-      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        options.month = chartConfig.selectedMonth;
-        options.year = chartConfig.selectedYear;
-      }
-    } else if (chartConfig.timeRange === 'monthly') {
-      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        options.years = chartConfig.selectedYears;
-      }
-    } else if (chartConfig.timeRange === 'custom') {
-      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        options.startDate = chartConfig.dateRange.from;
-        options.endDate = chartConfig.dateRange.to;
-      }
-    }
-
-    const response = await DashboardService.getAppStoreInstallStats(chartConfig.timeRange, options);
-    
-    if (response.success && response.data) {
-      // Handle different response structures
-      // The API returns: {installStats: Array, metadata: {}}
-      let appStoreInstallStatsArray: any[];
-      
-      if (Array.isArray(response.data)) {
-        // Response is an array directly
-        appStoreInstallStatsArray = response.data;
-      } else if (response.data.installStats && Array.isArray(response.data.installStats)) {
-        // Response has installStats property (actual API structure)
-        appStoreInstallStatsArray = response.data.installStats;
-      } else if (response.data.appStoreInstallStats && Array.isArray(response.data.appStoreInstallStats)) {
-        // Fallback: Response has appStoreInstallStats property
-        appStoreInstallStatsArray = response.data.appStoreInstallStats;
-      } else {
-        // Fallback: try to extract data from response.data
-        console.warn('Unexpected response structure for app store install stats:', response.data);
-        appStoreInstallStatsArray = [];
-      }
-      
-      // Filter out metadata object if present (metadata is not part of the data array)
-      const dataArray = appStoreInstallStatsArray.filter(item => item && item.date && typeof item.signupPercentage === 'number');
-      
-      // Transform AppStoreInstallStatsResponse to AnalyticsData format
-      // Sort by date to ensure chronological order
-      const sortedAppStoreInstallStats = [...dataArray].sort((a, b) => {
-        // Parse dates - handle both "Jan 21, 2026" and "Jan 2026" formats
-        const parseDate = (dateStr: string): number => {
-          // Try parsing as "Jan 21, 2026" format first
-          const parsed = new Date(dateStr);
-          if (!isNaN(parsed.getTime())) {
-            return parsed.getTime();
-          }
-          // Try parsing as "Jan 2026" format
-          const parts = dateStr.split(' ');
-          if (parts.length === 2) {
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const monthIndex = monthNames.indexOf(parts[0]);
-            const year = parseInt(parts[1]);
-            if (monthIndex !== -1 && !isNaN(year)) {
-              return new Date(year, monthIndex, 1).getTime();
-            }
-          }
-          return 0;
-        };
-        return parseDate(a.date) - parseDate(b.date);
-      });
-
-      return {
-        userGrowth: [], // Will be loaded separately
-        activeUsers: [], // Will be loaded separately
-        conversions: [], // Not used for app store install stats
-        appStoreInstallStats: sortedAppStoreInstallStats,
-        performance: {
-          averageResponseTime: 0,
-          uptime: 0,
-          errorRate: 0,
-          throughput: 0,
-        },
-      };
-    } else {
-      // Fallback to mock data
-      let calculatedStartDate: Date;
-      let calculatedEndDate: Date = new Date();
-      
-      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        const minYear = Math.min(...chartConfig.selectedYears);
-        calculatedStartDate = new Date(minYear, 0, 1);
-        const maxYear = Math.max(...chartConfig.selectedYears);
-        calculatedEndDate = new Date(maxYear, 11, 31);
-      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        calculatedStartDate = chartConfig.dateRange.from;
-        calculatedEndDate = chartConfig.dateRange.to;
-      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else {
-        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-      }
-      
-      return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
-        chartConfig.timeRange,
-        chartConfig.selectedYears
-      );
-    }
-  } catch (error) {
-    console.error('Error loading app store install stats:', error);
-    // Fallback to mock data on error
-    let calculatedStartDate: Date;
-    let calculatedEndDate: Date = new Date();
-    
-    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-      const minYear = Math.min(...chartConfig.selectedYears);
-      calculatedStartDate = new Date(minYear, 0, 1);
-      const maxYear = Math.max(...chartConfig.selectedYears);
-      calculatedEndDate = new Date(maxYear, 11, 31);
-    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-      calculatedStartDate = chartConfig.dateRange.from;
-      calculatedEndDate = chartConfig.dateRange.to;
-    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else {
-      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-    }
-    
-    return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
-      chartConfig.timeRange,
-      chartConfig.selectedYears
-    );
-  }
-};
-
-// Load safety metrics data using the new dedicated API
-const loadSafetyMetricsData = async (chartConfig: ChartConfig): Promise<AnalyticsData | null> => {
-  try {
-    const options: {
-      month?: number;
-      year?: number;
-      years?: number[];
-      startDate?: Date;
-      endDate?: Date;
-    } = {};
-
-    // Build options based on timeRange
-    if (chartConfig.timeRange === 'daily' || chartConfig.timeRange === 'weekly') {
-      if (chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        options.month = chartConfig.selectedMonth;
-        options.year = chartConfig.selectedYear;
-      }
-    } else if (chartConfig.timeRange === 'monthly') {
-      if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        options.years = chartConfig.selectedYears;
-      }
-    } else if (chartConfig.timeRange === 'custom') {
-      if (chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        options.startDate = chartConfig.dateRange.from;
-        options.endDate = chartConfig.dateRange.to;
-      }
-    }
-
-    const response = await DashboardService.getSafetyMetrics(chartConfig.timeRange, options);
-    
-    if (response.success && response.data) {
-      // Transform SafetyMetricsResponse to AnalyticsData format
-      // Sort by date to ensure chronological order
-      const sortedSafetyMetrics = [...response.data.safetyMetrics].sort((a, b) => {
-        // Parse dates using UTC to avoid timezone issues
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateA.getTime() - dateB.getTime();
-      });
-
-      return {
-        userGrowth: [], // Will be loaded separately
-        activeUsers: [], // Will be loaded separately
-        conversions: [], // Not used for safety metrics
-        safetyMetrics: sortedSafetyMetrics,
-        performance: {
-          averageResponseTime: 0,
-          uptime: 0,
-          errorRate: 0,
-          throughput: 0,
-        },
-      };
-    } else {
-      // Fallback to mock data
-      let calculatedStartDate: Date;
-      let calculatedEndDate: Date = new Date();
-      
-      if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-        const minYear = Math.min(...chartConfig.selectedYears);
-        calculatedStartDate = new Date(minYear, 0, 1);
-        const maxYear = Math.max(...chartConfig.selectedYears);
-        calculatedEndDate = new Date(maxYear, 11, 31);
-      } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-        calculatedStartDate = chartConfig.dateRange.from;
-        calculatedEndDate = chartConfig.dateRange.to;
-      } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-        calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-        calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-      } else {
-        calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-      }
-      
-      return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
-        chartConfig.timeRange,
-        chartConfig.selectedYears
-      );
-    }
-  } catch (error) {
-    console.error('Error loading safety metrics:', error);
-    // Fallback to mock data on error
-    let calculatedStartDate: Date;
-    let calculatedEndDate: Date = new Date();
-    
-    if (chartConfig.timeRange === 'monthly' && chartConfig.selectedYears && chartConfig.selectedYears.length > 0) {
-      const minYear = Math.min(...chartConfig.selectedYears);
-      calculatedStartDate = new Date(minYear, 0, 1);
-      const maxYear = Math.max(...chartConfig.selectedYears);
-      calculatedEndDate = new Date(maxYear, 11, 31);
-    } else if (chartConfig.timeRange === 'custom' && chartConfig.dateRange.from && chartConfig.dateRange.to) {
-      calculatedStartDate = chartConfig.dateRange.from;
-      calculatedEndDate = chartConfig.dateRange.to;
-    } else if (chartConfig.timeRange === 'daily' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else if (chartConfig.timeRange === 'weekly' && chartConfig.selectedMonth !== undefined && chartConfig.selectedYear !== undefined) {
-      calculatedStartDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth, 1);
-      calculatedEndDate = new Date(chartConfig.selectedYear, chartConfig.selectedMonth + 1, 0);
-    } else {
-      calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
-    }
-    
-    return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
+      calculatedStartDate,
+      calculatedEndDate,
       chartConfig.timeRange,
       chartConfig.selectedYears
     );
@@ -992,7 +495,7 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
   try {
     let calculatedStartDate: Date | undefined;
     let calculatedEndDate: Date | undefined;
-    
+
     // For monthly with multi-year selection, use the dateRange from config
     if (chartConfig.timeRange === 'monthly') {
       if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0 && chartConfig.dateRange.from && chartConfig.dateRange.to) {
@@ -1030,7 +533,7 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
       calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
       calculatedEndDate = new Date();
     }
-    
+
     if (!calculatedStartDate || !calculatedEndDate) return null;
 
     const response = await DashboardService.getAnalytics(
@@ -1038,13 +541,13 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
       calculatedStartDate,
       calculatedEndDate
     );
-    
+
     if (response.success && response.data) {
       return response.data;
     } else {
       return generateMockAnalyticsData(
-        calculatedStartDate, 
-        calculatedEndDate, 
+        calculatedStartDate,
+        calculatedEndDate,
         chartConfig.timeRange,
         chartConfig.selectedYears
       );
@@ -1052,7 +555,7 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
   } catch (error) {
     let calculatedStartDate: Date | undefined;
     let calculatedEndDate: Date | undefined;
-    
+
     // For monthly with multi-year selection, use the dateRange from config
     if (chartConfig.timeRange === 'monthly') {
       if (chartConfig.selectedYears && chartConfig.selectedYears.length > 0 && chartConfig.dateRange.from && chartConfig.dateRange.to) {
@@ -1089,12 +592,12 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
       calculatedStartDate = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
       calculatedEndDate = new Date();
     }
-    
+
     if (!calculatedStartDate || !calculatedEndDate) return null;
-    
+
     return generateMockAnalyticsData(
-      calculatedStartDate, 
-      calculatedEndDate, 
+      calculatedStartDate,
+      calculatedEndDate,
       chartConfig.timeRange,
       chartConfig.selectedYears
     );
@@ -1102,8 +605,8 @@ const loadChartData = async (chartConfig: ChartConfig): Promise<AnalyticsData | 
 };
 
 export function useChartData(
-  chartConfig: ChartConfig, 
-  apiType: 'userGrowth' | 'activeUsers' | 'conversions' | 'revenue' | 'conversationAnalytics' | 'appStoreInstallStats' | 'safetyMetrics' | 'default' = 'default'
+  chartConfig: ChartConfig,
+  apiType: 'userGrowth' | 'activeUsers' | 'conversions' | 'default' = 'default'
 ) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1128,14 +631,6 @@ export function useChartData(
       loadData = loadActiveUsersData;
     } else if (apiType === 'conversions') {
       loadData = loadConversionsData;
-    } else if (apiType === 'revenue') {
-      loadData = loadRevenueData;
-    } else if (apiType === 'conversationAnalytics') {
-      loadData = loadConversationAnalyticsData;
-    } else if (apiType === 'appStoreInstallStats') {
-      loadData = loadAppStoreInstallStatsData;
-    } else if (apiType === 'safetyMetrics') {
-      loadData = loadSafetyMetricsData;
     } else {
       loadData = loadChartData;
     }
@@ -1178,8 +673,8 @@ export function useChartData(
       }
     };
   }, [
-    chartConfig.timeRange, 
-    chartConfig.dateRange.from, 
+    chartConfig.timeRange,
+    chartConfig.dateRange.from,
     chartConfig.dateRange.to,
     chartConfig.selectedYears?.join(','), // Include selected years in dependencies
     chartConfig.selectedMonth, // Include selected month for daily/weekly

@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
-import { productStore } from "@/lib/productStore";
 import { DashboardService } from "@/api/services/dashboardService";
 import { useToast } from "@/hooks/use-toast";
 import { ChartCard } from "@/components/admin/dashboard/ChartCard";
@@ -40,7 +39,7 @@ const createChartConfig = (): ChartConfig => {
 // Helper function to format dates using UTC to avoid timezone shifts
 const formatDateUTC = (date: Date, format: 'daily' | 'weekly' | 'monthly'): string => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
+
   if (format === 'daily') {
     const day = date.getUTCDate().toString().padStart(2, '0');
     const month = months[date.getUTCMonth()];
@@ -65,7 +64,6 @@ const formatDateUTC = (date: Date, format: 'daily' | 'weekly' | 'monthly'): stri
 export default function Dashboard() {
   const { toast } = useToast();
 
-  const [products, setProducts] = useState(productStore.getProducts());
   const [syncing, setSyncing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -79,7 +77,7 @@ export default function Dashboard() {
   // Use custom hook for chart data
   // Fetch stats independently (NO FILTERS - stats remain static)
   const { data: statsSummary, isLoading: statsLoading, refetch: refetchStatsSummary } = useDashboardStatsSummary();
-  
+
   // Use the new dedicated User Growth API for user growth chart
   const { data: userGrowthData, loading: userGrowthLoading } = useChartData(userGrowthChart, 'userGrowth');
   // Use the new dedicated Active Users API for active users chart
@@ -87,12 +85,7 @@ export default function Dashboard() {
   // Use the new dedicated Conversions API for conversion insights chart
   const { data: conversionData, loading: conversionLoading } = useChartData(conversionChart, 'conversions');
 
-  useEffect(() => {
-    const unsubscribe = productStore.subscribe(() => {
-      setProducts(productStore.getProducts());
-    });
-    return unsubscribe;
-  }, []);
+
 
   // Handle sync user growth data
   const handleSyncUserGrowth = async () => {
@@ -139,15 +132,15 @@ export default function Dashboard() {
   const handleRefreshAnalytics = async (date?: string) => {
     try {
       setRefreshing(true);
-      
+
       // Format date as YYYY-MM-DD if provided, otherwise use current date
       const dateToRefresh = date || new Date().toISOString().split('T')[0];
-      
+
       const response = await DashboardService.refreshAnalytics(dateToRefresh);
 
       if (response.success && response.data) {
         const { userGrowth, activeUsers, duration_ms } = response.data;
-        
+
         toast({
           title: "Refresh Successful",
           description: `Analytics data refreshed successfully for ${response.data.date} (${duration_ms}ms)`,
@@ -156,7 +149,7 @@ export default function Dashboard() {
         // Force refresh all chart data by updating the chart configs
         // This will trigger the useChartData hooks to refetch
         const now = new Date();
-        
+
         setUserGrowthChart(prev => ({
           ...prev,
           dateRange: {
@@ -164,7 +157,7 @@ export default function Dashboard() {
             to: now,
           },
         }));
-        
+
         setActiveUsersChart(prev => ({
           ...prev,
           dateRange: {
@@ -172,7 +165,7 @@ export default function Dashboard() {
             to: now,
           },
         }));
-        
+
         setConversionChart(prev => ({
           ...prev,
           dateRange: {
@@ -268,7 +261,7 @@ export default function Dashboard() {
         const aName = typeof a.name === 'string' ? a.name : '';
         const bName = typeof b.name === 'string' ? b.name : '';
         return months.indexOf(aName) - months.indexOf(bName);
-      }) as Array<{ name: string; [key: string]: string | number }>;
+      }) as Array<{ name: string;[key: string]: string | number }>;
     }
 
     // Standard format for single year or other time ranges
@@ -307,7 +300,7 @@ export default function Dashboard() {
         const aName = typeof a.name === 'string' ? a.name : '';
         const bName = typeof b.name === 'string' ? b.name : '';
         return months.indexOf(aName) - months.indexOf(bName);
-      }) as Array<{ name: string; [key: string]: string | number }>;
+      }) as Array<{ name: string;[key: string]: string | number }>;
     }
 
     return activeUsersData.activeUsers.map(item => ({
@@ -328,21 +321,21 @@ export default function Dashboard() {
       conversionChart.selectedYears &&
       conversionChart.selectedYears.length > 1
     ) {
-      const monthDataMap = new Map<string, { name: string; [key: string]: number | string }>();
+      const monthDataMap = new Map<string, { name: string;[key: string]: number | string }>();
 
       const conversions = conversionData.conversions || [];
 
       conversions.forEach((item) => {
         const raw = item.metric;
         if (!raw) return;
-        
+
         const parts = raw.split(' ');
-        if(parts.length !==2 ) return;
+        if (parts.length !== 2) return;
 
         let monthLabel = parts[0];
         let yearNum = Number(parts[1]);
 
-        if(isNaN(yearNum)) return;
+        if (isNaN(yearNum)) return;
         //removed the ISO parsing of date when we already have months name comming in API response so I used that 
         if (
           conversionChart.selectedYears &&
