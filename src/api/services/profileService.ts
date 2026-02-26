@@ -7,100 +7,30 @@ export interface UserProfile {
   lastName: string;
   email: string;
   phone: string;
-  location?: string;
-  bio?: string;
   avatar: string;
-  role: string;
-  joinDate: string;
-  lastLogin: string;
-  lastPasswordChange?: {
-    changedAt: string;
-    changedAtFormatted: string;
-    changedBy: string;
-    reason: string;
-    timeAgo: string;
-  };
-  isActive: boolean;
-  twoFactorEnabled: boolean;
-  permissions: string[];
 }
 
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
-  location?: string;
-  bio?: string;
-}
-
-export interface VerifyOtpRequest {
-  otp: string;
-  newPassword: string;
-}
-
-export interface ResetPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordConfirmRequest {
-  token: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface TwoFactorEnableRequest {
-  otp: string;
-}
-
-export interface TwoFactorDisableRequest {
-  otp: string;
 }
 
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, string[]>;
-  };
 }
 
 class ProfileService {
   private baseUrl = API_CONFIG.BASE_URL;
 
   /**
-   * Get user ID from localStorage
-   */
-  private getUserId(): string | null {
-    try {
-      const user = localStorage.getItem('user');
-      if (user) {
-        const userData = JSON.parse(user);
-        const userId = userData.id || userData.userId;
-        if (userId) {
-          return userId;
-        }
-      }
-      return null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  /**
    * Get user profile
    */
   async getProfile(): Promise<ApiResponse<UserProfile>> {
     try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`;
-
-      const response = await apiClient.get(url);
+      const response = await apiClient.get(`${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`);
 
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
@@ -134,12 +64,7 @@ class ProfileService {
    */
   async updateProfile(profileData: UpdateProfileRequest): Promise<ApiResponse<UserProfile>> {
     try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`;
-
-      const response = await apiClient.put(url, profileData);
+      const response = await apiClient.put(`${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE}`, profileData);
 
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
@@ -171,17 +96,12 @@ class ProfileService {
   /**
    * Upload avatar
    */
-  async uploadAvatar(file: File, userId?: string): Promise<ApiResponse<{ avatar: string; avatarUrl: string }>> {
+  async uploadAvatar(file: File): Promise<ApiResponse<{ avatarUrl: string }>> {
     try {
-      const targetUserId = userId || this.getUserId();
       const formData = new FormData();
       formData.append('file', file);
 
-      const url = targetUserId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_AVATAR}?userId=${targetUserId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_AVATAR}`;
-
-      const response = await apiClient.post(url, formData, {
+      const response = await apiClient.post(`${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_AVATAR}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -189,17 +109,17 @@ class ProfileService {
 
       if (response && typeof response === 'object') {
         if ('success' in response && 'data' in response) {
-          return response as ApiResponse<{ avatar: string; avatarUrl: string }>;
+          return response as ApiResponse<{ avatarUrl: string }>;
         } else if ('data' in response && response.data) {
           return {
             success: true,
-            data: response.data as { avatar: string; avatarUrl: string },
+            data: response.data as { avatarUrl: string },
             message: 'Avatar uploaded successfully'
           };
         } else {
           return {
             success: true,
-            data: response as unknown as { avatar: string; avatarUrl: string },
+            data: response as unknown as { avatarUrl: string },
             message: 'Avatar uploaded successfully'
           };
         }
@@ -209,174 +129,6 @@ class ProfileService {
         success: false,
         message: 'Invalid response format'
       };
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Verify OTP for password change
-   */
-  async verifyOtp(otpData: VerifyOtpRequest): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_VERIFY_OTP}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_VERIFY_OTP}`;
-
-      const response = await apiClient.post(url, otpData);
-
-      if (response && typeof response === 'object') {
-        if ('success' in response && 'data' in response) {
-          return response as ApiResponse<void>;
-        } else if ('data' in response && response.data) {
-          return {
-            success: true,
-            data: response.data,
-            message: 'OTP verified successfully'
-          };
-        } else {
-          return {
-            success: true,
-            data: undefined,
-            message: response.message || 'OTP verified successfully'
-          };
-        }
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format'
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Request password reset
-   */
-  async requestPasswordReset(resetData: ResetPasswordRequest): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET_REQUEST}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET_REQUEST}`;
-
-      const response = await apiClient.post(url, resetData);
-
-      if (response && typeof response === 'object') {
-        if ('success' in response && 'data' in response) {
-          return response as ApiResponse<void>;
-        } else if ('data' in response && response.data) {
-          return {
-            success: true,
-            data: response.data,
-            message: 'Password reset link sent successfully'
-          };
-        } else {
-          return {
-            success: true,
-            data: undefined,
-            message: response.message || 'Password reset link sent successfully'
-          };
-        }
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format'
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Reset password with token
-   */
-  async resetPassword(resetData: ResetPasswordConfirmRequest): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_PASSWORD_RESET}`;
-
-      const response = await apiClient.post(url, resetData);
-
-      if (response && typeof response === 'object') {
-        if ('success' in response && 'data' in response) {
-          return response as ApiResponse<void>;
-        } else if ('data' in response && response.data) {
-          return {
-            success: true,
-            data: response.data,
-            message: 'Password reset successfully'
-          };
-        } else {
-          return {
-            success: true,
-            data: undefined,
-            message: response.message || 'Password reset successfully'
-          };
-        }
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format'
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Setup 2FA (send OTP)
-   */
-  async setup2FA(): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_SETUP}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_SETUP}`;
-
-      const response = await apiClient.post<void>(url);
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Enable 2FA
-   */
-  async enable2FA(otpData: TwoFactorEnableRequest): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_ENABLE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_ENABLE}`;
-
-      const response = await apiClient.post<void>(url, otpData);
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Disable 2FA
-   */
-  async disable2FA(otpData: TwoFactorDisableRequest): Promise<ApiResponse<void>> {
-    try {
-      const userId = this.getUserId();
-      const url = userId
-        ? `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_DISABLE}?userId=${userId}`
-        : `${this.baseUrl}${API_CONFIG.ENDPOINTS.ADMIN_PROFILE.PROFILE_2FA_DISABLE}`;
-
-      const response = await apiClient.post<void>(url, otpData);
-      return response;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -387,37 +139,13 @@ class ProfileService {
    */
   private handleError(error: any): Error {
     if (error.response) {
-      const { data, status } = error.response;
-
+      const { data } = error.response;
       if (data?.message) {
         return new Error(data.message);
       }
-
-      if (data?.error) {
-        return new Error(data.error.message || 'An error occurred');
-      }
-
-      switch (status) {
-        case 401:
-          return new Error(data?.message || 'Unauthorized. Please login again.');
-        case 403:
-          return new Error('Access denied. You do not have permission to perform this action.');
-        case 404:
-          return new Error('Profile not found.');
-        case 422:
-          return new Error('Validation failed. Please check your input.');
-        case 500:
-          return new Error('Server error. Please try again later.');
-        default:
-          return new Error('An unexpected error occurred.');
-      }
+      return new Error('An error occurred');
     }
-
-    if (error.request) {
-      return new Error('Network error. Please check your connection.');
-    }
-
-    return new Error('An error occurred while processing your request.');
+    return new Error('Network error');
   }
 }
 

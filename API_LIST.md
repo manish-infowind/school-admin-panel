@@ -5,7 +5,7 @@ This is a **backend-ready** API spec for the **current trimmed admin panel** (Lo
 ### Base URL
 
 - **Env var**: `VITE_API_BASE_URL`
-- **Default** (see `src/api/config.ts`): `http://localhost:8000/admin`
+- **Default** (see `src/api/config.ts`): `http://localhost:5000/admin`
 - All paths below are **relative** to the base URL unless mentioned otherwise.
 
 ### Auth & response envelope (what the frontend expects)

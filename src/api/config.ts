@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   // Base URL for API calls - production server
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/admin',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/admin',
 
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -34,9 +34,6 @@ export const API_CONFIG = {
       PROFILE_PASSWORD_VERIFY_OTP: '/admin-profile/password/verify-otp',
       PROFILE_PASSWORD_RESET_REQUEST: '/admin-profile/password/reset-request',
       PROFILE_PASSWORD_RESET: '/admin-profile/password/reset',
-      PROFILE_PREFERENCES: '/admin-profile/preferences',
-      PROFILE_ACTIVITY: '/admin-profile/activity',
-      PROFILE_2FA_SETUP: '/admin-profile/2fa/setup',
       PROFILE_2FA_ENABLE: '/admin-profile/2fa/enable',
       PROFILE_2FA_DISABLE: '/admin-profile/2fa/disable',
     },
@@ -44,7 +41,6 @@ export const API_CONFIG = {
       MAIN: '/dashboard',
       STATS: '/dashboard/stats',
       STATS_SUMMARY: '/dashboard/stats/summary',
-      ACTIVITY: '/dashboard/activity',
       USER_GROWTH: '/dashboard/analytics/user-growth',
       USER_GROWTH_SYNC: '/dashboard/analytics/user-growth/sync',
       ACTIVE_USERS: '/dashboard/analytics/active-users',
@@ -78,4 +74,4 @@ export const API_ERROR_TYPES = {
   NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
   SERVER_ERROR: 'SERVER_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
-} as const; 
+} as const;

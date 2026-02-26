@@ -123,12 +123,5 @@ export const getMockResponse = async <T>(
     };
   }
 
-  if (normalizedEndpoint === API_CONFIG.ENDPOINTS.DASHBOARD.ACTIVITY) {
-    return {
-      success: true,
-      data: mockDashboardData.recentActivity as any,
-    };
-  }
-
   return null;
 };
