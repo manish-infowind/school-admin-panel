@@ -9,136 +9,136 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    /* Background & Foreground - Light Mode */
-    --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 222 47% 11%; /* #0F172A */
+    /* Background & Foreground - Light Mode (College Eduversity: light gray #f2f2f2) */
+    --background: 0 0% 95%; /* #f2f2f2 - Logo background */
+    --foreground: 224 44% 20%; /* Dark blue tint for text */
 
     --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 222 47% 11%; /* #0F172A */
+    --card-foreground: 224 44% 20%;
 
-    --popover: 0 0% 100%; /* #FFFFFF */
-    --popover-foreground: 222 47% 11%; /* #0F172A */
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 44% 20%;
 
-    /* Primary - Green Brand Color #3EFF8B */
-    --primary: 144 100% 62%; /* #3EFF8B */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Primary - College Eduversity Orange #f47b20 */
+    --primary: 27 91% 54%; /* #f47b20 */
+    --primary-foreground: 0 0% 100%; /* White text on orange */
 
-    /* Secondary - Teal */
-    --secondary: 160 84% 39%; /* #10B981 */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Secondary - College Eduversity Dark Blue #324b81 */
+    --secondary: 224 44% 35%; /* #324b81 */
+    --secondary-foreground: 0 0% 100%;
 
     /* Muted */
-    --muted: 210 40% 96%; /* #F1F5F9 */
-    --muted-foreground: 215 16% 47%; /* #64748B */
+    --muted: 0 0% 92%; /* #ebebeb */
+    --muted-foreground: 224 30% 40%;
 
-    /* Accent - Green #3EFF8B */
-    --accent: 144 100% 62%; /* #3EFF8B */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Accent - Orange #f47b20 */
+    --accent: 27 91% 54%;
+    --accent-foreground: 0 0% 100%;
 
     /* Destructive - Error Red */
     --destructive: 0 84% 60%; /* #EF4444 */
-    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --destructive-foreground: 0 0% 100%;
 
-    /* Success - Green #3EFF8B */
-    --success: 144 100% 62%; /* #3EFF8B */
-    --success-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Success - Orange (brand) */
+    --success: 27 91% 54%;
+    --success-foreground: 0 0% 100%;
 
     /* Boost - Orange */
-    --boost: 35 100% 50%; /* #FF8300 */
-    --boost-foreground: 0 0% 100%; /* #FFFFFF */
+    --boost: 27 91% 54%;
+    --boost-foreground: 0 0% 100%;
 
     /* Border & Input */
-    --border: 214 32% 91%; /* #E2E8F0 */
-    --input: 214 32% 91%; /* #E2E8F0 */
-    --ring: 144 100% 62%; /* #3EFF8B */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 27 91% 54%; /* Orange focus ring */
 
     --radius: 0.75rem;
 
     /* Sidebar - Light Mode */
-    --sidebar-background: 0 0% 100%; /* #FFFFFF */
-    --sidebar-foreground: 222 47% 11%; /* #0F172A */
-    --sidebar-primary: 144 100% 62%; /* #3EFF8B */
-    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
-    --sidebar-accent: 120 100% 95%; /* Light green tint */
-    --sidebar-accent-foreground: 120 100% 20%; /* Dark green */
-    --sidebar-border: 214 32% 91%; /* #E2E8F0 */
-    --sidebar-ring: 144 100% 62%; /* #3EFF8B */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 44% 20%;
+    --sidebar-primary: 27 91% 54%; /* Orange */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 27 91% 96%; /* Light orange tint */
+    --sidebar-accent-foreground: 224 44% 35%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 27 91% 54%;
 
-    /* Brand colors - Green Theme */
-    --brand-green: 144 100% 62%; /* #3EFF8B */
-    --brand-teal: 160 84% 39%; /* #10B981 */
-    --brand-blue: 199 89% 48%; /* #0EA5E9 */
+    /* Brand colors - College Eduversity (Orange + Dark Blue) */
+    --brand-green: 27 91% 54%; /* #f47b20 - Orange (used as primary accent) */
+    --brand-teal: 27 85% 58%; /* Lighter orange for gradients */
+    --brand-blue: 224 44% 35%; /* #324b81 - Dark blue */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(144 100% 62%),
-      hsl(160 84% 39%),
-      hsl(199 89% 48%)
+      hsl(27 91% 54%),
+      hsl(27 85% 58%),
+      hsl(224 44% 35%)
     );
   }
 
   .dark {
-    /* Background & Foreground - Dark Mode - Glossy Black */
-    --background: 0 0% 2%; /* #050505 - Glossy black base */
-    --foreground: 0 0% 98%; /* #FAFAFA - Almost white */
+    /* Background & Foreground - Dark Mode */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 4%; /* Glossy dark gray */
+    --card: 0 0% 4%;
     --card-foreground: 0 0% 98%;
 
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
 
-    /* Primary - Green Brand Color #3EFF8B */
-    --primary: 144 100% 62%; /* #3EFF8B */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Primary - College Eduversity Orange #f47b20 */
+    --primary: 27 91% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Teal */
-    --secondary: 160 84% 39%; /* #10B981 */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Secondary - Dark Blue #324b81 */
+    --secondary: 224 44% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    /* Muted - Glossy dark gray, no green tint */
-    --muted: 0 0% 8%; /* Glossy dark gray */
-    --muted-foreground: 0 0% 65%; /* Light gray */
+    /* Muted */
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent - Green #3EFF8B */
-    --accent: 144 100% 62%; /* #3EFF8B */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Accent - Orange */
+    --accent: 27 91% 54%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Destructive - Error Red */
-    --destructive: 0 84% 60%; /* #EF4444 */
-    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Success - Green #3EFF8B */
-    --success: 144 100% 62%; /* #3EFF8B */
-    --success-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
+    /* Success - Orange */
+    --success: 27 91% 54%;
+    --success-foreground: 0 0% 100%;
 
-    /* Boost - Yellow (dark mode) */
-    --boost: 50 100% 68%; /* #FFD54F */
-    --boost-foreground: 0 0% 10%; /* #1A1A1A */
+    /* Boost - Orange (dark mode) */
+    --boost: 27 91% 58%;
+    --boost-foreground: 0 0% 100%;
 
-    /* Border & Input - Glossy dark gray, no green tint */
-    --border: 0 0% 15%; /* Glossy dark gray border */
+    /* Border & Input */
+    --border: 0 0% 15%;
     --input: 0 0% 15%;
-    --ring: 144 100% 62%; /* #3EFF8B */
+    --ring: 27 91% 54%;
 
-    /* Sidebar - Dark Mode - Glossy Black */
-    --sidebar-background: 0 0% 3%; /* Glossy dark gray */
+    /* Sidebar - Dark Mode */
+    --sidebar-background: 0 0% 3%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 144 100% 62%; /* #3EFF8B */
-    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF - White text on bright green */
-    --sidebar-accent: 0 0% 10%; /* Glossy dark gray, no green tint */
+    --sidebar-primary: 27 91% 54%; /* Orange */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 10%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%; /* Glossy dark gray border */
-    --sidebar-ring: 144 100% 62%; /* #3EFF8B */
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 27 91% 54%;
 
-    /* Brand colors - Green Theme (Dark Mode) */
-    --brand-green: 144 100% 62%; /* #3EFF8B */
-    --brand-teal: 160 84% 39%; /* #10B981 */
-    --brand-blue: 199 89% 48%; /* #0EA5E9 */
+    /* Brand colors - College Eduversity (Dark Mode) */
+    --brand-green: 27 91% 54%; /* #f47b20 */
+    --brand-teal: 27 85% 58%;
+    --brand-blue: 224 44% 35%; /* #324b81 */
     --brand-gradient: linear-gradient(
       135deg,
-      hsl(144 100% 62%),
-      hsl(160 84% 39%),
-      hsl(199 89% 48%)
+      hsl(27 91% 54%),
+      hsl(27 85% 58%),
+      hsl(224 44% 35%)
     );
   }
 }

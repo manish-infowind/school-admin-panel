@@ -27,15 +27,10 @@ class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        
-        // Debug: Log the request details
-        console.log('API Client: Request:', {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          headers: config.headers,
-          data: config.data
-        });
-        
+        // So backend receives multipart/form-data with boundary (for image upload)
+        if (config.data instanceof FormData) {
+          delete config.headers['Content-Type'];
+        }
         return config;
       },
       (error) => {
@@ -51,8 +46,8 @@ class ApiClient {
       async (error) => {
         if (error.response?.status === 401) {
           // Only handle token refresh for authenticated requests (not login, refresh, or password operations)
-          const isLoginRequest = error.config?.url?.includes('/auth/login');
-          const isRefreshRequest = error.config?.url?.includes('/auth/refresh');
+          const isLoginRequest = error.config?.url?.includes('auth/login');
+          const isRefreshRequest = error.config?.url?.includes('auth/refresh');
           const isPasswordRequest = error.config?.url?.includes('/password');
           
           if (!isLoginRequest && !isRefreshRequest && !isPasswordRequest && this.getAuthToken()) {
@@ -154,8 +149,8 @@ class ApiClient {
         type: this.getErrorType(status),
         message: data?.message || data?.error || `HTTP ${status} error`,
         status,
-        errors: data?.errors,
         timestamp: new Date().toISOString(),
+        ...(data?.errors != null ? { errors: data.errors } : {}),
       };
     } else if (error.request) {
       apiError = {
@@ -323,7 +318,10 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
-  // File upload method
+  /**
+   * Upload file as multipart/form-data. Sends the given FormData to the backend.
+   * Content-Type is left unset so axios sets multipart/form-data with the correct boundary.
+   */
   async upload<T = any>(endpoint: string, formData: FormData, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
     const config: AxiosRequestConfig = {
       method: 'POST',
@@ -331,7 +329,6 @@ class ApiClient {
       data: formData,
       headers: {
         ...options?.headers,
-        'Content-Type': 'multipart/form-data',
       },
     };
 

@@ -11,6 +11,7 @@ export interface ApiError {
   message: string;
   status?: number;
   timestamp: string;
+  errors?: unknown;
 }
 
 // Authentication Types
@@ -63,4 +64,198 @@ export interface ApiRequestOptions {
   body?: any;
   timeout?: number;
   signal?: AbortSignal;
+}
+
+// --- Location & Colleges (Admin API) ---
+
+export interface Country {
+  _id: string;
+  name: string;
+  code: string;
+}
+
+export interface State {
+  _id: string;
+  name: string;
+  slug: string;
+  countryId?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface City {
+  _id: string;
+  name: string;
+  slug: string;
+  stateId: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+/** Institution type (replaces single course category; courses are selected via courseFees). */
+export const INSTITUTION_TYPES = [
+  'Private',
+  'Autonomous',
+  'Government',
+  'Deemed',
+  'Aided',
+  'Other',
+] as const;
+
+export type InstitutionType = (typeof INSTITUTION_TYPES)[number];
+
+/** Per-course fee row for create/update. Use courseId (from courses API) and courseName for display. API may return _id on each item. */
+export interface CourseFee {
+  _id?: string;
+  courseId?: string;
+  courseName: string;
+  fee?: string;
+  feeAmount?: number;
+  feePeriod?: 'year' | 'semester';
+}
+
+export interface College {
+  _id: string;
+  name: string;
+  slug: string;
+  shortName?: string;
+  countryId: string;
+  stateId: string;
+  cityId: string;
+  stateName: string;
+  cityName: string;
+  locationDisplay: string;
+  category: string; // Institution type: Private, Autonomous, Government, etc.
+  address?: string;
+  pinCode?: string;
+  courses?: string[];
+  courseFees?: CourseFee[];
+  badge?: string;
+  fee?: string;
+  feeAmount?: number;
+  feePeriod?: 'year' | 'semester';
+  rating?: number;
+  nirfRank?: number;
+  placementRate?: number;
+  avgPackage?: string;
+  description?: string;
+  highlights?: string[];
+  eligibility?: string;
+  facilities?: string[];
+  website?: string;
+  phone?: string;
+  email?: string;
+  logoUrl?: string;
+  coverImageUrl?: string;
+  galleryUrls?: string[];
+  isActive?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateCollegeRequest {
+  name: string;
+  countryId: string;
+  stateId: string;
+  cityId: string;
+  stateName: string;
+  cityName: string;
+  locationDisplay: string;
+  category: string; // Institution type: Private, Autonomous, Government, etc.
+  shortName?: string;
+  address?: string;
+  pinCode?: string;
+  courses?: string[];
+  courseFees?: CourseFee[];
+  badge?: string;
+  fee?: string;
+  feeAmount?: number;
+  feePeriod?: 'year' | 'semester';
+  rating?: number;
+  nirfRank?: number;
+  placementRate?: number;
+  avgPackage?: string;
+  description?: string;
+  highlights?: string[];
+  eligibility?: string;
+  facilities?: string[];
+  website?: string;
+  phone?: string;
+  email?: string;
+  logoUrl?: string;
+  coverImageUrl?: string;
+  galleryUrls?: string[];
+  isActive?: boolean;
+  isVerified?: boolean;
+}
+
+export interface CollegesListParams {
+  category?: string;
+  stateId?: string;
+  cityId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext?: boolean;
+  hasPrev?: boolean;
+}
+
+export interface CollegesListResponse {
+  colleges: College[];
+  pagination: Pagination;
+}
+
+export interface DashboardData {
+  colleges: { total: number; active: number };
+  enquiries: { total: number; new: number };
+  applications: { total: number };
+}
+
+export interface Enquiry {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+  status?: 'new' | 'contacted' | 'closed';
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EnquiriesListParams {
+  status?: 'new' | 'contacted' | 'closed';
+  page?: number;
+  limit?: number;
+}
+
+export interface EnquiriesListResponse {
+  enquiries: Enquiry[];
+  pagination: Pagination;
+}
+
+// --- Courses (Consumer + Admin API) ---
+
+/** Course (consumer dropdown: _id, name, slug; admin includes isActive, sortOrder, timestamps). */
+export interface Course {
+  _id: string;
+  name: string;
+  slug: string;
+  isActive?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateCourseRequest {
+  name: string;
+  isActive?: boolean;
+  sortOrder?: number;
 }

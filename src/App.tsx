@@ -12,6 +12,10 @@ import { loginInfo, logout } from "@/redux/features/authSlice";
 import { AuthService } from "@/api/services/authService";
 import Dashboard from "./pages/admin/Dashboard";
 import Profile from "./pages/admin/Profile";
+import Colleges from "./pages/admin/Colleges";
+import AddCollege from "./pages/admin/AddCollege";
+import CollegeDetail from "./pages/admin/CollegeDetail";
+import Courses from "./pages/admin/Courses";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +76,57 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <Profile />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/courses"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Courses />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/colleges"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Colleges />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/colleges/add"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AddCollege />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/colleges/:id/edit"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AddCollege />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/colleges/:id"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CollegeDetail />
                 </AdminLayout>
               </ProtectedRoute>
             }

@@ -26,3 +26,16 @@ export { AuthService } from './authService';
 
 // Dashboard Services
 export { DashboardService } from './dashboardService';
+
+// Location (countries, states, cities)
+export { LocationService } from './locationService';
+
+// Colleges & Enquiries
+export {
+  CollegeService,
+  AdminDashboardService,
+  EnquiryService,
+} from './collegeService';
+
+// Courses
+export { CourseService, getCoursesPublic } from './courseService';

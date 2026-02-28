@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutDashboard,
+  Building2,
+  GraduationCap,
   ChevronRight,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -16,6 +18,16 @@ const navigation = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Colleges",
+    href: "/admin/colleges",
+    icon: Building2,
+  },
+  {
+    name: "Courses",
+    href: "/admin/courses",
+    icon: GraduationCap,
   },
 ];
 
