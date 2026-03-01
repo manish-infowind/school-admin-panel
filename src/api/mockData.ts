@@ -8,7 +8,7 @@ export const mockUser: User = {
   username: 'admin',
   email: 'admin@gmail.com',
   role: 'super_admin',
-  profilePic: '/logo.svg',
+  profilePic: '/logo.png',
   firstName: 'Admin',
   lastName: 'User',
   phone: '+1234567890',

@@ -151,6 +151,7 @@ class ApiClient {
         status,
         timestamp: new Date().toISOString(),
         ...(data?.errors != null ? { errors: data.errors } : {}),
+        ...(data?.code != null ? { code: data.code } : {}),
       };
     } else if (error.request) {
       apiError = {

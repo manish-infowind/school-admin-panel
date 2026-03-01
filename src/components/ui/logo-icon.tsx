@@ -11,17 +11,17 @@ export const LogoIcon: React.FC<LogoIconProps> = ({
 }) => {
   const sizeClasses = {
     sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-    xl: 'h-16 w-16'
+    md: 'h-8 w-20',
+    lg: 'h-12 w-32',
+    xl: 'h-16 w-44'
   };
 
   return (
     <div className={`${sizeClasses[size]} relative ${className}`}>
       <img 
-        src="/logo.svg" 
-        alt="FindMyFunding.ai Logo" 
-        className="w-full h-full object-contain rounded-full"
+        src="/logo.png" 
+        alt="College Eduversity" 
+        className="w-full h-full object-contain"
       />
     </div>
   );

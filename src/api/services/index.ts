@@ -39,3 +39,6 @@ export {
 
 // Courses
 export { CourseService, getCoursesPublic } from './courseService';
+
+// Events
+export { EventService } from './eventService';

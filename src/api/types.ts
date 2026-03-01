@@ -12,6 +12,8 @@ export interface ApiError {
   status?: number;
   timestamp: string;
   errors?: unknown;
+  /** Backend error code (e.g. ENQUIRY_NOT_FOUND for 404 on enquiry). */
+  code?: string;
 }
 
 // Authentication Types
@@ -214,30 +216,91 @@ export interface CollegesListResponse {
 
 export interface DashboardData {
   colleges: { total: number; active: number };
-  enquiries: { total: number; new: number };
+  enquiries: { total: number; new?: number; pending?: number };
   applications: { total: number };
+}
+
+/** Populated course reference in enquiry. */
+export interface EnquiryCourseRef {
+  _id: string;
+  name: string;
+  slug: string;
 }
 
 export interface Enquiry {
   _id: string;
+  mobile?: string;
   name?: string;
   email?: string;
-  phone?: string;
-  message?: string;
-  status?: 'new' | 'contacted' | 'closed';
-  notes?: string;
+  description?: string;
+  courseId?: EnquiryCourseRef;
+  status?: 'pending' | 'reviewed' | 'resolved';
+  notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
 
+/** Status values: pending (new), reviewed (admin has reviewed), resolved (closed). */
+export type EnquiryStatus = 'pending' | 'reviewed' | 'resolved';
+
+/** Body for PUT /api/admin/enquiries/:id (partial update: status and/or notes). */
+export interface EnquiryUpdateRequest {
+  status?: EnquiryStatus;
+  notes?: string;
+}
+
 export interface EnquiriesListParams {
-  status?: 'new' | 'contacted' | 'closed';
+  status?: EnquiryStatus;
   page?: number;
   limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  /** newest = latest first (default), oldest = oldest first */
+  sort?: 'newest' | 'oldest';
 }
 
 export interface EnquiriesListResponse {
   enquiries: Enquiry[];
+  pagination: Pagination;
+}
+
+// --- Events (Admin API) ---
+
+export interface Event {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  shortDescription?: string;
+  longDescription?: string;
+  imageUrl?: string;
+  venue?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Body for POST /api/admin/events. endDate must be on or after startDate. */
+export interface CreateEventRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+  shortDescription?: string;
+  longDescription?: string;
+  imageUrl?: string;
+  venue?: string;
+  isActive?: boolean;
+}
+
+export interface EventsListParams {
+  page?: number;
+  limit?: number;
+  /** startDate (default) or endDate */
+  sort?: 'startDate' | 'endDate';
+}
+
+export interface EventsListResponse {
+  events: Event[];
   pagination: Pagination;
 }
 

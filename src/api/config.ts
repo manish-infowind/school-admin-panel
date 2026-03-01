@@ -2,7 +2,7 @@
 // Base URL: no trailing slash. Admin and public paths under /api/...
 export const API_CONFIG = {
   // Base URL for API calls (backend root)
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://school-be-1.onrender.com',
 
   // Default timeout for API requests (in milliseconds)
   TIMEOUT: 10000,
@@ -42,6 +42,8 @@ export const API_CONFIG = {
       MAIN: '/api/admin/dashboard',
       STATS: '/api/admin/dashboard/stats',
       STATS_SUMMARY: '/api/admin/dashboard/stats/summary',
+      /** Enquiry counts over time for dashboard chart. See docs/DASHBOARD-ENQUIRY-API.md */
+      ENQUIRY_ANALYTICS: '/api/admin/dashboard/enquiries/analytics',
       USER_GROWTH: '/api/admin/dashboard/analytics/user-growth',
       USER_GROWTH_SYNC: '/api/admin/dashboard/analytics/user-growth/sync',
       ACTIVE_USERS: '/api/admin/dashboard/analytics/active-users',
@@ -59,6 +61,7 @@ export const API_CONFIG = {
     COLLEGES: '/api/admin/colleges',
     COURSES: '/api/admin/courses',
     ENQUIRIES: '/api/admin/enquiries',
+    EVENTS: '/api/admin/events',
     UPLOAD: '/api/admin/upload',
   },
 } as const;
@@ -87,4 +90,10 @@ export const API_ERROR_TYPES = {
   NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
   SERVER_ERROR: 'SERVER_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+} as const;
+
+/** Backend error codes (e.g. 404 responses). Use for branching in UI. */
+export const API_ERROR_CODES = {
+  ENQUIRY_NOT_FOUND: 'ENQUIRY_NOT_FOUND',
+  EVENT_NOT_FOUND: 'EVENT_NOT_FOUND',
 } as const;

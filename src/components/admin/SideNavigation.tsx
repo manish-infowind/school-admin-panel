@@ -5,6 +5,8 @@ import {
   LayoutDashboard,
   Building2,
   GraduationCap,
+  MessageSquare,
+  Calendar,
   ChevronRight,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -29,6 +31,16 @@ const navigation = [
     href: "/admin/courses",
     icon: GraduationCap,
   },
+  {
+    name: "Enquiries",
+    href: "/admin/enquiries",
+    icon: MessageSquare,
+  },
+  {
+    name: "Events",
+    href: "/admin/events",
+    icon: Calendar,
+  },
 ];
 
 interface SideNavigationProps {
@@ -50,8 +62,8 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
     >
       {/* Header with Logo */}
       <div className="flex h-32 items-center justify-center px-6 py-4">
-        <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-200 dark:bg-black p-3 shadow-lg flex items-center justify-center">
-          <LogoIcon size="lg" className="h-16 w-16" />
+        <div className="h-20 w-full max-w-[180px] overflow-hidden flex items-center justify-center">
+          <LogoIcon size="lg" className="h-full w-full" />
         </div>
       </div>
 
@@ -60,7 +72,9 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
           <div className="space-y-0.5">
             {navigation
               .map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== "/admin" && location.pathname.startsWith(item.href + "/"));
                 return (
                   <motion.div
                     key={item.name}
@@ -108,7 +122,7 @@ export function SideNavigation({ isOpen, onClose }: SideNavigationProps) {
         <div className="flex items-center gap-2 px-2 py-1">
           <LogoIcon size="sm" />
           <div className="flex flex-col">
-            <span className="text-sm font-medium">FindMyFunding.ai</span>
+            <span className="text-sm font-medium">College Eduversity</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>

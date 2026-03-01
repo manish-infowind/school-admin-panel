@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "@/components/ui/badge";
-import { Settings, LogOut, User, Menu, Loader2, Shield } from "lucide-react";
+import { LogOut, Menu, Loader2, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { logout } from "../../redux/features/authSlice"
@@ -111,7 +111,7 @@ const TopNavigation = ({ onToggleSidebar, isSidebarOpen }: TopNavigationProps) =
                   }
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {authLoginState?.email || 'admin@findmyfunding.com'}
+                  {authLoginState?.email || 'admin@collegeeduversity.com'}
                 </p>
                 {authLoginState?.role && (
                   <Badge
@@ -124,11 +124,6 @@ const TopNavigation = ({ onToggleSidebar, isSidebarOpen }: TopNavigationProps) =
                 )}
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/admin/profile")}>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logoutHandler}>
               <LogOut className="mr-2 h-4 w-4" />

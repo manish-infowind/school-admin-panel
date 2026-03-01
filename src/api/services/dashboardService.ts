@@ -75,6 +75,17 @@ export interface AnalyticsRefreshResponse {
   data: AnalyticsRefreshData;
 }
 
+// Enquiry analytics (counts over time for dashboard chart)
+export interface EnquiryAnalyticsDataPoint {
+  label: string;   // e.g. "Jan 2024", "Week 1 (Jan 2024)", "Jan 01, 2024"
+  date?: string;   // ISO 8601 optional, for sorting
+  count: number;
+}
+
+export interface EnquiryAnalyticsResponse {
+  enquiries: EnquiryAnalyticsDataPoint[];
+}
+
 // Dashboard stats summary (static, unfiltered)
 export interface DashboardStatsSummary {
   totalUsers: number;
@@ -282,6 +293,33 @@ export class DashboardService {
     } catch (error) {
       throw error;
     }
+  }
+
+  // Get enquiry analytics (counts over time) for dashboard chart
+  static async getEnquiryAnalytics(
+    timeRange: 'daily' | 'weekly' | 'monthly' | 'custom',
+    options: {
+      month?: number;
+      year?: number;
+      years?: number[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<ApiResponse<EnquiryAnalyticsResponse>> {
+    const params = new URLSearchParams({ timeRange });
+
+    if (timeRange === 'daily' || timeRange === 'weekly') {
+      if (options.month !== undefined) params.append('month', options.month.toString());
+      if (options.year !== undefined) params.append('year', options.year.toString());
+    } else if (timeRange === 'monthly') {
+      if (options.years?.length) options.years.forEach(y => params.append('years', y.toString()));
+    } else if (timeRange === 'custom') {
+      if (options.startDate) params.append('startDate', options.startDate.toISOString());
+      if (options.endDate) params.append('endDate', options.endDate.toISOString());
+    }
+
+    const url = `${API_CONFIG.ENDPOINTS.DASHBOARD.ENQUIRY_ANALYTICS}?${params.toString()}`;
+    return apiClient.get<EnquiryAnalyticsResponse>(url);
   }
 
   // Sync user growth analytics data from external service

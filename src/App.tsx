@@ -16,6 +16,10 @@ import Colleges from "./pages/admin/Colleges";
 import AddCollege from "./pages/admin/AddCollege";
 import CollegeDetail from "./pages/admin/CollegeDetail";
 import Courses from "./pages/admin/Courses";
+import Enquiries from "./pages/admin/Enquiries";
+import EnquiryDetail from "./pages/admin/EnquiryDetail";
+import Events from "./pages/admin/Events";
+import AddEvent from "./pages/admin/AddEvent";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +131,56 @@ const App = () => (
               <ProtectedRoute>
                 <AdminLayout>
                   <CollegeDetail />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/enquiries"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Enquiries />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/enquiries/:id"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EnquiryDetail />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/events"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Events />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/events/add"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AddEvent />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/events/:id/edit"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AddEvent />
                 </AdminLayout>
               </ProtectedRoute>
             }

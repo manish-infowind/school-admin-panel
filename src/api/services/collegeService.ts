@@ -10,6 +10,7 @@ import type {
   Enquiry,
   EnquiriesListParams,
   EnquiriesListResponse,
+  EnquiryUpdateRequest,
 } from '../types';
 
 export class CollegeService {
@@ -87,23 +88,34 @@ export class AdminDashboardService {
   }
 }
 
-/** Counselling enquiries. */
+/**
+ * Admin Enquiry API: list (with filters/pagination), get by ID, update status/notes.
+ * Base path: GET/PUT /api/admin/enquiries. Auth: Bearer token required.
+ */
 export class EnquiryService {
+  /** List enquiries; optional filters: status, fromDate, toDate; sort: newest | oldest. */
   static async list(params?: EnquiriesListParams): Promise<ApiResponse<EnquiriesListResponse>> {
     const search = new URLSearchParams();
     if (params?.status) search.set('status', params.status);
     if (params?.page != null) search.set('page', String(params.page));
     if (params?.limit != null) search.set('limit', String(params.limit));
+    if (params?.fromDate) search.set('fromDate', params.fromDate);
+    if (params?.toDate) search.set('toDate', params.toDate);
+    if (params?.sort) search.set('sort', params.sort);
     const query = search.toString();
     const url = query ? `${API_CONFIG.ENDPOINTS.ENQUIRIES}?${query}` : API_CONFIG.ENDPOINTS.ENQUIRIES;
     const response = await apiClient.get<EnquiriesListResponse>(url);
     return response;
   }
 
-  static async update(
-    id: string,
-    body: { status?: 'new' | 'contacted' | 'closed'; notes?: string }
-  ): Promise<ApiResponse<Enquiry>> {
+  /** Get a single enquiry by ID (24-char hex ObjectId). 404 returns code ENQUIRY_NOT_FOUND. */
+  static async getById(id: string): Promise<ApiResponse<Enquiry>> {
+    const response = await apiClient.get<Enquiry>(`${API_CONFIG.ENDPOINTS.ENQUIRIES}/${id}`);
+    return response;
+  }
+
+  /** Update enquiry status and/or notes. Partial body OK. */
+  static async update(id: string, body: EnquiryUpdateRequest): Promise<ApiResponse<Enquiry>> {
     const response = await apiClient.put<Enquiry>(`${API_CONFIG.ENDPOINTS.ENQUIRIES}/${id}`, body);
     return response;
   }
